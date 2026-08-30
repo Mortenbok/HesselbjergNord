@@ -13,13 +13,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Upload via FTP
+      - name: Upload to FTP server
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ftp.simply.com
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
           protocol: ftp
-          local-dir: ./public
-          server-dir: /public_html/
+          server-dir: /
           dangerous-clean-slate: false
