@@ -178,6 +178,18 @@
   }
 
   /* Placeringsoplysninger — dl så adresse og adgang parres semantisk. */
+  .badge {
+    display: inline-block;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    background: rgba(60, 160, 90, 0.35);
+    border: 1px solid rgba(140, 230, 170, 0.6);
+    margin-bottom: 16px;
+  }
+
   .facts {
     display: grid;
     grid-template-columns: minmax(110px, max-content) 1fr;
@@ -486,9 +498,9 @@
   <div class="container">
     <h1>Hjertestarter</h1>
     <p class="lead">
-      Der er en hjertestarter i Hesselbjerg Nord. Den er registreret i
-      Hjertestarternetværket, så den kan findes af alarmcentralen og af
-      hjerteløbere i nærheden.
+      Der er en hjertestarter i Hesselbjerg Nord. Den står udendørs ved vejen og
+      kan hentes af alle hele døgnet. Den er registreret i Hjertestarternetværket,
+      så den kan findes af alarmcentralen og af hjerteløbere i nærheden.
     </p>
 
     <div class="emergency">
@@ -538,6 +550,8 @@
            Flyttes hjertestarteren, skal den rettes begge steder — og i
            kortadresserne længere nede.
            =================================================================== -->
+      <span class="badge">Døgnåben · udendørs</span>
+
       <dl class="facts">
         <dt>Adresse</dt>
         <dd>
@@ -546,6 +560,9 @@
             5932 Humble
           </address>
         </dd>
+
+        <dt>Sådan finder du den</dt>
+        <dd>Den sidder på et stativ ude ved vejen og kan hentes af alle, hele døgnet.</dd>
 
         <dt>Registrering</dt>
         <dd>Hjertestarternetværket, id 1000045246</dd>
