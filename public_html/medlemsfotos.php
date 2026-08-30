@@ -250,6 +250,7 @@ $photos = $stmt->fetchAll();
       <a href="bestyrelsen.html">Bestyrelsen</a>
       <a href="kontingent.html">Kontingent</a>
       <a href="aktiviteter.html">Aktiviteter</a>
+      <a href="hjertestarter.html">Hjertestarter</a>
       <a href="medlemsfotos.php" class="active">Medlemsfotos</a>
     </div>
     <div class="nav-account">
