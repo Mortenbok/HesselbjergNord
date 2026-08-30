@@ -37,14 +37,23 @@
     width: 100%;
     z-index: 2;
     display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
     gap: 10px;
     padding: 20px 15px;
     background: linear-gradient(to bottom, rgba(0,0,0,0.45), transparent);
   }
 
-  nav a {
+  .nav-links {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    flex: 1;
+  }
+
+  nav a,
+  .login-btn {
     color: #fff;
     text-decoration: none;
     font-size: 0.95rem;
@@ -56,8 +65,16 @@
   }
 
   nav a:hover,
-  nav a.active {
+  nav a.active,
+  .login-btn:hover {
     background: rgba(255,255,255,0.18);
+  }
+
+  .login-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.4);
+    margin-right: 10px;
+    white-space: nowrap;
   }
 
   .content {
@@ -107,11 +124,14 @@
 </head>
 <body>
   <nav>
-    <a href="omraade.html">Område</a>
-    <a href="vedtaegter.html">Vedtægter</a>
-    <a href="bestyrelsen.html" class="active">Bestyrelsen</a>
-    <a href="kontingent.html">Kontingent</a>
-    <a href="aktiviteter.html">Aktiviteter</a>
+    <div class="nav-links">
+      <a href="omraade.html">Område</a>
+      <a href="vedtaegter.html">Vedtægter</a>
+      <a href="bestyrelsen.html" class="active">Bestyrelsen</a>
+      <a href="kontingent.html">Kontingent</a>
+      <a href="aktiviteter.html">Aktiviteter</a>
+    </div>
+    <a href="bestyrelsen.html" class="login-btn">Bestyrelsen login</a>
   </nav>
 
   <div class="content">
