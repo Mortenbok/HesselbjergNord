@@ -76,6 +76,82 @@
     border: 1px solid rgba(255,255,255,0.4);
     margin-right: 10px;
     white-space: nowrap;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 20;
+  }
+
+  .modal.open {
+    display: flex;
+  }
+
+  .modal-content {
+    background: rgba(14, 22, 27, 0.92);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 16px;
+    padding: 24px;
+    width: min(92vw, 380px);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.35);
+  }
+
+  .modal-content h2 {
+    margin-bottom: 18px;
+    text-align: center;
+    font-size: 1.5rem;
+  }
+
+  .modal-content label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.9);
+  }
+
+  .modal-content input {
+    width: 100%;
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    font: inherit;
+  }
+
+  .modal-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .modal-actions button {
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 10px;
+    padding: 10px 16px;
+    cursor: pointer;
+    font: inherit;
+  }
+
+  .close-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.8);
+    font-size: 1.5rem;
+    cursor: pointer;
+    line-height: 1;
   }
 
   .content {
@@ -133,13 +209,66 @@
       <a href="aktiviteter.html">Aktiviteter</a>
       <a href="medlemsfotos.php">Medlemsfotos</a>
     </div>
-    <a href="bestyrelsen.html" class="login-btn">Bestyrelsen login</a>
+    <button type="button" class="login-btn" data-open-login>Bestyrelsen login</button>
   </nav>
+
+  <div class="modal" id="loginModal" aria-hidden="true">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <h2 id="loginTitle">Log ind</h2>
+        <button type="button" class="close-btn" aria-label="Luk" data-close-login>&times;</button>
+      </div>
+      <form>
+        <label for="loginUser">Brugernavn</label>
+        <input id="loginUser" type="text" name="username" placeholder="Brugernavn">
+
+        <label for="loginPass">Adgangskode</label>
+        <input id="loginPass" type="password" name="password" placeholder="Adgangskode">
+
+        <div class="modal-actions">
+          <button type="button" data-close-login>Annuller</button>
+          <button type="submit">Log ind</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <div class="content">
     <h1>Kontingent</h1>
     <span class="badge">Under opbygning</span>
   </div>
   <footer>&copy; 2026 Hesselbjerg Nord</footer>
+
+  <script>
+    const loginModal = document.getElementById('loginModal');
+    const openLoginButtons = document.querySelectorAll('[data-open-login]');
+    const closeLoginButtons = document.querySelectorAll('[data-close-login]');
+
+    openLoginButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        loginModal.classList.add('open');
+        loginModal.setAttribute('aria-hidden', 'false');
+      });
+    });
+
+    closeLoginButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        loginModal.classList.remove('open');
+        loginModal.setAttribute('aria-hidden', 'true');
+      });
+    });
+
+    loginModal.addEventListener('click', (event) => {
+      if (event.target === loginModal) {
+        loginModal.classList.remove('open');
+        loginModal.setAttribute('aria-hidden', 'true');
+      }
+    });
+
+    loginModal.querySelector('form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      window.location.href = 'bestyrelsen.html';
+    });
+  </script>
 </body>
 </html>
