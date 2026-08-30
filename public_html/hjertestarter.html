@@ -177,18 +177,6 @@
     letter-spacing: 0.5px;
   }
 
-  .badge {
-    display: inline-block;
-    padding: 5px 14px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    background: rgba(60, 160, 90, 0.35);
-    border: 1px solid rgba(140, 230, 170, 0.6);
-    margin-bottom: 14px;
-  }
-
   /* Placeringsoplysninger — dl så adresse og adgang parres semantisk. */
   .facts {
     display: grid;
@@ -216,22 +204,52 @@
     line-height: 1.5;
   }
 
-  .todo {
-    background: rgba(190, 140, 20, 0.3);
-    border: 1px solid rgba(255, 210, 120, 0.6);
-    border-radius: 10px;
-    padding: 12px 14px;
-    font-size: 0.92rem;
-    color: #ffeec9;
+  /* Kort. line-height: 0 fjerner den stribe, en inline iframe ellers
+     efterlader under sig. */
+  .map {
+    margin-top: 22px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.22);
+    background: rgba(0,0,0,0.25);
+    line-height: 0;
+  }
+
+  .map iframe {
+    width: 100%;
+    height: 340px;
+    border: 0;
+    display: block;
+  }
+
+  .map-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
     margin-top: 16px;
   }
 
-  .todo code {
-    font-family: Consolas, 'Courier New', monospace;
-    background: rgba(0,0,0,0.3);
-    padding: 1px 5px;
-    border-radius: 4px;
+  .map-btn {
+    flex: 1 1 200px;
+    text-align: center;
+    text-decoration: none;
+    color: #fff;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 0.98rem;
+    transition: background 0.2s ease;
   }
+
+  .map-btn:hover { background: rgba(255,255,255,0.2); }
+
+  .map-btn.primary {
+    background: rgba(60, 130, 200, 0.45);
+    border-color: rgba(150, 200, 255, 0.65);
+  }
+
+  .map-btn.primary:hover { background: rgba(70, 150, 225, 0.6); }
 
   /* Handlingstrin ved hjertestop. */
   .steps {
@@ -415,6 +433,8 @@
     }
 
     .facts dd { margin-bottom: 10px; }
+
+    .map iframe { height: 260px; }
   }
 </style>
 </head>
@@ -513,38 +533,43 @@
       <h2>Hvor står den?</h2>
 
       <!-- ===================================================================
-           PLACERING — RET DE FIRE FELTER HERUNDER
-           Oplysningerne skal svare til registreringen på hjertestarter.dk.
-           Ret dem begge steder, hvis hjertestarteren flyttes.
+           PLACERING
+           Adressen skal svare til registreringen på hjertestarter.dk.
+           Flyttes hjertestarteren, skal den rettes begge steder — og i
+           kortadresserne længere nede.
            =================================================================== -->
-      <span class="badge">Døgnåben</span>
-
       <dl class="facts">
         <dt>Adresse</dt>
         <dd>
           <address>
-            Udfyld adressen her<br>
-            Postnr. og by
+            Fyrrevænget 7<br>
+            5932 Humble
           </address>
         </dd>
-
-        <dt>Sådan finder du den</dt>
-        <dd>Udfyld en kort beskrivelse — f.eks. &quot;i skabet på gavlen af fælleshuset, ud mod vejen&quot;.</dd>
-
-        <dt>Adgang</dt>
-        <dd>Udendørs skab, tilgængeligt hele døgnet.</dd>
 
         <dt>Registrering</dt>
         <dd>Hjertestarternetværket, id 1000045246</dd>
       </dl>
-      <!-- ============ SLUT PÅ PLACERINGSOPLYSNINGER ======================= -->
 
-      <p class="todo">
-        <strong>Til bestyrelsen:</strong> felterne ovenfor er endnu ikke udfyldt.
-        Åbn <code>hjertestarter.html</code> og ret teksten mellem
-        <code>PLACERING</code>-kommentarerne, så adressen står samme sted som på
-        hjertestarter.dk. Slet derefter denne boks.
-      </p>
+      <div class="map">
+        <iframe
+          title="Kort over hjertestarterens placering på Fyrrevænget 7, 5932 Humble"
+          src="https://maps.google.com/maps?q=Fyrrev%C3%A6nget+7%2C+5932+Humble&amp;z=16&amp;hl=da&amp;output=embed"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          allowfullscreen></iframe>
+      </div>
+
+      <div class="map-actions">
+        <a class="map-btn"
+           href="https://www.google.com/maps/search/?api=1&amp;query=Fyrrev%C3%A6nget+7%2C+5932+Humble"
+           target="_blank" rel="noopener">Åbn i Google Maps</a>
+
+        <a class="map-btn primary"
+           href="https://www.google.com/maps/dir/?api=1&amp;destination=Fyrrev%C3%A6nget+7%2C+5932+Humble"
+           target="_blank" rel="noopener">Vis rute hertil</a>
+      </div>
+      <!-- ============ SLUT PÅ PLACERINGSOPLYSNINGER ======================= -->
     </div>
 
     <div class="panel">
