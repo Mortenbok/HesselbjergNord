@@ -18,6 +18,17 @@ try {
         $password,
         $options
     );
+
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS member_photos (
+            id INT NOT NULL AUTO_INCREMENT,
+            member_name VARCHAR(255) NOT NULL DEFAULT 'Medlem',
+            file_name VARCHAR(255) NOT NULL,
+            original_name VARCHAR(255) NOT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
 } catch (PDOException $e) {
     die('Database connection failed: ' . $e->getMessage());
 }
