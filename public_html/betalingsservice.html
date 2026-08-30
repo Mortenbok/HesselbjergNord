@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Hjertestarter i Hesselbjerg Nord — placering, adgang og hvad du gør ved hjertestop.">
-<title>Hjertestarter — Hesselbjerg Nord</title>
+<meta name="description" content="Tilmeld kontingentet til Betalingsservice i Hesselbjerg Nord.">
+<title>Betalingsservice — Hesselbjerg Nord</title>
 <link rel="icon" type="image/jpeg" href="beach-bg.jpg">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -15,19 +15,17 @@
   }
 
   body {
-    background: url('beach-bg.jpg') no-repeat center center fixed;
+    background: url('kontingent.jpg') no-repeat center center fixed;
     background-size: cover;
     color: #fff;
     position: relative;
   }
 
-  /* Kraftigere slør end på de øvrige sider — teksten her skal kunne læses
-     i solskin på en telefon, i et minut hvor det haster. */
   body::before {
     content: "";
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.62);
+    background: rgba(0, 0, 0, 0.55);
     z-index: 0;
   }
 
@@ -94,7 +92,7 @@
   .container {
     position: relative;
     z-index: 1;
-    max-width: 900px;
+    max-width: 820px;
     margin: 0 auto;
     padding: 20px 20px 70px;
   }
@@ -111,55 +109,8 @@
     font-weight: 300;
     color: rgba(255,255,255,0.9);
     margin-bottom: 28px;
-    max-width: 60ch;
+    max-width: 62ch;
   }
-
-  /* Nødopkald — det første øjet skal ramme. */
-  .emergency {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 18px;
-    background: rgba(150, 20, 20, 0.55);
-    border: 2px solid rgba(255, 120, 120, 0.65);
-    border-radius: 16px;
-    padding: 20px 22px;
-    margin-bottom: 28px;
-  }
-
-  .emergency-text {
-    flex: 1;
-    min-width: 220px;
-  }
-
-  .emergency-text strong {
-    display: block;
-    font-size: 1.15rem;
-    margin-bottom: 4px;
-  }
-
-  .emergency-text span {
-    font-size: 0.95rem;
-    color: rgba(255,255,255,0.88);
-  }
-
-  .call-btn {
-    display: inline-block;
-    background: #d92b2b;
-    color: #fff;
-    text-decoration: none;
-    font-size: 1.35rem;
-    font-weight: 700;
-    letter-spacing: 2px;
-    padding: 14px 34px;
-    border-radius: 12px;
-    border: 1px solid rgba(255,255,255,0.5);
-    box-shadow: 0 6px 18px rgba(0,0,0,0.35);
-    transition: background 0.2s ease, transform 0.1s ease;
-  }
-
-  .call-btn:hover { background: #ef3a3a; }
-  .call-btn:active { transform: translateY(1px); }
 
   .panel {
     background: rgba(10, 20, 25, 0.55);
@@ -177,93 +128,42 @@
     letter-spacing: 0.5px;
   }
 
-  .badge {
-    display: inline-block;
-    padding: 5px 14px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    background: rgba(60, 160, 90, 0.35);
-    border: 1px solid rgba(140, 230, 170, 0.6);
-    margin-bottom: 16px;
-  }
-
-  /* Placeringsoplysninger — dl så adresse og adgang parres semantisk. */
-  .facts {
+  /* Tjekliste over det, man skal have ved hånden. */
+  .checklist {
+    list-style: none;
     display: grid;
-    grid-template-columns: minmax(110px, max-content) 1fr;
-    gap: 10px 20px;
-    margin: 0;
-    font-size: 1rem;
+    gap: 12px;
   }
 
-  .facts dt {
-    color: rgba(255,255,255,0.65);
-    font-size: 0.85rem;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    padding-top: 2px;
-  }
-
-  .facts dd {
-    margin: 0;
-    color: #fff;
-  }
-
-  .facts dd address {
-    font-style: normal;
+  .checklist li {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
     line-height: 1.5;
   }
 
-  /* Kort. line-height: 0 fjerner den stribe, en inline iframe ellers
-     efterlader under sig. */
-  .map {
-    margin-top: 22px;
-    border-radius: 12px;
-    overflow: hidden;
-    border: 1px solid rgba(255,255,255,0.22);
-    background: rgba(0,0,0,0.25);
-    line-height: 0;
-  }
-
-  .map iframe {
-    width: 100%;
-    height: 340px;
-    border: 0;
-    display: block;
-  }
-
-  .map-actions {
+  .checklist li::before {
+    content: "✓";
+    flex: 0 0 auto;
+    width: 24px;
+    height: 24px;
+    margin-top: 1px;
+    border-radius: 50%;
+    background: rgba(70, 170, 110, 0.35);
+    border: 1px solid rgba(150, 230, 180, 0.6);
     display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-top: 16px;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
   }
 
-  .map-btn {
-    flex: 1 1 200px;
-    text-align: center;
-    text-decoration: none;
-    color: #fff;
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.4);
-    border-radius: 10px;
-    padding: 12px 18px;
-    font-size: 0.98rem;
-    transition: background 0.2s ease;
+  .checklist strong { display: block; }
+
+  .checklist span {
+    color: rgba(255,255,255,0.8);
+    font-size: 0.92rem;
   }
 
-  .map-btn:hover { background: rgba(255,255,255,0.2); }
-
-  .map-btn.primary {
-    background: rgba(60, 130, 200, 0.45);
-    border-color: rgba(150, 200, 255, 0.65);
-  }
-
-  .map-btn.primary:hover { background: rgba(70, 150, 225, 0.6); }
-
-  /* Handlingstrin ved hjertestop. */
   .steps {
     list-style: none;
     counter-reset: step;
@@ -304,37 +204,75 @@
     line-height: 1.5;
   }
 
-  .link-list {
-    display: grid;
-    gap: 12px;
+  /* Selve tilmeldingsknappen. */
+  .signup {
+    text-align: center;
+    padding: 26px 24px;
   }
 
-  .link-card {
-    display: block;
-    text-decoration: none;
+  .signup-btn {
+    display: inline-block;
+    background: rgba(45, 115, 190, 0.75);
     color: #fff;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.2);
+    text-decoration: none;
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    padding: 16px 40px;
     border-radius: 12px;
+    border: 1px solid rgba(160, 205, 255, 0.7);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+    transition: background 0.2s ease, transform 0.1s ease;
+  }
+
+  .signup-btn:hover { background: rgba(60, 140, 220, 0.9); }
+  .signup-btn:active { transform: translateY(1px); }
+
+  .signup-note {
+    margin-top: 14px;
+    font-size: 0.88rem;
+    color: rgba(255,255,255,0.75);
+  }
+
+  .todo {
+    background: rgba(190, 140, 20, 0.32);
+    border: 1px solid rgba(255, 210, 120, 0.6);
+    border-radius: 10px;
     padding: 14px 16px;
-    transition: background 0.2s ease;
+    font-size: 0.92rem;
+    line-height: 1.55;
+    color: #ffeec9;
+    margin-bottom: 24px;
   }
 
-  .link-card:hover { background: rgba(255,255,255,0.14); }
+  .todo strong { color: #fff; }
 
-  .link-card strong {
-    display: block;
-    margin-bottom: 3px;
+  .todo code {
+    font-family: Consolas, 'Courier New', monospace;
+    background: rgba(0,0,0,0.35);
+    padding: 1px 5px;
+    border-radius: 4px;
+    word-break: break-all;
   }
 
-  .link-card span {
-    font-size: 0.9rem;
-    color: rgba(255,255,255,0.78);
+  .todo ol {
+    margin: 10px 0 0 20px;
+    display: grid;
+    gap: 6px;
   }
 
-  .link-card span::after {
-    content: " ↗";
-    opacity: 0.7;
+  .faq dt {
+    font-weight: 600;
+    margin-top: 14px;
+  }
+
+  .faq dt:first-child { margin-top: 0; }
+
+  .faq dd {
+    margin: 4px 0 0;
+    color: rgba(255,255,255,0.82);
+    font-size: 0.95rem;
+    line-height: 1.55;
   }
 
   /* Login-dialog — samme som på de øvrige sider. */
@@ -434,19 +372,11 @@
   }
 
   @media (max-width: 520px) {
-    .call-btn {
+    .signup-btn {
+      display: block;
       width: 100%;
-      text-align: center;
+      padding: 16px 20px;
     }
-
-    .facts {
-      grid-template-columns: 1fr;
-      gap: 4px 0;
-    }
-
-    .facts dd { margin-bottom: 10px; }
-
-    .map iframe { height: 260px; }
   }
 </style>
 </head>
@@ -457,9 +387,9 @@
       <a href="vedtaegter.html">Vedtægter</a>
       <a href="bestyrelsen.html">Bestyrelsen</a>
       <a href="kontingent.html">Kontingent</a>
-      <a href="betalingsservice.html">Betalingsservice</a>
+      <a href="betalingsservice.html" class="active">Betalingsservice</a>
       <a href="aktiviteter.html">Aktiviteter</a>
-      <a href="hjertestarter.html" class="active">Hjertestarter</a>
+      <a href="hjertestarter.html">Hjertestarter</a>
       <a href="medlemsfotos.php" data-members-only hidden>Medlemsfotos</a>
     </div>
     <div class="nav-account">
@@ -497,120 +427,109 @@
   </div>
 
   <div class="container">
-    <h1>Hjertestarter</h1>
+    <h1>Betalingsservice</h1>
     <p class="lead">
-      Der er en hjertestarter i Hesselbjerg Nord. Den står udendørs ved vejen og
-      kan hentes af alle hele døgnet. Den er registreret i Hjertestarternetværket,
-      så den kan findes af alarmcentralen og af hjerteløbere i nærheden.
+      Du kan tilmelde kontingentet til Betalingsservice, så det bliver trukket
+      automatisk fra din konto. Så skal du ikke huske at betale hvert år, og
+      foreningen slipper for at rykke.
     </p>
 
-    <div class="emergency">
-      <div class="emergency-text">
-        <strong>Ved mistanke om hjertestop: ring 112 først</strong>
-        <span>Alarmcentralen fortæller dig, hvor den nærmeste hjertestarter er, og guider dig gennem hjertelungeredning.</span>
-      </div>
-      <a class="call-btn" href="tel:112">Ring 112</a>
+    <!-- =====================================================================
+         TIL BESTYRELSEN — SLET DENNE BOKS, NÅR LINKET ER SAT IND
+         ===================================================================== -->
+    <div class="todo">
+      <strong>Tilmeldingslinket mangler.</strong>
+      Knappen nedenfor virker først, når foreningens eget BS-tilmeldingslink er
+      sat ind. Linket kan <em>ikke</em> skrives i hånden — det indeholder en
+      kontrolkode (<code>pbscheck</code>), som Betalingsservice danner ud fra
+      foreningens kreditornummer.
+      <ol>
+        <li>Foreningen skal have en Betalingsservice-kreditoraftale. Den oprettes gennem banken.</li>
+        <li>Log på Mastercard Connect Nordics med MitID, og gå til BS Customer Portal → Tilmeldingslink.</li>
+        <li>Vælg linktype, udfyld kreditoroplysninger, og dan linket.</li>
+        <li>Erstat <code>INDSAET_TILMELDINGSLINK_HER</code> i <code>betalingsservice.html</code> med det dannede link, og slet denne boks.</li>
+      </ol>
     </div>
 
     <div class="panel">
-      <h2>Sådan gør du</h2>
+      <h2>Sådan tilmelder du dig</h2>
       <ol class="steps">
         <li>
           <div>
-            <strong>Ring 112</strong>
-            <span>Bliv i telefonen. Vagtcentralen guider dig hele vejen — også hvis du aldrig har prøvet det før.</span>
+            <strong>Find oplysningerne frem</strong>
+            <span>Du skal bruge MitID, dit reg.- og kontonummer samt dit medlemsnummer.</span>
           </div>
         </li>
         <li>
           <div>
-            <strong>Send en anden efter hjertestarteren</strong>
-            <span>Bliv selv hos den tilskadekomne, hvis I er flere. Er du alene, følger du 112's anvisning.</span>
+            <strong>Klik på knappen herunder</strong>
+            <span>Formularen åbner i et nyt vindue hos Betalingsservice. Den er ikke en del af foreningens hjemmeside.</span>
           </div>
         </li>
         <li>
           <div>
-            <strong>Start hjertelungeredning</strong>
-            <span>30 tryk midt på brystkassen, derefter 2 indblæsninger. Tryk hårdt og hurtigt, ca. 100 gange i minuttet.</span>
+            <strong>Udfyld og godkend med MitID</strong>
+            <span>Du bekræfter aftalen med MitID, præcis som når du godkender andre betalinger.</span>
           </div>
         </li>
         <li>
           <div>
-            <strong>Tænd hjertestarteren, og følg stemmen</strong>
-            <span>Den taler dansk og fortæller præcis, hvad du skal gøre. Den giver kun stød, hvis der er behov for det — du kan ikke komme til at gøre skade.</span>
+            <strong>Se aftalen på din næste betalingsoversigt</strong>
+            <span>Tilmeldingen bekræftes på oversigten fra din bank. Kontakt kassereren, hvis den ikke dukker op.</span>
           </div>
         </li>
       </ol>
     </div>
 
-    <div class="panel">
-      <h2>Hvor står den?</h2>
+    <div class="panel signup">
+      <!-- ===== TILMELDINGSLINK — INDSÆT FORENINGENS EGET LINK HER ========= -->
+      <a class="signup-btn"
+         href="INDSAET_TILMELDINGSLINK_HER"
+         target="_blank" rel="noopener">Tilmeld Betalingsservice</a>
+      <!-- ================================================================== -->
 
-      <!-- ===================================================================
-           PLACERING
-           Adressen skal svare til registreringen på hjertestarter.dk.
-           Flyttes hjertestarteren, skal den rettes begge steder — og i
-           kortadresserne længere nede.
-           =================================================================== -->
-      <span class="badge">Døgnåben · udendørs</span>
-
-      <dl class="facts">
-        <dt>Adresse</dt>
-        <dd>
-          <address>
-            Fyrrevænget 7<br>
-            5932 Humble
-          </address>
-        </dd>
-
-        <dt>Sådan finder du den</dt>
-        <dd>Den sidder på et stativ ude ved vejen og kan hentes af alle, hele døgnet.</dd>
-
-        <dt>Registrering</dt>
-        <dd>Hjertestarternetværket, id 1000045246</dd>
-      </dl>
-
-      <div class="map">
-        <iframe
-          title="Kort over hjertestarterens placering på Fyrrevænget 7, 5932 Humble"
-          src="https://maps.google.com/maps?q=Fyrrev%C3%A6nget+7%2C+5932+Humble&amp;z=16&amp;hl=da&amp;output=embed"
-          loading="lazy"
-          referrerpolicy="no-referrer-when-downgrade"
-          allowfullscreen></iframe>
-      </div>
-
-      <div class="map-actions">
-        <a class="map-btn"
-           href="https://www.google.com/maps/search/?api=1&amp;query=Fyrrev%C3%A6nget+7%2C+5932+Humble"
-           target="_blank" rel="noopener">Åbn i Google Maps</a>
-
-        <a class="map-btn primary"
-           href="https://www.google.com/maps/dir/?api=1&amp;destination=Fyrrev%C3%A6nget+7%2C+5932+Humble"
-           target="_blank" rel="noopener">Vis rute hertil</a>
-      </div>
-      <!-- ============ SLUT PÅ PLACERINGSOPLYSNINGER ======================= -->
+      <p class="signup-note">Åbner Betalingsservice i et nyt vindue. Du godkender med MitID.</p>
     </div>
 
     <div class="panel">
-      <h2>På hjertestarter.dk</h2>
-      <div class="link-list">
-        <a class="link-card" href="https://hjertestarter.dk/find-hjertestarter#id/1000045246/15"
-           target="_blank" rel="noopener">
-          <strong>Se vores hjertestarter på kortet</strong>
-          <span>Den officielle registrering med kort og seneste oplysninger</span>
-        </a>
+      <h2>Det skal du have klar</h2>
+      <ul class="checklist">
+        <li>
+          <div>
+            <strong>MitID</strong>
+            <span>Til at godkende aftalen.</span>
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>Reg.nr. og kontonummer</strong>
+            <span>På den konto, kontingentet skal trækkes fra.</span>
+          </div>
+        </li>
+        <li>
+          <div>
+            <strong>Dit medlemsnummer</strong>
+            <span>Står på opkrævningen fra foreningen. Er du i tvivl, så spørg kassereren.</span>
+          </div>
+        </li>
+      </ul>
+    </div>
 
-        <a class="link-card" href="https://hjertestarter.dk/find-hjertestarter"
-           target="_blank" rel="noopener">
-          <strong>Find alle hjertestartere i nærheden</strong>
-          <span>Landsdækkende kort over registrerede hjertestartere</span>
-        </a>
+    <div class="panel">
+      <h2>Spørgsmål og svar</h2>
+      <dl class="faq">
+        <dt>Binder jeg mig til noget?</dt>
+        <dd>Nej. En Betalingsservice-aftale kan altid afmeldes igen — enten i din netbank eller på din betalingsoversigt.</dd>
 
-        <a class="link-card" href="https://hjertestarter.dk/hjerteloeber"
-           target="_blank" rel="noopener">
-          <strong>Bliv hjerteløber</strong>
-          <span>Få besked på mobilen, hvis nogen får hjertestop i nærheden af dig</span>
-        </a>
-      </div>
+        <dt>Hvad hvis kontingentet ændrer sig?</dt>
+        <dd>Beløbet fremgår af betalingsoversigten, inden det trækkes. Du kan afvise en enkelt betaling, hvis noget ser forkert ud.</dd>
+
+        <dt>Kan jeg stadig betale manuelt?</dt>
+        <dd>Ja. Tilmelding til Betalingsservice er frivillig — du kan fortsat betale ved bankoverførsel.</dd>
+
+        <dt>Indtaster jeg mine kontooplysninger på foreningens hjemmeside?</dt>
+        <dd>Nej. Knappen sender dig videre til Betalingsservice, og alle oplysninger indtastes dér. Foreningen ser hverken dit kontonummer eller dit MitID.</dd>
+      </dl>
     </div>
   </div>
 
