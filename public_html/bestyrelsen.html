@@ -3,40 +3,36 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Bestyrelsen i Hesselbjerg Nord — hvem sidder i bestyrelsen, og hvordan du kommer i kontakt.">
 <title>Bestyrelsen — Hesselbjerg Nord</title>
 <link rel="icon" type="image/jpeg" href="beach-bg.jpg">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   html, body {
-    height: 100%;
+    min-height: 100%;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   }
 
   body {
     background: url('bestyrelsen.jpg') no-repeat center center fixed;
     background-size: cover;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
     color: #fff;
     position: relative;
   }
 
   body::before {
     content: "";
-    position: absolute;
+    position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.35);
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 0;
   }
 
   nav {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
+    position: relative;
     z-index: 2;
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -71,14 +67,6 @@
     background: rgba(255,255,255,0.18);
   }
 
-  .login-btn {
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.4);
-    white-space: nowrap;
-    cursor: pointer;
-    font-family: inherit;
-  }
-
   .nav-account {
     display: flex;
     align-items: center;
@@ -93,21 +81,156 @@
     white-space: nowrap;
   }
 
-  .login-error {
-    display: none;
-    margin-bottom: 14px;
-    padding: 10px 12px;
-    border-radius: 10px;
-    background: rgba(180, 40, 40, 0.35);
-    color: #ffdede;
-    font-size: 0.9rem;
-    text-align: left;
+  .login-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.4);
+    white-space: nowrap;
+    cursor: pointer;
+    font-family: inherit;
   }
 
-  .login-error.show {
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 20px 20px 70px;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 5vw, 3rem);
+    letter-spacing: 1px;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+    margin-bottom: 10px;
+  }
+
+  p.lead {
+    font-size: clamp(1rem, 2.2vw, 1.15rem);
+    font-weight: 300;
+    color: rgba(255,255,255,0.9);
+    margin-bottom: 28px;
+    max-width: 62ch;
+  }
+
+  .todo {
+    background: rgba(190, 140, 20, 0.32);
+    border: 1px solid rgba(255, 210, 120, 0.6);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 0.92rem;
+    line-height: 1.55;
+    color: #ffeec9;
+    margin-bottom: 26px;
+  }
+
+  .todo strong { color: #fff; }
+
+  .todo code {
+    font-family: Consolas, 'Courier New', monospace;
+    background: rgba(0,0,0,0.35);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+
+  /* Bestyrelsen. Kort frem for en <table>, så billede og kontaktoplysninger
+     også kan læses på en telefon uden vandret scroll. */
+  .board {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+  }
+
+  .member {
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+    background: rgba(10, 20, 25, 0.55);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+    backdrop-filter: blur(4px);
+  }
+
+  .member-photo {
+    flex: 0 0 auto;
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.32);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .member-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
     display: block;
   }
 
+  .member-photo .initials {
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,0.6);
+  }
+
+  .member-body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .member-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  .member-role {
+    font-size: 0.8rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: rgba(150, 210, 255, 0.95);
+    margin-bottom: 14px;
+  }
+
+  .member-contact {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 7px 12px;
+    margin: 0;
+    font-size: 0.93rem;
+  }
+
+  .member-contact dt {
+    color: rgba(255,255,255,0.55);
+    font-size: 0.82rem;
+    padding-top: 1px;
+  }
+
+  .member-contact dd {
+    margin: 0;
+    min-width: 0;
+  }
+
+  .member-contact a {
+    color: #cfe9ff;
+    text-decoration: none;
+    word-break: break-word;
+  }
+
+  .member-contact a:hover { text-decoration: underline; }
+
+  .member-contact address {
+    font-style: normal;
+    line-height: 1.45;
+  }
+
+  /* Login-dialog — samme som på de øvrige sider. */
   .modal {
     position: fixed;
     inset: 0;
@@ -118,12 +241,10 @@
     z-index: 20;
   }
 
-  .modal.open {
-    display: flex;
-  }
+  .modal.open { display: flex; }
 
   .modal-content {
-    background: rgba(14, 22, 27, 0.92);
+    background: rgba(14, 22, 27, 0.94);
     border: 1px solid rgba(255,255,255,0.2);
     border-radius: 16px;
     padding: 24px;
@@ -182,48 +303,43 @@
     line-height: 1;
   }
 
-  .content {
-    position: relative;
-    z-index: 1;
-    padding: 40px 30px;
-    max-width: 600px;
+  .login-error {
+    display: none;
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(180, 40, 40, 0.35);
+    color: #ffdede;
+    font-size: 0.9rem;
+    text-align: left;
   }
 
-  h1 {
-    font-size: clamp(2rem, 6vw, 3.5rem);
-    letter-spacing: 2px;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.6);
-    margin-bottom: 15px;
-  }
-
-  p.subtitle {
-    font-size: clamp(1rem, 2.5vw, 1.4rem);
-    text-shadow: 0 1px 6px rgba(0,0,0,0.6);
-    margin-bottom: 30px;
-    font-weight: 300;
-  }
-
-  .badge {
-    display: inline-block;
-    padding: 10px 24px;
-    border: 2px solid rgba(255,255,255,0.8);
-    border-radius: 30px;
-    font-size: 0.95rem;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    backdrop-filter: blur(4px);
-    background: rgba(255,255,255,0.08);
-  }
+  .login-error.show { display: block; }
 
   footer {
-    position: absolute;
-    bottom: 20px;
-    width: 100%;
-    text-align: center;
+    position: relative;
     z-index: 1;
+    text-align: center;
+    padding: 10px 10px 30px;
     font-size: 0.85rem;
     color: rgba(255,255,255,0.75);
     text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+  }
+
+  @media (max-width: 400px) {
+    .member {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .member-contact {
+      grid-template-columns: 1fr;
+      gap: 2px;
+      text-align: center;
+    }
+
+    .member-contact dt { margin-top: 8px; }
   }
 </style>
 </head>
@@ -272,10 +388,158 @@
     </div>
   </div>
 
-  <div class="content">
+  <div class="container">
     <h1>Bestyrelsen</h1>
-    <span class="badge">Under opbygning</span>
+    <p class="lead">
+      Bestyrelsen vælges på generalforsamlingen og varetager foreningens daglige
+      drift. Du er altid velkommen til at kontakte os.
+    </p>
+
+    <!-- =====================================================================
+         TIL BESTYRELSEN — SLET DENNE BOKS, NÅR OPLYSNINGERNE ER UDFYLDT
+         ===================================================================== -->
+    <div class="todo">
+      <strong>Oplysningerne mangler.</strong>
+      Hvert kort herunder er en skabelon. Ret navn, post, telefon, mail og
+      adresse i <code>bestyrelsen.html</code> — kortene ligger under kommentaren
+      <code>BESTYRELSESMEDLEMMER</code>.
+      <br><br>
+      <strong>Billeder:</strong> læg dem i mappen <code>bestyrelse/</code> og
+      erstat linjen <code>&lt;span class="initials"&gt;…&lt;/span&gt;</code> med
+      <code>&lt;img src="bestyrelse/filnavn.jpg" alt="Navn"&gt;</code>. Kvadratiske
+      billeder på ca. 300×300 px fungerer bedst. Uden billede vises initialerne.
+      <br><br>
+      Skal der være flere eller færre medlemmer, kopierer eller sletter du et
+      helt <code>&lt;article class="member"&gt;</code>-afsnit.
+    </div>
+
+    <!-- ===================== BESTYRELSESMEDLEMMER ========================= -->
+    <div class="board">
+
+      <article class="member">
+        <div class="member-photo">
+          <span class="initials">?</span>
+        </div>
+        <div class="member-body">
+          <p class="member-name">Udfyld navn</p>
+          <p class="member-role">Formand</p>
+          <dl class="member-contact">
+            <dt>Tlf.</dt>
+            <dd><a href="tel:+4500000000">00 00 00 00</a></dd>
+
+            <dt>Mail</dt>
+            <dd><a href="mailto:navn@example.dk">navn@example.dk</a></dd>
+
+            <dt>Adresse</dt>
+            <dd><address>Vejnavn 0<br>5932 Humble</address></dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="member">
+        <div class="member-photo">
+          <span class="initials">?</span>
+        </div>
+        <div class="member-body">
+          <p class="member-name">Udfyld navn</p>
+          <p class="member-role">Næstformand</p>
+          <dl class="member-contact">
+            <dt>Tlf.</dt>
+            <dd><a href="tel:+4500000000">00 00 00 00</a></dd>
+
+            <dt>Mail</dt>
+            <dd><a href="mailto:navn@example.dk">navn@example.dk</a></dd>
+
+            <dt>Adresse</dt>
+            <dd><address>Vejnavn 0<br>5932 Humble</address></dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="member">
+        <div class="member-photo">
+          <span class="initials">?</span>
+        </div>
+        <div class="member-body">
+          <p class="member-name">Udfyld navn</p>
+          <p class="member-role">Kasserer</p>
+          <dl class="member-contact">
+            <dt>Tlf.</dt>
+            <dd><a href="tel:+4500000000">00 00 00 00</a></dd>
+
+            <dt>Mail</dt>
+            <dd><a href="mailto:navn@example.dk">navn@example.dk</a></dd>
+
+            <dt>Adresse</dt>
+            <dd><address>Vejnavn 0<br>5932 Humble</address></dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="member">
+        <div class="member-photo">
+          <span class="initials">?</span>
+        </div>
+        <div class="member-body">
+          <p class="member-name">Udfyld navn</p>
+          <p class="member-role">Sekretær</p>
+          <dl class="member-contact">
+            <dt>Tlf.</dt>
+            <dd><a href="tel:+4500000000">00 00 00 00</a></dd>
+
+            <dt>Mail</dt>
+            <dd><a href="mailto:navn@example.dk">navn@example.dk</a></dd>
+
+            <dt>Adresse</dt>
+            <dd><address>Vejnavn 0<br>5932 Humble</address></dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="member">
+        <div class="member-photo">
+          <span class="initials">?</span>
+        </div>
+        <div class="member-body">
+          <p class="member-name">Udfyld navn</p>
+          <p class="member-role">Bestyrelsesmedlem</p>
+          <dl class="member-contact">
+            <dt>Tlf.</dt>
+            <dd><a href="tel:+4500000000">00 00 00 00</a></dd>
+
+            <dt>Mail</dt>
+            <dd><a href="mailto:navn@example.dk">navn@example.dk</a></dd>
+
+            <dt>Adresse</dt>
+            <dd><address>Vejnavn 0<br>5932 Humble</address></dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="member">
+        <div class="member-photo">
+          <span class="initials">?</span>
+        </div>
+        <div class="member-body">
+          <p class="member-name">Udfyld navn</p>
+          <p class="member-role">Suppleant</p>
+          <dl class="member-contact">
+            <dt>Tlf.</dt>
+            <dd><a href="tel:+4500000000">00 00 00 00</a></dd>
+
+            <dt>Mail</dt>
+            <dd><a href="mailto:navn@example.dk">navn@example.dk</a></dd>
+
+            <dt>Adresse</dt>
+            <dd><address>Vejnavn 0<br>5932 Humble</address></dd>
+          </dl>
+        </div>
+      </article>
+
+    </div>
+    <!-- =================== SLUT PÅ BESTYRELSESMEDLEMMER =================== -->
   </div>
+
   <footer>&copy; 2026 Hesselbjerg Nord</footer>
 
   <script>
