@@ -87,7 +87,7 @@ $photos = $stmt->fetchAll();
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
 <title>Medlemsfotos — Hesselbjerg Nord</title>
-<link rel="icon" type="image/jpeg" href="beach-bg.jpg">
+<link rel="icon" type="image/jpeg" href="favicon.jpg">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body {
