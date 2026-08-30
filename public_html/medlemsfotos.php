@@ -1,22 +1,42 @@
 <?php
+require __DIR__ . '/includes/auth.php';
 require __DIR__ . '/includes/db.php';
+
+// Alt herunder kræver login — besøgende uden session sendes til forsiden,
+// hvor loginvinduet åbner automatisk.
+auth_require('index.html');
+
+$user = auth_user();
+$csrf = auth_csrf_token();
 
 $uploadError = '';
 $uploadSuccess = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photo'])) {
     $file = $_FILES['photo'];
-    $memberName = trim((string)($_POST['member_name'] ?? ''));
 
-    if ($file['error'] !== UPLOAD_ERR_OK) {
-        $uploadError = 'Uploaden mislykkedes. Prøv igen.';
-    } elseif (!is_array($file['name']) && $file['size'] > 0) {
-        $allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!auth_csrf_valid($_POST['csrf_token'] ?? null)) {
+        $uploadError = 'Sessionen er udløbet. Genindlæs siden, og prøv igen.';
+    } elseif (is_array($file['name'])) {
+        $uploadError = 'Upload ét billede ad gangen.';
+    } elseif ($file['error'] !== UPLOAD_ERR_OK) {
+        $uploadError = ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE)
+            ? 'Billedet er for stort.'
+            : 'Uploaden mislykkedes. Prøv igen.';
+    } elseif ($file['size'] <= 0 || $file['size'] > 8 * 1024 * 1024) {
+        $uploadError = 'Billedet skal fylde mellem 0 og 8 MB.';
+    } else {
+        $allowed = [
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+        ];
+
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mime = finfo_file($finfo, $file['tmp_name']);
         finfo_close($finfo);
 
-        if (!in_array($mime, $allowed, true)) {
+        if (!isset($allowed[$mime])) {
             $uploadError = 'Kun JPG, PNG og WebP filer er tilladt.';
         } else {
             $uploadsDir = __DIR__ . '/uploads';
@@ -25,17 +45,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photo'])) {
             }
 
             $originalName = preg_replace('/[^A-Za-z0-9._-]/', '_', basename($file['name']));
-            $safeName = time() . '_' . $originalName;
+            // Filnavnet kan ikke gættes — billederne serveres alligevel kun
+            // gennem photo.php, som kræver login.
+            $safeName = date('Ymd_His') . '_' . bin2hex(random_bytes(8)) . '.' . $allowed[$mime];
             $targetPath = $uploadsDir . '/' . $safeName;
 
             if (move_uploaded_file($file['tmp_name'], $targetPath)) {
+                chmod($targetPath, 0644);
+
                 $stmt = $pdo->prepare(
-                    'INSERT INTO member_photos (member_name, file_name, original_name, created_at) VALUES (:member_name, :file_name, :original_name, NOW())'
+                    'INSERT INTO member_photos (user_id, member_name, file_name, original_name, mime_type, created_at)
+                     VALUES (:user_id, :member_name, :file_name, :original_name, :mime_type, NOW())'
                 );
                 $stmt->execute([
-                    ':member_name' => $memberName !== '' ? $memberName : 'Medlem',
+                    ':user_id' => $user['id'],
+                    ':member_name' => $user['display_name'] !== '' ? $user['display_name'] : 'Medlem',
                     ':file_name' => $safeName,
                     ':original_name' => $originalName,
+                    ':mime_type' => $mime,
                 ]);
 
                 $uploadSuccess = 'Billedet er uploadet.';
@@ -46,7 +73,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['photo'])) {
     }
 }
 
-$stmt = $pdo->query('SELECT member_name, file_name, original_name, created_at FROM member_photos ORDER BY created_at DESC');
+$stmt = $pdo->query(
+    'SELECT id, member_name, original_name, created_at
+       FROM member_photos
+      ORDER BY created_at DESC, id DESC'
+);
 $photos = $stmt->fetchAll();
 ?>
 <!DOCTYPE html>
@@ -54,6 +85,7 @@ $photos = $stmt->fetchAll();
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
 <title>Medlemsfotos — Hesselbjerg Nord</title>
 <link rel="icon" type="image/jpeg" href="beach-bg.jpg">
 <style>
@@ -106,10 +138,21 @@ $photos = $stmt->fetchAll();
   nav a:hover, .login-btn:hover, nav a.active {
     background: rgba(255,255,255,0.18);
   }
+  .nav-account {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-right: 10px;
+    white-space: nowrap;
+  }
+  .nav-user {
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.85);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+  }
   .login-btn {
     background: rgba(255,255,255,0.08);
     border: 1px solid rgba(255,255,255,0.4);
-    margin-right: 10px;
     white-space: nowrap;
   }
   .container {
@@ -140,7 +183,7 @@ $photos = $stmt->fetchAll();
   input, button {
     font: inherit;
   }
-  input[type="text"], input[type="file"] {
+  input[type="file"] {
     width: 100%;
     max-width: 280px;
     padding: 10px 12px;
@@ -163,6 +206,10 @@ $photos = $stmt->fetchAll();
   }
   .message.error { color: #ffd3d3; }
   .message.success { color: #d7ffd7; }
+  .empty {
+    margin-top: 30px;
+    color: rgba(255,255,255,0.8);
+  }
   .gallery {
     margin-top: 40px;
     display: grid;
@@ -205,17 +252,20 @@ $photos = $stmt->fetchAll();
       <a href="aktiviteter.html">Aktiviteter</a>
       <a href="medlemsfotos.php" class="active">Medlemsfotos</a>
     </div>
-    <a href="bestyrelsen.html" class="login-btn">Bestyrelsen login</a>
+    <div class="nav-account">
+      <span class="nav-user">Logget ind som <?php echo htmlspecialchars($user['display_name'], ENT_QUOTES, 'UTF-8'); ?></span>
+      <a href="logout.php" class="login-btn">Log ud</a>
+    </div>
   </nav>
 
   <div class="container">
     <div class="panel">
       <h1>Medlemsfotos</h1>
-      <p>Upload dine egne billeder til medlemsgalleriet.</p>
+      <p>Upload dine egne billeder til medlemsgalleriet. Galleriet er kun synligt for medlemmer, der er logget ind.</p>
 
       <form method="post" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8'); ?>">
         <div class="form-row">
-          <input type="text" name="member_name" placeholder="Dit navn" value="">
           <input type="file" name="photo" accept="image/jpeg,image/png,image/webp" required>
           <button type="submit">Upload billede</button>
         </div>
@@ -227,17 +277,23 @@ $photos = $stmt->fetchAll();
         <div class="message success"><?php echo htmlspecialchars($uploadSuccess, ENT_QUOTES, 'UTF-8'); ?></div>
       <?php endif; ?>
 
-      <div class="gallery">
-        <?php foreach ($photos as $photo): ?>
-          <div class="photo-card">
-            <img src="uploads/<?php echo htmlspecialchars($photo['file_name'], ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($photo['original_name'], ENT_QUOTES, 'UTF-8'); ?>">
-            <div class="photo-meta">
-              <strong><?php echo htmlspecialchars($photo['member_name'], ENT_QUOTES, 'UTF-8'); ?></strong><br>
-              <?php echo htmlspecialchars(date('d-m-Y', strtotime($photo['created_at'])), ENT_QUOTES, 'UTF-8'); ?>
+      <?php if (!$photos): ?>
+        <p class="empty">Der er ikke uploadet billeder endnu. Bliv den første.</p>
+      <?php else: ?>
+        <div class="gallery">
+          <?php foreach ($photos as $photo): ?>
+            <div class="photo-card">
+              <img src="photo.php?id=<?php echo (int)$photo['id']; ?>"
+                   alt="<?php echo htmlspecialchars($photo['original_name'], ENT_QUOTES, 'UTF-8'); ?>"
+                   loading="lazy">
+              <div class="photo-meta">
+                <strong><?php echo htmlspecialchars($photo['member_name'], ENT_QUOTES, 'UTF-8'); ?></strong><br>
+                <?php echo htmlspecialchars(date('d-m-Y', strtotime($photo['created_at'])), ENT_QUOTES, 'UTF-8'); ?>
+              </div>
             </div>
-          </div>
-        <?php endforeach; ?>
-      </div>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
     </div>
   </div>
 

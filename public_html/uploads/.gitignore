@@ -1,0 +1,5 @@
+# Medlemmernes uploadede billeder hører hjemme på serveren, ikke i git.
+*
+!.gitkeep
+!.gitignore
+!.htaccess

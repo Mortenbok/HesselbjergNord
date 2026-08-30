@@ -1,0 +1,15 @@
+# Medlemsbilleder må kun serveres gennem photo.php, som kræver login.
+# Direkte adgang til uploads/ er spærret.
+<IfModule mod_authz_core.c>
+  Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+  Order allow,deny
+  Deny from all
+</IfModule>
+
+# Ekstra sikkerhed: kør aldrig scripts, der måtte være havnet her.
+<IfModule mod_php.c>
+  php_flag engine off
+</IfModule>
+AddType text/plain .php .phtml .phar .cgi .pl .py

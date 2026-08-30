@@ -74,10 +74,38 @@
   .login-btn {
     background: rgba(255,255,255,0.08);
     border: 1px solid rgba(255,255,255,0.4);
-    margin-right: 10px;
     white-space: nowrap;
     cursor: pointer;
     font-family: inherit;
+  }
+
+  .nav-account {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-right: 10px;
+  }
+
+  .nav-user {
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.85);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+    white-space: nowrap;
+  }
+
+  .login-error {
+    display: none;
+    margin-bottom: 14px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(180, 40, 40, 0.35);
+    color: #ffdede;
+    font-size: 0.9rem;
+    text-align: left;
+  }
+
+  .login-error.show {
+    display: block;
   }
 
   .modal {
@@ -207,9 +235,13 @@
       <a href="bestyrelsen.html">Bestyrelsen</a>
       <a href="kontingent.html" class="active">Kontingent</a>
       <a href="aktiviteter.html">Aktiviteter</a>
-      <a href="medlemsfotos.php">Medlemsfotos</a>
+      <a href="medlemsfotos.php" data-members-only hidden>Medlemsfotos</a>
     </div>
-    <button type="button" class="login-btn" data-open-login>Bestyrelsen login</button>
+    <div class="nav-account">
+      <span class="nav-user" data-user-name hidden></span>
+      <button type="button" class="login-btn" data-open-login>Login</button>
+      <a href="logout.php" class="login-btn" data-logout hidden>Log ud</a>
+    </div>
   </nav>
 
   <div class="modal" id="loginModal" aria-hidden="true">
@@ -218,12 +250,18 @@
         <h2 id="loginTitle">Log ind</h2>
         <button type="button" class="close-btn" aria-label="Luk" data-close-login>&times;</button>
       </div>
-      <form>
+      <p class="login-error" id="loginError" role="alert"></p>
+
+      <form method="post" action="login.php">
+        <input type="hidden" name="next" value="medlemsfotos.php">
+
         <label for="loginUser">Brugernavn</label>
-        <input id="loginUser" type="text" name="username" placeholder="Brugernavn">
+        <input id="loginUser" type="text" name="username" placeholder="Brugernavn"
+               autocomplete="username" required>
 
         <label for="loginPass">Adgangskode</label>
-        <input id="loginPass" type="password" name="password" placeholder="Adgangskode">
+        <input id="loginPass" type="password" name="password" placeholder="Adgangskode"
+               autocomplete="current-password" required>
 
         <div class="modal-actions">
           <button type="button" data-close-login>Annuller</button>
@@ -265,10 +303,98 @@
       }
     });
 
-    loginModal.querySelector('form').addEventListener('submit', (event) => {
+    const loginForm = loginModal.querySelector('form');
+    const loginError = document.getElementById('loginError');
+
+    // Fejlkoder fra login.php (bruges kun, når JavaScript er slået fra og
+    // browseren er blevet sendt tilbage hertil med ?error=...).
+    const LOGIN_ERRORS = {
+      empty: 'Udfyld både brugernavn og adgangskode.',
+      throttled: 'For mange forsøg. Vent et minut, og prøv igen.',
+      auth: 'Forkert brugernavn eller adgangskode.',
+      request: 'Ugyldig forespørgsel.',
+    };
+
+    function showLoginError(message) {
+      loginError.textContent = message;
+      loginError.classList.add('show');
+    }
+
+    // Navigationen tilpasses efter, om den besøgende er logget ind.
+    fetch('session-status.php', { credentials: 'same-origin' })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((status) => {
+        if (!status || !status.loggedIn) {
+          return;
+        }
+
+        document.querySelectorAll('[data-members-only], [data-logout]').forEach((el) => {
+          el.hidden = false;
+        });
+
+        document.querySelectorAll('[data-open-login]').forEach((el) => {
+          el.hidden = true;
+        });
+
+        document.querySelectorAll('[data-user-name]').forEach((el) => {
+          el.textContent = status.displayName || '';
+          el.hidden = !status.displayName;
+        });
+      })
+      .catch(() => {
+        // Uden svar bliver menuen stående som "ikke logget ind".
+      });
+
+    loginForm.addEventListener('submit', (event) => {
       event.preventDefault();
-      window.location.href = 'bestyrelsen.html';
+      loginError.classList.remove('show');
+
+      const submitButton = loginForm.querySelector('button[type="submit"]');
+      submitButton.disabled = true;
+
+      fetch('login.php', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Accept': 'application/json' },
+        body: new FormData(loginForm),
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          if (result.ok) {
+            window.location.href = result.redirect || 'medlemsfotos.php';
+            return;
+          }
+
+          submitButton.disabled = false;
+          showLoginError(result.message || 'Login mislykkedes.');
+        })
+        .catch(() => {
+          submitButton.disabled = false;
+          showLoginError('Der kunne ikke oprettes forbindelse. Prøv igen.');
+        });
     });
+
+    // index.html?login=1 åbner loginvinduet med det samme — det er dertil,
+    // medlemssider sender besøgende uden login.
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get('login') === '1') {
+      loginModal.classList.add('open');
+      loginModal.setAttribute('aria-hidden', 'false');
+
+      const errorCode = params.get('error');
+
+      if (errorCode) {
+        showLoginError(LOGIN_ERRORS[errorCode] || 'Login mislykkedes. Prøv igen.');
+      }
+
+      const next = params.get('next');
+      const nextField = loginForm.querySelector('input[name="next"]');
+
+      if (next && /^[a-z0-9._-]+\.(php|html)$/i.test(next)) {
+        nextField.value = next;
+      }
+    }
   </script>
 </body>
 </html>
