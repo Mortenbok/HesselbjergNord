@@ -112,26 +112,6 @@
     max-width: 62ch;
   }
 
-  .todo {
-    background: rgba(190, 140, 20, 0.32);
-    border: 1px solid rgba(255, 210, 120, 0.6);
-    border-radius: 10px;
-    padding: 14px 16px;
-    font-size: 0.92rem;
-    line-height: 1.55;
-    color: #ffeec9;
-    margin-bottom: 26px;
-  }
-
-  .todo strong { color: #fff; }
-
-  .todo code {
-    font-family: Consolas, 'Courier New', monospace;
-    background: rgba(0,0,0,0.35);
-    padding: 1px 5px;
-    border-radius: 4px;
-  }
-
   /* Bestyrelsen. Kort frem for en <table>, så billede og kontaktoplysninger
      også kan læses på en telefon uden vandret scroll. */
   .board {
@@ -396,142 +376,177 @@
     </p>
 
     <!-- =====================================================================
-         TIL BESTYRELSEN — SLET DENNE BOKS, NÅR OPLYSNINGERNE ER UDFYLDT
-         ===================================================================== -->
-    <div class="todo">
-      <strong>Oplysningerne mangler.</strong>
-      Hvert kort herunder er en skabelon. Ret navn, post, telefon, mail og
-      adresse i <code>bestyrelsen.html</code> — kortene ligger under kommentaren
-      <code>BESTYRELSESMEDLEMMER</code>.
-      <br><br>
-      <strong>Billeder:</strong> læg dem i mappen <code>bestyrelse/</code> og
-      erstat linjen <code>&lt;span class="initials"&gt;…&lt;/span&gt;</code> med
-      <code>&lt;img src="bestyrelse/filnavn.jpg" alt="Navn"&gt;</code>. Kvadratiske
-      billeder på ca. 300×300 px fungerer bedst. Uden billede vises initialerne.
-      <br><br>
-      Skal der være flere eller færre medlemmer, kopierer eller sletter du et
-      helt <code>&lt;article class="member"&gt;</code>-afsnit.
-    </div>
+         BESTYRELSESMEDLEMMER
 
-    <!-- ===================== BESTYRELSESMEDLEMMER ========================= -->
+         Telefon:  <dd><a href="tel:+4512345678">12 34 56 78</a></dd>
+         Mail:     <dd><a href="mailto:navn@dk">navn@dk</a></dd>
+         Adresse:  <dd><address>Vejnavn 1<br>5932 Humble</address></dd>
+
+         Billede:  læg en kvadratisk fil (ca. 300x300 px) i mappen bestyrelse/
+                   og erstat <span class="initials">..</span> med
+                   <img src="bestyrelse/filnavn.jpg" alt="Navn">
+
+         Flere eller færre medlemmer: kopiér eller slet et helt
+         <article class="member">-afsnit.
+         ===================================================================== -->
     <div class="board">
 
       <article class="member">
         <div class="member-photo">
-          <span class="initials">?</span>
+          <span class="initials">U</span>
         </div>
         <div class="member-body">
-          <p class="member-name">Udfyld navn</p>
+          <p class="member-name">Uffe</p>
           <p class="member-role">Formand</p>
           <dl class="member-contact">
             <dt>Tlf.</dt>
-            <dd><a href="tel:+4500000000">00 00 00 00</a></dd>
+            <dd>&mdash;</dd>
 
             <dt>Mail</dt>
-            <dd><a href="mailto:navn@example.dk">navn@example.dk</a></dd>
+            <dd>&mdash;</dd>
 
             <dt>Adresse</dt>
-            <dd><address>Vejnavn 0<br>5932 Humble</address></dd>
+            <dd>&mdash;</dd>
           </dl>
         </div>
       </article>
 
       <article class="member">
         <div class="member-photo">
-          <span class="initials">?</span>
+          <span class="initials">J</span>
         </div>
         <div class="member-body">
-          <p class="member-name">Udfyld navn</p>
+          <p class="member-name">Jesper</p>
           <p class="member-role">Næstformand</p>
           <dl class="member-contact">
             <dt>Tlf.</dt>
-            <dd><a href="tel:+4500000000">00 00 00 00</a></dd>
+            <dd>&mdash;</dd>
 
             <dt>Mail</dt>
-            <dd><a href="mailto:navn@example.dk">navn@example.dk</a></dd>
+            <dd>&mdash;</dd>
 
             <dt>Adresse</dt>
-            <dd><address>Vejnavn 0<br>5932 Humble</address></dd>
+            <dd>&mdash;</dd>
           </dl>
         </div>
       </article>
 
       <article class="member">
         <div class="member-photo">
-          <span class="initials">?</span>
+          <span class="initials">J</span>
         </div>
         <div class="member-body">
-          <p class="member-name">Udfyld navn</p>
+          <p class="member-name">Jette</p>
           <p class="member-role">Kasserer</p>
           <dl class="member-contact">
             <dt>Tlf.</dt>
-            <dd><a href="tel:+4500000000">00 00 00 00</a></dd>
+            <dd>&mdash;</dd>
 
             <dt>Mail</dt>
-            <dd><a href="mailto:navn@example.dk">navn@example.dk</a></dd>
+            <dd>&mdash;</dd>
 
             <dt>Adresse</dt>
-            <dd><address>Vejnavn 0<br>5932 Humble</address></dd>
+            <dd>&mdash;</dd>
           </dl>
         </div>
       </article>
 
       <article class="member">
         <div class="member-photo">
-          <span class="initials">?</span>
+          <span class="initials">L</span>
         </div>
         <div class="member-body">
-          <p class="member-name">Udfyld navn</p>
-          <p class="member-role">Sekretær</p>
+          <p class="member-name">Lars</p>
+          <p class="member-role">Notar</p>
           <dl class="member-contact">
             <dt>Tlf.</dt>
-            <dd><a href="tel:+4500000000">00 00 00 00</a></dd>
+            <dd>&mdash;</dd>
 
             <dt>Mail</dt>
-            <dd><a href="mailto:navn@example.dk">navn@example.dk</a></dd>
+            <dd>&mdash;</dd>
 
             <dt>Adresse</dt>
-            <dd><address>Vejnavn 0<br>5932 Humble</address></dd>
+            <dd>&mdash;</dd>
           </dl>
         </div>
       </article>
 
       <article class="member">
         <div class="member-photo">
-          <span class="initials">?</span>
+          <span class="initials">M</span>
         </div>
         <div class="member-body">
-          <p class="member-name">Udfyld navn</p>
-          <p class="member-role">Bestyrelsesmedlem</p>
+          <p class="member-name">Morten</p>
+          <p class="member-role">Menigt medlem</p>
           <dl class="member-contact">
             <dt>Tlf.</dt>
-            <dd><a href="tel:+4500000000">00 00 00 00</a></dd>
+            <dd>&mdash;</dd>
 
             <dt>Mail</dt>
-            <dd><a href="mailto:navn@example.dk">navn@example.dk</a></dd>
+            <dd>&mdash;</dd>
 
             <dt>Adresse</dt>
-            <dd><address>Vejnavn 0<br>5932 Humble</address></dd>
+            <dd>&mdash;</dd>
           </dl>
         </div>
       </article>
 
       <article class="member">
         <div class="member-photo">
-          <span class="initials">?</span>
+          <span class="initials">MB</span>
         </div>
         <div class="member-body">
-          <p class="member-name">Udfyld navn</p>
-          <p class="member-role">Suppleant</p>
+          <p class="member-name">Morten Bo</p>
+          <p class="member-role">Menigt medlem</p>
           <dl class="member-contact">
             <dt>Tlf.</dt>
-            <dd><a href="tel:+4500000000">00 00 00 00</a></dd>
+            <dd>&mdash;</dd>
 
             <dt>Mail</dt>
-            <dd><a href="mailto:navn@example.dk">navn@example.dk</a></dd>
+            <dd>&mdash;</dd>
 
             <dt>Adresse</dt>
-            <dd><address>Vejnavn 0<br>5932 Humble</address></dd>
+            <dd>&mdash;</dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="member">
+        <div class="member-photo">
+          <span class="initials">T</span>
+        </div>
+        <div class="member-body">
+          <p class="member-name">Tea</p>
+          <p class="member-role">Menigt medlem</p>
+          <dl class="member-contact">
+            <dt>Tlf.</dt>
+            <dd>&mdash;</dd>
+
+            <dt>Mail</dt>
+            <dd>&mdash;</dd>
+
+            <dt>Adresse</dt>
+            <dd>&mdash;</dd>
+          </dl>
+        </div>
+      </article>
+
+      <article class="member">
+        <div class="member-photo">
+          <span class="initials">T</span>
+        </div>
+        <div class="member-body">
+          <p class="member-name">Torben</p>
+          <p class="member-role">Menigt medlem</p>
+          <dl class="member-contact">
+            <dt>Tlf.</dt>
+            <dd>&mdash;</dd>
+
+            <dt>Mail</dt>
+            <dd>&mdash;</dd>
+
+            <dt>Adresse</dt>
+            <dd>&mdash;</dd>
           </dl>
         </div>
       </article>
