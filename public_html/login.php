@@ -48,7 +48,13 @@ $password = (string)($_POST['password'] ?? '');
 
 // Kun kendte sider accepteres som viderestilling, så parameteren ikke kan
 // bruges til at sende folk videre til et fremmed domæne.
-$allowedNext = ['medlemsfotos.php', 'bestyrelsen.html', 'index.html'];
+$allowedNext = [
+    'medlemsfotos.php',
+    'generalforsamling.php',
+    'regnskab.php',
+    'bestyrelsen.html',
+    'index.html',
+];
 $next = (string)($_POST['next'] ?? 'medlemsfotos.php');
 
 if (!in_array($next, $allowedNext, true)) {
