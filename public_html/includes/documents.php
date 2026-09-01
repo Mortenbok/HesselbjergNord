@@ -525,7 +525,7 @@ function documents_render_page(PDO $pdo, string $category, array $page, array $u
       <a href="index.html">Forside</a>
       <a href="omraade.html">Område</a>
       <a href="vedtaegter.html">Vedtægter</a>
-      <a href="bestyrelsen.html">Bestyrelsen</a>
+      <a href="bestyrelsen.php">Bestyrelsen</a>
       <a href="kontingent.html">Kontingent</a>
       <a href="aktiviteter.html">Aktiviteter</a>
       <a href="hjertestarter.html">Hjertestarter</a>

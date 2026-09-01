@@ -1,9 +1,27 @@
+<?php
+/**
+ * Bestyrelsen i to udgaver af samme side:
+ *
+ *   uden login — navn og post, så alle kan se, hvem der sidder i bestyrelsen
+ *   med login  — også telefon, mail og adresse
+ *
+ * Selve listen står i includes/bestyrelse.php. Kontaktoplysningerne skrives
+ * først ud, når der er en session, så de ikke ligger i sidens kildekode for
+ * udefrakommende.
+ */
+
+require __DIR__ . '/includes/auth.php';
+require __DIR__ . '/includes/bestyrelse.php';
+
+$user = auth_user();
+$loggedIn = $user !== null;
+?>
 <!DOCTYPE html>
 <html lang="da">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Bestyrelsen i Hesselbjerg Nord — hvem sidder i bestyrelsen, og hvordan du kommer i kontakt.">
+<meta name="description" content="Bestyrelsen i Hesselbjerg Nord — hvem sidder i bestyrelsen og på hvilke poster.">
 <title>Bestyrelsen — Hesselbjerg Nord</title>
 <link rel="icon" type="image/jpeg" href="favicon.jpg">
 <style>
@@ -210,6 +228,50 @@
     line-height: 1.45;
   }
 
+  /* Uden login er kortene kun navn og post — så må de gerne være smallere. */
+  .board-compact {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+
+  .member-compact {
+    align-items: center;
+  }
+
+  .member-compact .member-role {
+    margin-bottom: 0;
+  }
+
+  .member-compact .member-photo {
+    width: 64px;
+    height: 64px;
+  }
+
+  .member-compact .initials {
+    font-size: 1.15rem;
+  }
+
+  /* Henvisningen til login, der står i stedet for kontaktoplysningerne. */
+  .locked {
+    margin-top: 28px;
+    padding: 18px 20px;
+    background: rgba(10, 20, 25, 0.55);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 14px;
+    font-size: 0.95rem;
+    color: rgba(255,255,255,0.85);
+    backdrop-filter: blur(4px);
+  }
+
+  .locked button {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #cfe9ff;
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
   /* Login-dialog — samme som på de øvrige sider. */
   .modal {
     position: fixed;
@@ -326,49 +388,57 @@
 <body>
   <nav>
     <div class="nav-links">
+      <a href="index.html">Forside</a>
       <a href="omraade.html">Område</a>
       <a href="vedtaegter.html">Vedtægter</a>
-      <a href="bestyrelsen.html" class="active">Bestyrelsen</a>
+      <a href="bestyrelsen.php" class="active">Bestyrelsen</a>
       <a href="kontingent.html">Kontingent</a>
       <a href="aktiviteter.html">Aktiviteter</a>
       <a href="hjertestarter.html">Hjertestarter</a>
-      <a href="medlemsfotos.php" data-members-only hidden>Medlemsfotos</a>
-      <a href="generalforsamling.php" data-members-only hidden>Generalforsamling</a>
-      <a href="regnskab.php" data-members-only hidden>Regnskab</a>
+      <?php if ($loggedIn): ?>
+        <a href="medlemsfotos.php">Medlemsfotos</a>
+        <a href="generalforsamling.php">Generalforsamling</a>
+        <a href="regnskab.php">Regnskab</a>
+      <?php endif; ?>
     </div>
     <div class="nav-account">
-      <span class="nav-user" data-user-name hidden></span>
-      <button type="button" class="login-btn" data-open-login>Login</button>
-      <a href="logout.php" class="login-btn" data-logout hidden>Log ud</a>
+      <?php if ($loggedIn): ?>
+        <span class="nav-user">Logget ind som <?php echo board_e($user['display_name']); ?></span>
+        <a href="logout.php" class="login-btn">Log ud</a>
+      <?php else: ?>
+        <button type="button" class="login-btn" data-open-login>Login</button>
+      <?php endif; ?>
     </div>
   </nav>
 
-  <div class="modal" id="loginModal" aria-hidden="true">
-    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <h2 id="loginTitle">Log ind</h2>
-        <button type="button" class="close-btn" aria-label="Luk" data-close-login>&times;</button>
-      </div>
-      <p class="login-error" id="loginError" role="alert"></p>
-
-      <form method="post" action="login.php">
-        <input type="hidden" name="next" value="medlemsfotos.php">
-
-        <label for="loginUser">Brugernavn</label>
-        <input id="loginUser" type="text" name="username" placeholder="Brugernavn"
-               autocomplete="username" required>
-
-        <label for="loginPass">Adgangskode</label>
-        <input id="loginPass" type="password" name="password" placeholder="Adgangskode"
-               autocomplete="current-password" required>
-
-        <div class="modal-actions">
-          <button type="button" data-close-login>Annuller</button>
-          <button type="submit">Log ind</button>
+  <?php if (!$loggedIn): ?>
+    <div class="modal" id="loginModal" aria-hidden="true">
+      <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <h2 id="loginTitle">Log ind</h2>
+          <button type="button" class="close-btn" aria-label="Luk" data-close-login>&times;</button>
         </div>
-      </form>
+        <p class="login-error" id="loginError" role="alert"></p>
+
+        <form method="post" action="login.php">
+          <input type="hidden" name="next" value="bestyrelsen.php">
+
+          <label for="loginUser">Brugernavn</label>
+          <input id="loginUser" type="text" name="username" placeholder="Brugernavn"
+                 autocomplete="username" required>
+
+          <label for="loginPass">Adgangskode</label>
+          <input id="loginPass" type="password" name="password" placeholder="Adgangskode"
+                 autocomplete="current-password" required>
+
+          <div class="modal-actions">
+            <button type="button" data-close-login>Annuller</button>
+            <button type="submit">Log ind</button>
+          </div>
+        </form>
+      </div>
     </div>
-  </div>
+  <?php endif; ?>
 
   <div class="container">
     <h1>Bestyrelsen</h1>
@@ -377,255 +447,58 @@
       drift. Du er altid velkommen til at kontakte os.
     </p>
 
-    <!-- =====================================================================
-         BESTYRELSESMEDLEMMER
-
-         Telefon:  <dd><a href="tel:+4512345678">12 34 56 78</a></dd>
-         Mail:     <dd><a href="mailto:navn@dk">navn@dk</a></dd>
-         Adresse:  <dd><address>Vejnavn 1<br>5932 Humble</address></dd>
-
-         Billede:  læg en kvadratisk fil (ca. 300x300 px) i mappen bestyrelse/
-                   og erstat <span class="initials">..</span> med
-                   <img src="bestyrelse/filnavn.jpg" alt="Navn">
-
-         Flere eller færre medlemmer: kopiér eller slet et helt
-         <article class="member">-afsnit.
-         ===================================================================== -->
-    <div class="board">
-
-      <article class="member">
-        <div class="member-photo">
-          <span class="initials">UG</span>
-        </div>
-        <div class="member-body">
-          <p class="member-name">Uffe Gangelhof</p>
-          <p class="member-role">Formand</p>
-          <dl class="member-contact">
-            <dt>Tlf.</dt>
-            <dd>&mdash;</dd>
-
-            <dt>Mail</dt>
-            <dd><a href="mailto:formand@hesselbjergnord.dk">formand@hesselbjergnord.dk</a></dd>
-
-            <dt>Adresse</dt>
-            <dd>&mdash;</dd>
-          </dl>
-        </div>
-      </article>
-
-      <article class="member">
-        <div class="member-photo">
-          <span class="initials">MD</span>
-        </div>
-        <div class="member-body">
-          <p class="member-name">Morten Dupont</p>
-          <p class="member-role">Næstformand</p>
-          <dl class="member-contact">
-            <dt>Tlf.</dt>
-            <dd>&mdash;</dd>
-
-            <dt>Mail</dt>
-            <dd><a href="mailto:naestformand@hesselbjergnord.dk">naestformand@hesselbjergnord.dk</a></dd>
-
-            <dt>Adresse</dt>
-            <dd>&mdash;</dd>
-          </dl>
-        </div>
-      </article>
-
-      <article class="member">
-        <div class="member-photo">
-          <span class="initials">JH</span>
-        </div>
-        <div class="member-body">
-          <p class="member-name">Jette Hansen</p>
-          <p class="member-role">Kasserer</p>
-          <dl class="member-contact">
-            <dt>Tlf.</dt>
-            <dd>&mdash;</dd>
-
-            <dt>Mail</dt>
-            <dd><a href="mailto:kasser@hesselbjergnord.dk">kasser@hesselbjergnord.dk</a></dd>
-
-            <dt>Adresse</dt>
-            <dd>&mdash;</dd>
-          </dl>
-        </div>
-      </article>
-
-      <article class="member">
-        <div class="member-photo">
-          <span class="initials">LK</span>
-        </div>
-        <div class="member-body">
-          <p class="member-name">Lars Klausen</p>
-          <p class="member-role">Bestyrelseskoordinator</p>
-          <dl class="member-contact">
-            <dt>Tlf.</dt>
-            <dd>&mdash;</dd>
-
-            <dt>Mail</dt>
-            <dd><a href="mailto:bestyrelsen@hesselbjergnord.dk">bestyrelsen@hesselbjergnord.dk</a></dd>
-
-            <dt>Adresse</dt>
-            <dd>&mdash;</dd>
-          </dl>
-        </div>
-      </article>
-
-      <article class="member">
-        <div class="member-photo">
-          <span class="initials">TS</span>
-        </div>
-        <div class="member-body">
-          <p class="member-name">Tea Sose</p>
-          <p class="member-role">Eventkoordinator</p>
-          <dl class="member-contact">
-            <dt>Tlf.</dt>
-            <dd>&mdash;</dd>
-
-            <dt>Mail</dt>
-            <dd><a href="mailto:bestyrelsen@hesselbjergnord.dk">bestyrelsen@hesselbjergnord.dk</a></dd>
-
-            <dt>Adresse</dt>
-            <dd>&mdash;</dd>
-          </dl>
-        </div>
-      </article>
-
-      <article class="member">
-        <div class="member-photo">
-          <span class="initials">MBK</span>
-        </div>
-        <div class="member-body">
-          <p class="member-name">Morten Bo Kristensen</p>
-          <p class="member-role">Vejudvalg</p>
-          <dl class="member-contact">
-            <dt>Tlf.</dt>
-            <dd>&mdash;</dd>
-
-            <dt>Mail</dt>
-            <dd><a href="mailto:bestyrelsen@hesselbjergnord.dk">bestyrelsen@hesselbjergnord.dk</a></dd>
-
-            <dt>Adresse</dt>
-            <dd>&mdash;</dd>
-          </dl>
-        </div>
-      </article>
-
-      <article class="member">
-        <div class="member-photo">
-          <span class="initials">JBH</span>
-        </div>
-        <div class="member-body">
-          <p class="member-name">Jesper Beck Holm</p>
-          <p class="member-role">Vejudvalg</p>
-          <dl class="member-contact">
-            <dt>Tlf.</dt>
-            <dd>&mdash;</dd>
-
-            <dt>Mail</dt>
-            <dd><a href="mailto:bestyrelsen@hesselbjergnord.dk">bestyrelsen@hesselbjergnord.dk</a></dd>
-
-            <dt>Adresse</dt>
-            <dd>&mdash;</dd>
-          </dl>
-        </div>
-      </article>
-
-      <article class="member">
-        <div class="member-photo">
-          <span class="initials">TH</span>
-        </div>
-        <div class="member-body">
-          <p class="member-name">Torben Holstebro</p>
-          <p class="member-role">Vejudvalg</p>
-          <dl class="member-contact">
-            <dt>Tlf.</dt>
-            <dd>&mdash;</dd>
-
-            <dt>Mail</dt>
-            <dd><a href="mailto:bestyrelsen@hesselbjergnord.dk">bestyrelsen@hesselbjergnord.dk</a></dd>
-
-            <dt>Adresse</dt>
-            <dd>&mdash;</dd>
-          </dl>
-        </div>
-      </article>
-
+    <!-- Listen står i includes/bestyrelse.php — ret navne og poster dér. -->
+    <div class="board<?php echo $loggedIn ? '' : ' board-compact'; ?>">
+      <?php board_render_cards($loggedIn); ?>
     </div>
-    <!-- =================== SLUT PÅ BESTYRELSESMEDLEMMER =================== -->
+
+    <?php if (!$loggedIn): ?>
+      <p class="locked">
+        Telefonnumre, mailadresser og adresser vises kun for medlemmer.
+        <button type="button" data-open-login>Log ind</button> for at se dem.
+      </p>
+    <?php endif; ?>
   </div>
 
-  <footer>&copy; 2026 Hesselbjerg Nord</footer>
+  <footer>&copy; <?php echo date('Y'); ?> Hesselbjerg Nord</footer>
 
+  <?php if (!$loggedIn): ?>
   <script>
+    // Loginvinduet. Menuen behøver ikke JavaScript her — siden ved selv, om
+    // den besøgende er logget ind.
     const loginModal = document.getElementById('loginModal');
-    const openLoginButtons = document.querySelectorAll('[data-open-login]');
-    const closeLoginButtons = document.querySelectorAll('[data-close-login]');
+    const loginForm = loginModal.querySelector('form');
+    const loginError = document.getElementById('loginError');
 
-    openLoginButtons.forEach((button) => {
-      button.addEventListener('click', () => {
-        loginModal.classList.add('open');
-        loginModal.setAttribute('aria-hidden', 'false');
-      });
+    function openLogin() {
+      loginModal.classList.add('open');
+      loginModal.setAttribute('aria-hidden', 'false');
+      document.getElementById('loginUser').focus();
+    }
+
+    function closeLogin() {
+      loginModal.classList.remove('open');
+      loginModal.setAttribute('aria-hidden', 'true');
+    }
+
+    document.querySelectorAll('[data-open-login]').forEach((button) => {
+      button.addEventListener('click', openLogin);
     });
 
-    closeLoginButtons.forEach((button) => {
-      button.addEventListener('click', () => {
-        loginModal.classList.remove('open');
-        loginModal.setAttribute('aria-hidden', 'true');
-      });
+    document.querySelectorAll('[data-close-login]').forEach((button) => {
+      button.addEventListener('click', closeLogin);
     });
 
     loginModal.addEventListener('click', (event) => {
       if (event.target === loginModal) {
-        loginModal.classList.remove('open');
-        loginModal.setAttribute('aria-hidden', 'true');
+        closeLogin();
       }
     });
-
-    const loginForm = loginModal.querySelector('form');
-    const loginError = document.getElementById('loginError');
-
-    // Fejlkoder fra login.php (bruges kun, når JavaScript er slået fra og
-    // browseren er blevet sendt tilbage hertil med ?error=...).
-    const LOGIN_ERRORS = {
-      empty: 'Udfyld både brugernavn og adgangskode.',
-      throttled: 'For mange forsøg. Vent et minut, og prøv igen.',
-      auth: 'Forkert brugernavn eller adgangskode.',
-      request: 'Ugyldig forespørgsel.',
-    };
 
     function showLoginError(message) {
       loginError.textContent = message;
       loginError.classList.add('show');
     }
-
-    // Navigationen tilpasses efter, om den besøgende er logget ind.
-    fetch('session-status.php', { credentials: 'same-origin' })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((status) => {
-        if (!status || !status.loggedIn) {
-          return;
-        }
-
-        document.querySelectorAll('[data-members-only], [data-logout]').forEach((el) => {
-          el.hidden = false;
-        });
-
-        document.querySelectorAll('[data-open-login]').forEach((el) => {
-          el.hidden = true;
-        });
-
-        document.querySelectorAll('[data-user-name]').forEach((el) => {
-          el.textContent = status.displayName || '';
-          el.hidden = !status.displayName;
-        });
-      })
-      .catch(() => {
-        // Uden svar bliver menuen stående som "ikke logget ind".
-      });
 
     loginForm.addEventListener('submit', (event) => {
       event.preventDefault();
@@ -643,7 +516,8 @@
         .then((response) => response.json())
         .then((result) => {
           if (result.ok) {
-            window.location.href = result.redirect || 'medlemsfotos.php';
+            // Samme side igen — nu med kontaktoplysningerne.
+            window.location.href = result.redirect || 'bestyrelsen.php';
             return;
           }
 
@@ -655,28 +529,7 @@
           showLoginError('Der kunne ikke oprettes forbindelse. Prøv igen.');
         });
     });
-
-    // index.html?login=1 åbner loginvinduet med det samme — det er dertil,
-    // medlemssider sender besøgende uden login.
-    const params = new URLSearchParams(window.location.search);
-
-    if (params.get('login') === '1') {
-      loginModal.classList.add('open');
-      loginModal.setAttribute('aria-hidden', 'false');
-
-      const errorCode = params.get('error');
-
-      if (errorCode) {
-        showLoginError(LOGIN_ERRORS[errorCode] || 'Login mislykkedes. Prøv igen.');
-      }
-
-      const next = params.get('next');
-      const nextField = loginForm.querySelector('input[name="next"]');
-
-      if (next && /^[a-z0-9._-]+\.(php|html)$/i.test(next)) {
-        nextField.value = next;
-      }
-    }
   </script>
+  <?php endif; ?>
 </body>
 </html>

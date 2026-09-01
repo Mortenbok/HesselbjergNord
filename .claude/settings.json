@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($php = \"C:\\\\Users\\\\mbkr\\\\AppData\\\\Local\\\\Microsoft\\\\WinGet\\\\Packages\\\\PHP.PHP.8.4_Microsoft.Winget.Source_8wekyb3d8bbwe\\\\php.exe\"; $sp = \"C:\\\\Users\\\\mbkr\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--GitRepo-HesselbjergNord\\\\592f621d-97a0-4569-9b85-665b77bda2bd\\\\scratchpad\"; & $php -c \"$sp\\\\php.ini\" \"$sp\\\\db-test.php\")",
+      "PowerShell(Get-Service | Where-Object { $_.Name -match 'mysql|maria' } | Select-Object Name, Status; Test-NetConnection -ComputerName 127.0.0.1 -Port 3306 -InformationLevel Quiet -WarningAction SilentlyContinue; \\(Get-Command mysqld,mariadbd -ErrorAction SilentlyContinue\\).Source)",
+      "PowerShell($php = \"C:\\\\Users\\\\mbkr\\\\AppData\\\\Local\\\\Microsoft\\\\WinGet\\\\Packages\\\\PHP.PHP.8.4_Microsoft.Winget.Source_8wekyb3d8bbwe\\\\php.exe\"; $sp = \"C:\\\\Users\\\\mbkr\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--GitRepo-HesselbjergNord\\\\592f621d-97a0-4569-9b85-665b77bda2bd\\\\scratchpad\"; & $php -c \"$sp\\\\php.ini\" -S localhost:8000 -t \"C:\\\\GitRepo\\\\HesselbjergNord\\\\public_html\" \"$sp\\\\router.php\")",
+      "PowerShell(foreach \\($u in @\\('/index.html','/preview/generalforsamling','/preview/regnskab'\\)\\) { try { $r = Invoke-WebRequest -Uri \"http://localhost:8000$u\" -UseBasicParsing -TimeoutSec 15; \"$u -> HTTP $\\($r.StatusCode\\), $\\($r.RawContentLength\\) bytes\" } catch { \"$u -> FEJL: $\\($_.Exception.Message\\)\" } })",
+      "PowerShell(\\(Invoke-WebRequest -Uri \"http://localhost:8000/preview/generalforsamling\" -UseBasicParsing\\).Content)",
+      "PowerShell(foreach \\($u in @\\('/preview/generalforsamling','/preview/regnskab'\\)\\) { try { $c = \\(Invoke-WebRequest -Uri \"http://localhost:8000$u\" -UseBasicParsing -TimeoutSec 15\\).Content; \"$u -> $\\($c.Length\\) tegn; Fatal: $\\($c -match 'Fatal error'\\); Warning: $\\($c -match 'Warning</b>'\\); dokumenter: $\\(\\([regex]::Matches\\($c,'class=\\\\\"doc\\\\\"'\\)\\).Count\\); upload-form: $\\($c -match 'name=\\\\\"document\\\\\"'\\)\" } catch { \"$u -> FEJL: $\\($_.Exception.Message\\)\" } })",
+      "PowerShell(Start-Process \"http://localhost:8000/preview/generalforsamling\")",
+      "PowerShell(Start-Process \"http://localhost:8000/preview/regnskab\")"
+    ]
+  }
+}

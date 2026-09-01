@@ -52,7 +52,7 @@ $allowedNext = [
     'medlemsfotos.php',
     'generalforsamling.php',
     'regnskab.php',
-    'bestyrelsen.html',
+    'bestyrelsen.php',
     'index.html',
 ];
 $next = (string)($_POST['next'] ?? 'medlemsfotos.php');
