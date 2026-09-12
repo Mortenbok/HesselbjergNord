@@ -163,7 +163,7 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
 <meta name="robots" content="noindex, nofollow">
 <!-- Siden er endnu ikke i menuen. Fjern denne linje, når den tages i brug. -->
 <meta name="robots" content="noindex, nofollow">
-<title>Beskeder — Hesselbjerg Nord Grundejerforening</title>
+<title>Beskeder — Grundejerforeningen Hesselbjerg Nord</title>
 <link rel="icon" type="image/jpeg" href="favicon.jpg">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -640,6 +640,7 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
 <body>
   <nav>
     <div class="nav-links">
+      <a href="index.html">Forside</a>
       <a href="omraade.html">Område</a>
       <a href="vedtaegter.html">Vedtægter</a>
       <a href="bestyrelsen.php">Bestyrelsen</a>
@@ -647,10 +648,11 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
       <a href="betalingsservice.html">Betalingsservice</a>
       <a href="aktiviteter.html">Aktiviteter</a>
       <a href="hjertestarter.html">Hjertestarter</a>
+      <a href="ny-beboer.php" data-guest-only>Ny beboer</a>
       <a href="medlemsfotos.php" data-members-only hidden>Medlemsfotos</a>
       <a href="generalforsamling.php" data-members-only hidden>Generalforsamling</a>
       <a href="regnskab.php" data-members-only hidden>Regnskab</a>
-      <a href="besked.php" data-board-only hidden>Beskeder</a>
+      <a href="besked.php" class="active" data-board-only hidden>Beskeder</a>
     </div>
     <div class="nav-account">
       <span class="nav-user" data-user-name hidden></span>
@@ -936,7 +938,7 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
       sync();
     })();
   </script>
-  <footer>&copy; 2026 Hesselbjerg Nord Grundejerforening</footer>
+  <footer>&copy; 2026 Grundejerforeningen Hesselbjerg Nord</footer>
 
   <script>
     const loginModal = document.getElementById('loginModal');

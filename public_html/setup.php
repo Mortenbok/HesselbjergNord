@@ -51,7 +51,7 @@ if (!$locked && $_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>Opsætning — Hesselbjerg Nord Grundejerforening</title>
+<title>Opsætning — Grundejerforeningen Hesselbjerg Nord</title>
 <link rel="icon" type="image/jpeg" href="favicon.jpg">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }

@@ -12,7 +12,7 @@ return [
     'sms_sender' => 'Hesselbjerg',
 
     'mail_from' => 'bestyrelsen@hesselbjergnord.dk',
-    'mail_from_name' => 'Hesselbjerg Nord Grundejerforening',
+    'mail_from_name' => 'Grundejerforeningen Hesselbjerg Nord',
 
     // SMTP hos udbyderen. Tom smtp_host = brug PHP's mail() i stedet.
     'smtp_host' => 'websmtp.simply.com',

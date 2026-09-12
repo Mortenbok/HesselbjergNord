@@ -86,7 +86,7 @@ $photos = $stmt->fetchAll();
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>Medlemsfotos — Hesselbjerg Nord Grundejerforening</title>
+<title>Medlemsfotos — Grundejerforeningen Hesselbjerg Nord</title>
 <link rel="icon" type="image/jpeg" href="favicon.jpg">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -267,9 +267,11 @@ $photos = $stmt->fetchAll();
   <nav>
     <div class="nav-links">
       <a href="index.html">Forside</a>
+      <a href="omraade.html">Område</a>
       <a href="vedtaegter.html">Vedtægter</a>
       <a href="bestyrelsen.php">Bestyrelsen</a>
       <a href="kontingent.html">Kontingent</a>
+      <a href="betalingsservice.html">Betalingsservice</a>
       <a href="aktiviteter.html">Aktiviteter</a>
       <a href="hjertestarter.html">Hjertestarter</a>
       <a href="medlemsfotos.php" class="active">Medlemsfotos</a>
@@ -328,6 +330,6 @@ $photos = $stmt->fetchAll();
     </div>
   </div>
 
-  <footer>&copy; 2026 Hesselbjerg Nord Grundejerforening</footer>
+  <footer>&copy; 2026 Grundejerforeningen Hesselbjerg Nord</footer>
 </body>
 </html>

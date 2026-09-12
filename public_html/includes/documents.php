@@ -278,7 +278,7 @@ function documents_render_page(PDO $pdo, string $category, array $page, array $u
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title><?php echo $e($page['title']); ?> — Hesselbjerg Nord Grundejerforening</title>
+<title><?php echo $e($page['title']); ?> — Grundejerforeningen Hesselbjerg Nord</title>
 <link rel="icon" type="image/jpeg" href="favicon.jpg">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -529,6 +529,7 @@ function documents_render_page(PDO $pdo, string $category, array $page, array $u
       <a href="vedtaegter.html">Vedtægter</a>
       <a href="bestyrelsen.php">Bestyrelsen</a>
       <a href="kontingent.html">Kontingent</a>
+      <a href="betalingsservice.html">Betalingsservice</a>
       <a href="aktiviteter.html">Aktiviteter</a>
       <a href="hjertestarter.html">Hjertestarter</a>
       <a href="medlemsfotos.php"<?php echo $page['nav'] === 'medlemsfotos.php' ? ' class="active"' : ''; ?>>Medlemsfotos</a>
@@ -628,7 +629,7 @@ function documents_render_page(PDO $pdo, string $category, array $page, array $u
     </div>
   </div>
 
-  <footer>&copy; <?php echo date('Y'); ?> Hesselbjerg Nord Grundejerforening</footer>
+  <footer>&copy; <?php echo date('Y'); ?> Grundejerforeningen Hesselbjerg Nord</footer>
 </body>
 </html>
     <?php

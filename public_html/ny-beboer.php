@@ -135,7 +135,7 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
 <meta name="description" content="Er du flyttet til Hesselbjerg Nord? Tilmeld dig hos grundejerforeningen her.">
 <!-- Siden er endnu ikke i menuen. Fjern denne linje, når den tages i brug. -->
 <meta name="robots" content="noindex, nofollow">
-<title>Ny beboer — Hesselbjerg Nord Grundejerforening</title>
+<title>Ny beboer — Grundejerforeningen Hesselbjerg Nord</title>
 <link rel="icon" type="image/jpeg" href="favicon.jpg">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -604,6 +604,7 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
 <body>
   <nav>
     <div class="nav-links">
+      <a href="index.html">Forside</a>
       <a href="omraade.html">Område</a>
       <a href="vedtaegter.html">Vedtægter</a>
       <a href="bestyrelsen.php">Bestyrelsen</a>
@@ -741,7 +742,7 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
     <?php endif; ?>
   </div>
 
-  <footer>&copy; 2026 Hesselbjerg Nord Grundejerforening</footer>
+  <footer>&copy; 2026 Grundejerforeningen Hesselbjerg Nord</footer>
 
   <script>
     const loginModal = document.getElementById('loginModal');
