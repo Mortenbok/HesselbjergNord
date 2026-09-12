@@ -1,12 +1,119 @@
+<?php
+/**
+ * Beskeder — SMS til beboerne.
+ *
+ * Kun bestyrelsen har adgang. En udsendelse koster penge og kan ikke kaldes
+ * tilbage, så siden kræver, at afsenderen først ser modtagerlisten og derefter
+ * bekræfter i et ekstra trin.
+ *
+ * Modtagerne er de beboere, der selv har oplyst et telefonnummer i
+ * "Ny beboer"-formularen og har givet samtykke.
+ */
+
+require __DIR__ . '/includes/auth.php';
+require __DIR__ . '/includes/db.php';
+require __DIR__ . '/includes/sms.php';
+
+auth_require('index.html');
+
+$user = auth_user();
+$denied = ($user['role'] ?? '') !== 'bestyrelse';
+
+if ($denied) {
+    http_response_code(403);
+}
+
+/** Beboere med et brugbart dansk nummer og samtykke. */
+function message_recipients(PDO $pdo): array
+{
+    $rows = $pdo->query(
+        "SELECT id, name, phone FROM residents
+          WHERE consent = 1 AND phone <> ''
+       ORDER BY name"
+    )->fetchAll();
+
+    $out = [];
+    foreach ($rows as $row) {
+        $msisdn = sms_msisdn($row['phone']);
+        if ($msisdn !== null) {
+            $out[$msisdn] = ['id' => (int)$row['id'], 'name' => $row['name'], 'msisdn' => $msisdn];
+        }
+    }
+
+    // Nøglen er nummeret, så to beboere på samme nummer kun får én besked.
+    return array_values($out);
+}
+
+$body = trim((string)($_POST['body'] ?? ''));
+$message = null;
+$confirming = false;
+$recipients = $denied ? [] : message_recipients($pdo);
+$length = sms_length($body);
+
+if (!$denied && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!auth_csrf_valid($_POST['csrf_token'] ?? null)) {
+        $message = ['bad', 'Handlingen var udløbet. Prøv igen.'];
+    } elseif ($body === '') {
+        $message = ['bad', 'Skriv en besked, før du sender.'];
+    } elseif ($recipients === []) {
+        $message = ['bad', 'Der er ingen modtagere med telefonnummer endnu.'];
+    } elseif (($_POST['step'] ?? '') !== 'send') {
+        // Første klik viser kun, hvad der vil ske.
+        $confirming = true;
+    } else {
+        $result = sms_send(array_column($recipients, 'msisdn'), $body);
+
+        $stmt = $pdo->prepare(
+            'INSERT INTO messages (body, sender_name, sent_by, sent_by_name, recipient_count, parts, status, error)
+             VALUES (:body, :sender, :by, :byname, :count, :parts, :status, :error)'
+        );
+        $stmt->execute([
+            ':body' => $body,
+            ':sender' => sms_config()['sms_sender'],
+            ':by' => $user['id'],
+            ':byname' => $user['display_name'],
+            ':count' => count($recipients),
+            ':parts' => $length['parts'],
+            ':status' => $result['ok'] ? 'sendt' : 'fejl',
+            ':error' => mb_substr($result['error'], 0, 255),
+        ]);
+
+        $messageId = (int)$pdo->lastInsertId();
+
+        if ($result['ok']) {
+            $rcpt = $pdo->prepare(
+                'INSERT INTO message_recipients (message_id, resident_id, name, msisdn)
+                 VALUES (:m, :r, :n, :p)'
+            );
+            foreach ($recipients as $r) {
+                $rcpt->execute([':m' => $messageId, ':r' => $r['id'], ':n' => $r['name'], ':p' => $r['msisdn']]);
+            }
+
+            $message = ['ok', 'Beskeden er sendt til ' . count($recipients) . ' modtagere.'];
+            $body = '';
+            $length = sms_length('');
+        } else {
+            $message = ['bad', 'Beskeden blev ikke sendt. ' . $result['error']];
+        }
+    }
+}
+
+$history = $denied ? [] : $pdo->query(
+    'SELECT * FROM messages ORDER BY created_at DESC LIMIT 20'
+)->fetchAll();
+
+$csrf = auth_csrf_token();
+$e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
+?>
 <!DOCTYPE html>
 <html lang="da">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Tilmeld kontingentet til Betalingsservice i Hesselbjerg Nord.">
+<meta name="robots" content="noindex, nofollow">
 <!-- Siden er endnu ikke i menuen. Fjern denne linje, når den tages i brug. -->
 <meta name="robots" content="noindex, nofollow">
-<title>Betalingsservice — Hesselbjerg Nord</title>
+<title>Beskeder — Hesselbjerg Nord</title>
 <link rel="icon" type="image/jpeg" href="favicon.jpg">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -380,6 +487,75 @@
       padding: 16px 20px;
     }
   }
+  /* ---- Beskeder --------------------------------------------------------- */
+  .muted { color: rgba(255,255,255,0.72); font-size: 0.92rem; margin-bottom: 14px; }
+  .container a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+
+  #msgBody {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.22);
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    font: inherit;
+    font-size: 16px;
+    resize: vertical;
+  }
+
+  #msgBody[readonly] { opacity: 0.75; }
+
+  .counter { margin-top: 8px; font-size: 0.88rem; color: rgba(255,255,255,0.75); }
+  .warn-text { color: #ffc9a8; }
+
+  .submit-btn, .actions button {
+    margin-top: 18px;
+    padding: 13px 26px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.45);
+    background: rgba(255,255,255,0.14);
+    color: #fff;
+    font: inherit;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+
+  .actions button.danger { border-color: rgba(230,120,120,0.6); background: rgba(150,45,45,0.45); }
+  .actions button[disabled] { opacity: 0.45; cursor: not-allowed; }
+  .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+  .cancel { font-size: 0.92rem; }
+
+  .panel.confirm { margin-top: 18px; border-color: rgba(230,160,90,0.5); background: rgba(90,55,20,0.35); }
+  .panel.warn { border-color: rgba(230,180,90,0.5); background: rgba(90,70,20,0.35); }
+  .panel.ok { border-color: rgba(80,190,120,0.5); background: rgba(30,90,50,0.35); }
+  .panel.bad { border-color: rgba(220,90,90,0.5); background: rgba(120,35,35,0.35); }
+
+  .rcpt { margin: 10px 0 0 18px; font-size: 0.9rem; line-height: 1.7; max-height: 240px; overflow-y: auto; }
+
+  .log { list-style: none; display: grid; gap: 12px; }
+
+  .log li {
+    padding: 14px 16px;
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 12px;
+    background: rgba(0,0,0,0.22);
+  }
+
+  .log li.fejl { border-color: rgba(220,90,90,0.45); }
+  .log-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .log-when { font-size: 0.84rem; color: rgba(255,255,255,0.6); }
+  .log-body { margin: 8px 0; line-height: 1.5; }
+  .log-meta { font-size: 0.84rem; color: rgba(255,255,255,0.62); }
+
+  .tag { flex: none; padding: 3px 11px; border-radius: 999px; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.07em; }
+  .tag.sendt { background: rgba(60,150,90,0.35); color: #d8ffe6; }
+  .tag.fejl { background: rgba(190,70,70,0.4); color: #ffdede; }
+
+  @media (max-width: 560px) {
+    .actions { flex-direction: column; align-items: stretch; }
+    .actions button { width: 100%; }
+    .cancel { text-align: center; }
+  }
 </style>
 <link rel="stylesheet" href="mobile-nav.css">
 <script src="mobile-nav.js" defer></script>
@@ -391,10 +567,9 @@
       <a href="vedtaegter.html">Vedtægter</a>
       <a href="bestyrelsen.php">Bestyrelsen</a>
       <a href="kontingent.html">Kontingent</a>
-      <a href="betalingsservice.html" class="active">Betalingsservice</a>
+      <a href="betalingsservice.html">Betalingsservice</a>
       <a href="aktiviteter.html">Aktiviteter</a>
       <a href="hjertestarter.html">Hjertestarter</a>
-      <a href="ny-beboer.php" data-guest-only>Ny beboer</a>
       <a href="medlemsfotos.php" data-members-only hidden>Medlemsfotos</a>
       <a href="generalforsamling.php" data-members-only hidden>Generalforsamling</a>
       <a href="regnskab.php" data-members-only hidden>Regnskab</a>
@@ -434,113 +609,151 @@
     </div>
   </div>
 
+
   <div class="container">
-    <h1>Betalingsservice</h1>
-    <p class="lead">
-      Du kan tilmelde kontingentet til Betalingsservice, så det bliver trukket
-      automatisk fra din konto. Så skal du ikke huske at betale hvert år, og
-      foreningen slipper for at rykke.
-    </p>
+    <h1>Beskeder</h1>
 
-    <!-- =====================================================================
-         TIL BESTYRELSEN — SLET DENNE BOKS, NÅR LINKET ER SAT IND
-         ===================================================================== -->
-    <div class="todo">
-      <strong>Tilmeldingslinket mangler.</strong>
-      Knappen nedenfor virker først, når foreningens eget BS-tilmeldingslink er
-      sat ind. Linket kan <em>ikke</em> skrives i hånden — det indeholder en
-      kontrolkode (<code>pbscheck</code>), som Betalingsservice danner ud fra
-      foreningens kreditornummer.
-      <ol>
-        <li>Foreningen skal have en Betalingsservice-kreditoraftale. Den oprettes gennem banken.</li>
-        <li>Log på Mastercard Connect Nordics med MitID, og gå til BS Customer Portal → Tilmeldingslink.</li>
-        <li>Vælg linktype, udfyld kreditoroplysninger, og dan linket.</li>
-        <li>Erstat <code>INDSAET_TILMELDINGSLINK_HER</code> i <code>betalingsservice.html</code> med det dannede link, og slet denne boks.</li>
-      </ol>
-    </div>
+    <?php if ($denied): ?>
+      <div class="panel bad">
+        <h2>Ingen adgang</h2>
+        <p>Kun bestyrelsen kan sende beskeder til beboerne.</p>
+      </div>
+    <?php else: ?>
 
-    <div class="panel">
-      <h2>Sådan tilmelder du dig</h2>
-      <ol class="steps">
-        <li>
-          <div>
-            <strong>Find oplysningerne frem</strong>
-            <span>Du skal bruge MitID, dit reg.- og kontonummer samt dit medlemsnummer.</span>
-          </div>
-        </li>
-        <li>
-          <div>
-            <strong>Klik på knappen herunder</strong>
-            <span>Formularen åbner i et nyt vindue hos Betalingsservice. Den er ikke en del af foreningens hjemmeside.</span>
-          </div>
-        </li>
-        <li>
-          <div>
-            <strong>Udfyld og godkend med MitID</strong>
-            <span>Du bekræfter aftalen med MitID, præcis som når du godkender andre betalinger.</span>
-          </div>
-        </li>
-        <li>
-          <div>
-            <strong>Se aftalen på din næste betalingsoversigt</strong>
-            <span>Tilmeldingen bekræftes på oversigten fra din bank. Kontakt kassereren, hvis den ikke dukker op.</span>
-          </div>
-        </li>
-      </ol>
-    </div>
+      <?php if (!sms_enabled()): ?>
+        <div class="panel warn">
+          <strong>Afsendelse er ikke sat op endnu.</strong>
+          <p>
+            Læg en GatewayAPI-nøgle i <code>includes/config.local.php</code>.
+            Indtil da kan beskeder skrives, men ikke sendes.
+          </p>
+        </div>
+      <?php endif; ?>
 
-    <div class="panel signup">
-      <!-- ===== TILMELDINGSLINK — INDSÆT FORENINGENS EGET LINK HER ========= -->
-      <a class="signup-btn"
-         href="INDSAET_TILMELDINGSLINK_HER"
-         target="_blank" rel="noopener">Tilmeld Betalingsservice</a>
-      <!-- ================================================================== -->
+      <?php if ($message !== null): ?>
+        <div class="panel <?php echo $e($message[0]); ?>" role="status"><?php echo $e($message[1]); ?></div>
+      <?php endif; ?>
 
-      <p class="signup-note">Åbner Betalingsservice i et nyt vindue. Du godkender med MitID.</p>
-    </div>
+      <div class="panel">
+        <h2>Ny besked</h2>
+        <p class="muted">
+          Sendes som SMS til de <strong><?php echo count($recipients); ?></strong> beboere,
+          der har oplyst et telefonnummer.
+        </p>
 
-    <div class="panel">
-      <h2>Det skal du have klar</h2>
-      <ul class="checklist">
-        <li>
-          <div>
-            <strong>MitID</strong>
-            <span>Til at godkende aftalen.</span>
-          </div>
-        </li>
-        <li>
-          <div>
-            <strong>Reg.nr. og kontonummer</strong>
-            <span>På den konto, kontingentet skal trækkes fra.</span>
-          </div>
-        </li>
-        <li>
-          <div>
-            <strong>Dit medlemsnummer</strong>
-            <span>Står på opkrævningen fra foreningen. Er du i tvivl, så spørg kassereren.</span>
-          </div>
-        </li>
-      </ul>
-    </div>
+        <form method="post">
+          <input type="hidden" name="csrf_token" value="<?php echo $e($csrf); ?>">
 
-    <div class="panel">
-      <h2>Spørgsmål og svar</h2>
-      <dl class="faq">
-        <dt>Binder jeg mig til noget?</dt>
-        <dd>Nej. En Betalingsservice-aftale kan altid afmeldes igen — enten i din netbank eller på din betalingsoversigt.</dd>
+          <label for="msgBody">Tekst</label>
+          <textarea id="msgBody" name="body" rows="5" maxlength="1000"
+                    placeholder="Fx: Husk generalforsamling torsdag kl. 19 i klubhuset."
+                    <?php echo $confirming ? 'readonly' : ''; ?>><?php echo $e($body); ?></textarea>
 
-        <dt>Hvad hvis kontingentet ændrer sig?</dt>
-        <dd>Beløbet fremgår af betalingsoversigten, inden det trækkes. Du kan afvise en enkelt betaling, hvis noget ser forkert ud.</dd>
+          <p class="counter" id="counter" aria-live="polite">
+            <?php echo $length['units']; ?> tegn &middot;
+            <?php echo $length['parts']; ?> SMS pr. modtager
+            <?php if ($length['unicode']): ?>
+              &middot; <span class="warn-text">specialtegn — kun 70 tegn pr. SMS</span>
+            <?php endif; ?>
+          </p>
 
-        <dt>Kan jeg stadig betale manuelt?</dt>
-        <dd>Ja. Tilmelding til Betalingsservice er frivillig — du kan fortsat betale ved bankoverførsel.</dd>
+          <?php if ($confirming): ?>
+            <div class="panel confirm">
+              <h3>Er du sikker?</h3>
+              <p>
+                Beskeden sendes til <strong><?php echo count($recipients); ?></strong>
+                modtagere som <strong><?php echo $length['parts']; ?></strong> SMS hver
+                — i alt <strong><?php echo count($recipients) * $length['parts']; ?></strong> SMS.
+                Det kan ikke fortrydes.
+              </p>
+              <details>
+                <summary>Vis modtagere</summary>
+                <ul class="rcpt">
+                  <?php foreach ($recipients as $r): ?>
+                    <li><?php echo $e($r['name']); ?> &middot; <?php echo $e($r['msisdn']); ?></li>
+                  <?php endforeach; ?>
+                </ul>
+              </details>
+              <div class="actions">
+                <button type="submit" name="step" value="send" class="danger"
+                        <?php echo sms_enabled() ? '' : 'disabled'; ?>>
+                  Ja, send nu
+                </button>
+                <a class="cancel" href="besked.php">Annuller</a>
+              </div>
+            </div>
+          <?php else: ?>
+            <button type="submit" class="submit-btn">Gennemse og send</button>
+          <?php endif; ?>
+        </form>
+      </div>
 
-        <dt>Indtaster jeg mine kontooplysninger på foreningens hjemmeside?</dt>
-        <dd>Nej. Knappen sender dig videre til Betalingsservice, og alle oplysninger indtastes dér. Foreningen ser hverken dit kontonummer eller dit MitID.</dd>
-      </dl>
-    </div>
+      <div class="panel">
+        <h2>Sendte beskeder</h2>
+        <?php if ($history === []): ?>
+          <p class="muted">Der er ikke sendt nogen beskeder endnu.</p>
+        <?php else: ?>
+          <ul class="log">
+            <?php foreach ($history as $h): ?>
+              <li class="<?php echo $e($h['status']); ?>">
+                <div class="log-top">
+                  <span class="log-when"><?php echo $e($h['created_at']); ?></span>
+                  <span class="tag <?php echo $e($h['status']); ?>">
+                    <?php echo $h['status'] === 'sendt' ? 'Sendt' : 'Fejlet'; ?>
+                  </span>
+                </div>
+                <p class="log-body"><?php echo nl2br($e($h['body'])); ?></p>
+                <p class="log-meta">
+                  <?php echo (int)$h['recipient_count']; ?> modtagere &middot;
+                  <?php echo (int)$h['parts']; ?> SMS hver &middot;
+                  <?php echo $e($h['sent_by_name']); ?>
+                  <?php if ($h['error'] !== ''): ?>
+                    <br><span class="warn-text"><?php echo $e($h['error']); ?></span>
+                  <?php endif; ?>
+                </p>
+              </li>
+            <?php endforeach; ?>
+          </ul>
+        <?php endif; ?>
+      </div>
+    <?php endif; ?>
   </div>
+  <script>
+    /* Tegntæller, der regner på samme måde som sms_length() i PHP:
+       teksten er GSM-7, indtil der dukker et tegn op, som ikke findes der. */
+    (function () {
+      var box = document.getElementById('msgBody');
+      var out = document.getElementById('counter');
+      if (!box || !out) return;
 
+      var GSM = "@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !\"#¤%&'()*+,-./0123456789:;<=>?¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà";
+      var EXT = "^{}\[~]|€";
+
+      function measure(text) {
+        var units = 0, unicode = false;
+        for (var ch of text) {
+          if (GSM.indexOf(ch) !== -1) units++;
+          else if (EXT.indexOf(ch) !== -1) units += 2;
+          else { unicode = true; break; }
+        }
+        if (unicode) {
+          // UTF-16 kodeenheder: emoji uden for BMP fylder to.
+          units = text.length;
+          return { units: units, parts: units <= 70 ? 1 : Math.ceil(units / 67), unicode: true };
+        }
+        return { units: units, parts: units <= 160 ? 1 : Math.ceil(units / 153), unicode: false };
+      }
+
+      function update() {
+        var r = measure(box.value);
+        out.innerHTML = r.units + ' tegn &middot; ' + r.parts + ' SMS pr. modtager' +
+          (r.unicode ? ' &middot; <span class="warn-text">specialtegn — kun 70 tegn pr. SMS</span>' : '');
+      }
+
+      box.addEventListener('input', update);
+      update();
+    })();
+  </script>
   <footer>&copy; 2026 Hesselbjerg Nord</footer>
 
   <script>

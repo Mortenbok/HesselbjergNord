@@ -615,6 +615,7 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
       <a href="medlemsfotos.php" data-members-only hidden>Medlemsfotos</a>
       <a href="generalforsamling.php" data-members-only hidden>Generalforsamling</a>
       <a href="regnskab.php" data-members-only hidden>Regnskab</a>
+      <a href="besked.php" data-board-only hidden>Beskeder</a>
     </div>
     <div class="nav-account">
       <span class="nav-user" data-user-name hidden></span>
@@ -796,6 +797,10 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
 
         // Tilmeldingen er til nye beboere — den skal ikke fylde i menuen,
         // når man allerede er logget ind.
+        if (status.role === 'bestyrelse') {
+          document.querySelectorAll('[data-board-only]').forEach((el) => { el.hidden = false; });
+        }
+
         document.querySelectorAll('[data-guest-only]').forEach((el) => { el.hidden = true; });
 
         document.querySelectorAll('[data-members-only], [data-logout]').forEach((el) => {
@@ -867,3 +872,4 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
     }
   </script>
 </body>
+</html>

@@ -97,6 +97,39 @@ try {
             KEY idx_residents_created (created_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
+
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS messages (
+            id INT NOT NULL AUTO_INCREMENT,
+            body TEXT NOT NULL,
+            sender_name VARCHAR(32) NOT NULL DEFAULT 'Hesselbjerg',
+            sent_by INT NULL DEFAULT NULL,
+            sent_by_name VARCHAR(255) NOT NULL DEFAULT '',
+            recipient_count INT NOT NULL DEFAULT 0,
+            parts SMALLINT NOT NULL DEFAULT 1,
+            status ENUM('sendt', 'fejl') NOT NULL DEFAULT 'sendt',
+            error VARCHAR(255) NOT NULL DEFAULT '',
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY idx_messages_created (created_at),
+            KEY idx_messages_user (sent_by)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS message_recipients (
+            id INT NOT NULL AUTO_INCREMENT,
+            message_id INT NOT NULL,
+            resident_id INT NULL DEFAULT NULL,
+            name VARCHAR(255) NOT NULL DEFAULT '',
+            msisdn VARCHAR(16) NOT NULL,
+            PRIMARY KEY (id),
+            KEY idx_msgrcpt_message (message_id),
+            CONSTRAINT fk_msgrcpt_message
+                FOREIGN KEY (message_id) REFERENCES messages (id)
+                ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
     // Tabellen kan stamme fra en tidligere version uden disse kolonner.
     $existing = $pdo->query('SHOW COLUMNS FROM member_photos')->fetchAll(PDO::FETCH_COLUMN, 0);
 

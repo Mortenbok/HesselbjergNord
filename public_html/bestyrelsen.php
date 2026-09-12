@@ -404,6 +404,9 @@ $loggedIn = $user !== null;
         <a href="medlemsfotos.php">Medlemsfotos</a>
         <a href="generalforsamling.php">Generalforsamling</a>
         <a href="regnskab.php">Regnskab</a>
+        <?php if ((['role'] ?? '') === 'bestyrelse'): ?>
+          <a href="besked.php">Beskeder</a>
+        <?php endif; ?>
       <?php endif; ?>
     </div>
     <div class="nav-account">
