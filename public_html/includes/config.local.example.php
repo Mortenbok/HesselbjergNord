@@ -1,25 +1,23 @@
 <?php
 /**
- * Hemmeligheder, der IKKE må ligge i git.
+ * Skabelon til includes/config.local.php.
  *
- * SÅDAN TAGER DU DEN I BRUG
- *   1. Kopiér denne fil til includes/config.local.php
- *   2. Sæt din rigtige GatewayAPI-nøgle ind
- *   3. Læg KUN config.local.php på serveren — aldrig i git
- *
- * Nøglen hentes hos GatewayAPI under "API-nøgler". Den giver adgang til at
- * sende for foreningens regning, så den skal behandles som en adgangskode.
+ * SÅDAN: kopiér filen til config.local.php, udfyld værdierne, og læg KUN
+ * config.local.php på serveren. Den må aldrig i git — den indeholder
+ * adgangskoder.
  */
 
 return [
-    // API-token fra gatewayapi.com. Tom streng = afsendelse slået fra.
     'gatewayapi_token' => '',
-
-    // Afsendernavn, som beboerne ser. Højst 11 tegn, kun bogstaver og tal.
     'sms_sender' => 'Hesselbjerg',
 
-    // Afsender på mails. Skal være en adresse på foreningens eget domæne,
-    // ellers ryger mailen ofte i modtagerens spamfilter.
     'mail_from' => 'bestyrelsen@hesselbjergnord.dk',
     'mail_from_name' => 'Grundejerforeningen Hesselbjerg Nord',
+
+    // SMTP hos udbyderen. Tom smtp_host = brug PHP's mail() i stedet.
+    'smtp_host' => 'websmtp.simply.com',
+    'smtp_port' => 587,
+    'smtp_user' => 'bestyrelsen@hesselbjergnord.dk',
+    'smtp_pass' => '',
+    'smtp_helo' => 'hesselbjergnord.dk',
 ];

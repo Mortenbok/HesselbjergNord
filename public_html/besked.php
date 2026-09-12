@@ -707,6 +707,18 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
         </div>
       <?php endif; ?>
 
+      <?php if ($channel === 'email' && !mail_uses_smtp()): ?>
+        <div class="panel warn">
+          <strong>Mail er ikke sat op endnu.</strong>
+          <p>
+            Udfyld <code>smtp_host</code>, <code>smtp_user</code> og
+            <code>smtp_pass</code> i <code>includes/config.local.php</code>.
+            Uden dem forsøger siden med PHP's <code>mail()</code>, som er slået
+            fra hos de fleste webhoteller — og så kommer mailen aldrig frem.
+          </p>
+        </div>
+      <?php endif; ?>
+
       <?php if ($message !== null): ?>
         <div class="panel <?php echo $e($message[0]); ?>" role="status"><?php echo $e($message[1]); ?></div>
       <?php endif; ?>
