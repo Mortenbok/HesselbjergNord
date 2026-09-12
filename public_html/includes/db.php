@@ -57,6 +57,26 @@ try {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
 
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS documents (
+            id INT NOT NULL AUTO_INCREMENT,
+            category ENUM('generalforsamling', 'regnskab') NOT NULL,
+            doc_year SMALLINT NOT NULL,
+            title VARCHAR(255) NOT NULL,
+            file_name VARCHAR(255) NOT NULL,
+            original_name VARCHAR(255) NOT NULL,
+            mime_type VARCHAR(128) NOT NULL DEFAULT 'application/pdf',
+            file_size INT NOT NULL DEFAULT 0,
+            uploaded_by INT NULL DEFAULT NULL,
+            uploader_name VARCHAR(255) NOT NULL DEFAULT 'Bestyrelsen',
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY uniq_documents_file (file_name),
+            KEY idx_documents_category (category, doc_year),
+            KEY idx_documents_user (uploaded_by)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+
     // Tabellen kan stamme fra en tidligere version uden disse kolonner.
     $existing = $pdo->query('SHOW COLUMNS FROM member_photos')->fetchAll(PDO::FETCH_COLUMN, 0);
 

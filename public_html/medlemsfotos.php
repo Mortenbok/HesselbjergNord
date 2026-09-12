@@ -247,11 +247,13 @@ $photos = $stmt->fetchAll();
     <div class="nav-links">
       <a href="index.html">Forside</a>
       <a href="vedtaegter.html">Vedtægter</a>
-      <a href="bestyrelsen.html">Bestyrelsen</a>
+      <a href="bestyrelsen.php">Bestyrelsen</a>
       <a href="kontingent.html">Kontingent</a>
       <a href="aktiviteter.html">Aktiviteter</a>
       <a href="hjertestarter.html">Hjertestarter</a>
       <a href="medlemsfotos.php" class="active">Medlemsfotos</a>
+      <a href="generalforsamling.php">Generalforsamling</a>
+      <a href="regnskab.php">Regnskab</a>
     </div>
     <div class="nav-account">
       <span class="nav-user">Logget ind som <?php echo htmlspecialchars($user['display_name'], ENT_QUOTES, 'UTF-8'); ?></span>
