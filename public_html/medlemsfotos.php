@@ -228,6 +228,25 @@ $photos = $stmt->fetchAll();
     object-fit: cover;
     display: block;
   }
+
+  .photo-dl {
+    display: block;
+    width: fit-content;
+    margin-top: 8px;
+    padding: 7px 14px;
+    border: 1px solid rgba(255,255,255,0.38);
+    border-radius: 999px;
+    background: rgba(255,255,255,0.10);
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.82rem;
+    letter-spacing: 0.03em;
+  }
+
+  .photo-dl:hover, .photo-dl:focus-visible {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.7);
+  }
   .photo-meta {
     padding: 10px 12px 14px;
     font-size: 0.9rem;
@@ -297,6 +316,10 @@ $photos = $stmt->fetchAll();
               <div class="photo-meta">
                 <strong><?php echo htmlspecialchars($photo['member_name'], ENT_QUOTES, 'UTF-8'); ?></strong><br>
                 <?php echo htmlspecialchars(date('d-m-Y', strtotime($photo['created_at'])), ENT_QUOTES, 'UTF-8'); ?>
+                <a class="photo-dl" href="photo.php?id=<?php echo (int)$photo['id']; ?>&amp;dl=1"
+                   download="<?php echo htmlspecialchars($photo['original_name'], ENT_QUOTES, 'UTF-8'); ?>">
+                  Hent billede
+                </a>
               </div>
             </div>
           <?php endforeach; ?>

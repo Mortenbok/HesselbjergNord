@@ -20,7 +20,7 @@ if (!$id) {
     exit;
 }
 
-$stmt = $pdo->prepare('SELECT file_name, mime_type FROM member_photos WHERE id = :id LIMIT 1');
+$stmt = $pdo->prepare('SELECT file_name, original_name, mime_type FROM member_photos WHERE id = :id LIMIT 1');
 $stmt->execute([':id' => $id]);
 $photo = $stmt->fetch();
 
@@ -60,6 +60,59 @@ header('Content-Type: ' . $mime);
 header('Content-Length: ' . filesize($path));
 header('Content-Disposition: inline; filename="' . basename($photo['file_name']) . '"');
 header('Cache-Control: private, max-age=3600');
+header('X-Content-Type-Options: nosniff');
+
+readfile($path);
+// ?dl=1 leverer billedet som en fil, man kan gemme, i stedet for at vise det.
+$download = filter_input(INPUT_GET, 'dl', FILTER_VALIDATE_INT) === 1;
+
+/**
+ * Et filnavn, browseren kan bruge: uden mappesti og uden tegn, der kan bryde
+ * ud af Content-Disposition-linjen.
+ */
+function photo_download_name(string $original, string $stored, string $mime): string
+{
+    // chr(92) er et backslash — skrevet sådan, så stien ikke kan misforstås.
+    $name = basename(str_replace(chr(92), '/', $original));
+    $name = preg_replace('/[\x00-\x1F"]+/u', '', $name);
+    $name = str_replace(chr(92), '', $name);
+    $name = trim($name);
+
+    if ($name === '' || $name === '.' || $name === '..') {
+        $name = basename($stored);
+    }
+
+    // Mangler endelsen, sættes den ud fra den type, filen rent faktisk har.
+    if (!preg_match('/\.(jpe?g|png|webp)$/i', $name)) {
+        $ext = ['image/jpeg' => '.jpg', 'image/png' => '.png', 'image/webp' => '.webp'][$mime] ?? '';
+        $name .= $ext;
+    }
+
+    return $name;
+}
+
+$fileName = photo_download_name(
+    (string)($photo['original_name'] ?? ''),
+    (string)$photo['file_name'],
+    $mime
+);
+
+header('Content-Type: ' . $mime);
+header('Content-Length: ' . filesize($path));
+
+if ($download) {
+    // ASCII-navnet er reserven; filename* bærer de danske tegn.
+    $ascii = preg_replace('/[^\x20-\x7E]/', '_', $fileName);
+    header(
+        'Content-Disposition: attachment; filename="' . $ascii . '"; '
+        . "filename*=UTF-8''" . rawurlencode($fileName)
+    );
+    header('Cache-Control: private, no-store');
+} else {
+    header('Content-Disposition: inline; filename="' . preg_replace('/[^\x20-\x7E]/', '_', $fileName) . '"');
+    header('Cache-Control: private, max-age=3600');
+}
+
 header('X-Content-Type-Options: nosniff');
 
 readfile($path);
