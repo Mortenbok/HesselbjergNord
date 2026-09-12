@@ -63,6 +63,11 @@ $body = trim((string)($_POST['body'] ?? ''));
 $message = null;
 $confirming = false;
 $recipients = $denied ? [] : message_recipients($pdo, $channel);
+
+// Begge tal skal med ud i siden, så teksten kan opdateres, når kanalen
+// skiftes — uden at spørge serveren igen.
+$countSms = $denied ? 0 : count(message_recipients($pdo, "sms"));
+$countMail = $denied ? 0 : count(message_recipients($pdo, "email"));
 $length = sms_length($body);
 
 if (!$denied && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -732,8 +737,11 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
             <input type="hidden" name="channel" value="<?php echo $e($channel); ?>">
           <?php endif; ?>
 
-          <p class="muted">
-            Sendes til <strong><?php echo count($recipients); ?></strong> beboere
+          <p class="muted" id="rcptInfo"
+             data-sms="<?php echo (int)$countSms; ?>"
+             data-mail="<?php echo (int)$countMail; ?>">
+            Sendes til <strong><?php echo count($recipients); ?></strong>
+            <?php echo count($recipients) === 1 ? 'beboer' : 'beboere'; ?>
             <?php echo $channel === 'sms' ? 'med telefonnummer' : 'med mailadresse'; ?>.
           </p>
 
@@ -887,9 +895,20 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
         return picked ? picked.value : 'sms';
       }
 
+      var info = document.getElementById('rcptInfo');
+
+      function syncRecipients(isMail) {
+        if (!info) return;
+        var n = parseInt(info.getAttribute(isMail ? 'data-mail' : 'data-sms'), 10) || 0;
+        info.innerHTML = 'Sendes til <strong>' + n + '</strong> ' +
+          (n === 1 ? 'beboer' : 'beboere') +
+          (isMail ? ' med mailadresse.' : ' med telefonnummer.');
+      }
+
       function sync() {
         var isMail = channel() === 'email';
-        if (subjectRow) subjectRow.classList.toggle('hidden-row', !isMail);
+        syncRecipients(isMail);
+        if (subjectRow) subjectRow.classList.toggle("hidden-row", !isMail);
         if (subject) subject.required = isMail;
         if (counter) counter.hidden = isMail;
         if (box) {
