@@ -17,6 +17,9 @@ require __DIR__ . '/includes/db.php';
 
 auth_start_session();
 
+/** En robot udfylder formularen på under et sekund; et menneske gør ikke. */
+const RESIDENT_MIN_SECONDS = 3;
+
 /** Indflytning må højst ligge et år tilbage. */
 define('RESIDENT_MOVED_MIN', date('Y-m-d', strtotime('-1 year')));
 
@@ -37,6 +40,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // "tak" uden at gemme noget, så afsenderen ikke kan regne fælden ud.
     if ($_POST['website'] ?? '') {
         $done = true;
+    }
+
+    // Tidsfælde: formularen kan ikke udfyldes meningsfuldt på under tre
+    // sekunder. I modsætning til honningkrukken svarer vi her med en fejl
+    // og ikke et stille "tak" — en hurtig beboer må ikke kunne miste sin
+    // tilmelding uden at opdage det.
+    $started = (int)($_SESSION['resident_form_started'] ?? 0);
+    if (!$done && $started > 0 && time() - $started < RESIDENT_MIN_SECONDS) {
+        $errors[] = 'Formularen blev sendt for hurtigt. Prøv at sende den igen.';
     }
 
     $last = $_SESSION['resident_last_post'] ?? 0;
@@ -108,6 +120,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $form = array_map(static fn() => '', $form);
     }
 }
+
+// Nulstilles ved hver visning — også når siden vises igen med fejl.
+$_SESSION['resident_form_started'] = time();
 
 $csrf = auth_csrf_token();
 $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
