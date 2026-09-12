@@ -86,7 +86,7 @@ $photos = $stmt->fetchAll();
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title>Medlemsfotos — Hesselbjerg Nord</title>
+<title>Medlemsfotos — Hesselbjerg Nord Grundejerforening</title>
 <link rel="icon" type="image/jpeg" href="favicon.jpg">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -328,6 +328,6 @@ $photos = $stmt->fetchAll();
     </div>
   </div>
 
-  <footer>&copy; 2026 Hesselbjerg Nord</footer>
+  <footer>&copy; 2026 Hesselbjerg Nord Grundejerforening</footer>
 </body>
 </html>

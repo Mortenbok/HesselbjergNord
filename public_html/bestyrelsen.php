@@ -21,8 +21,8 @@ $loggedIn = $user !== null;
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Bestyrelsen i Hesselbjerg Nord — hvem sidder i bestyrelsen og på hvilke poster.">
-<title>Bestyrelsen — Hesselbjerg Nord</title>
+<meta name="description" content="Bestyrelsen i Hesselbjerg Nord Grundejerforening — hvem sidder i bestyrelsen og på hvilke poster.">
+<title>Bestyrelsen — Hesselbjerg Nord Grundejerforening</title>
 <link rel="icon" type="image/jpeg" href="favicon.jpg">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -468,7 +468,7 @@ $loggedIn = $user !== null;
     <?php endif; ?>
   </div>
 
-  <footer>&copy; <?php echo date('Y'); ?> Hesselbjerg Nord</footer>
+  <footer>&copy; <?php echo date('Y'); ?> Hesselbjerg Nord Grundejerforening</footer>
 
   <?php if (!$loggedIn): ?>
   <script>

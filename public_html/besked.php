@@ -163,7 +163,7 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
 <meta name="robots" content="noindex, nofollow">
 <!-- Siden er endnu ikke i menuen. Fjern denne linje, når den tages i brug. -->
 <meta name="robots" content="noindex, nofollow">
-<title>Beskeder — Hesselbjerg Nord</title>
+<title>Beskeder — Hesselbjerg Nord Grundejerforening</title>
 <link rel="icon" type="image/jpeg" href="favicon.jpg">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -936,7 +936,7 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
       sync();
     })();
   </script>
-  <footer>&copy; 2026 Hesselbjerg Nord</footer>
+  <footer>&copy; 2026 Hesselbjerg Nord Grundejerforening</footer>
 
   <script>
     const loginModal = document.getElementById('loginModal');

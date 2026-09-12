@@ -3,13 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hesselbjerg Nord — Under opbygning</title>
+<title>Hesselbjerg Nord Grundejerforening</title>
+<meta name="description" content="Hesselbjerg Nord Grundejerforening på Sydlangeland — fredelig natur, Hesselbjerg Strand (Østersøbadet) og kort til Ristinge Strand og Ristinge Klint.">
 <link rel="icon" type="image/jpeg" href="favicon.jpg">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   html, body {
-    height: 100%;
+    min-height: 100%;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   }
 
@@ -17,6 +18,7 @@
     background: url('beach-bg.jpg') no-repeat center center fixed;
     background-size: cover;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
@@ -184,8 +186,9 @@
   .content {
     position: relative;
     z-index: 1;
-    padding: 40px 30px;
-    max-width: 600px;
+    padding: 110px 24px 40px;
+    max-width: 780px;
+    margin: 0 auto;
   }
 
   h1 {
@@ -214,9 +217,39 @@
     background: rgba(255,255,255,0.08);
   }
 
+
+  /* Teksten ligger oven på baggrundsbilledet, så den skal have sin egen
+     flade at stå på for at kunne læses. */
+  .intro {
+    margin-top: 34px;
+    padding: 28px clamp(20px, 4vw, 38px);
+    border-radius: 18px;
+    background: rgba(10, 18, 26, 0.62);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    backdrop-filter: blur(5px);
+    text-align: left;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.3);
+  }
+
+  .intro p {
+    font-size: clamp(0.98rem, 1.9vw, 1.08rem);
+    font-weight: 300;
+    line-height: 1.72;
+    color: rgba(255, 255, 255, 0.93);
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+  }
+
+  .intro p + p { margin-top: 16px; }
+
+  .intro p:last-child {
+    font-style: italic;
+    color: #f4d3a1;
+  }
+
   footer {
-    position: absolute;
-    bottom: 20px;
+    position: relative;
+    margin-top: auto;
+    padding: 24px 16px 28px;
     width: 100%;
     text-align: center;
     z-index: 1;
@@ -279,9 +312,34 @@
 
   <div class="content">
     <h1>Hesselbjerg Nord</h1>
-    <span class="badge">Under opbygning</span>
+    <span class="badge">Grundejerforening</span>
+
+    <div class="intro">
+      <p>
+        Hesselbjerg Nord ligger smukt på Sydlangeland, omgivet af fredelig
+        natur og tæt på nogle af øens bedste strande. Her er højt til himlen,
+        frisk havluft og gode muligheder for både afslapning og aktive
+        oplevelser.
+      </p>
+      <p>
+        Hesselbjerg Strand, også kaldet Østersøbadet, byder på fint sand,
+        klitter, roligt vand og en badebro. Stranden er børnevenlig og
+        velegnet til badning, SUP og vandsport. I sommerhalvåret kan man nyde
+        en is eller lidt at spise ved strandcaféen.
+      </p>
+      <p>
+        I nærheden ligger den brede Ristinge Strand og den imponerende
+        Ristinge Klint, hvorfra der er en fantastisk udsigt over havet mod
+        Ærø. Området indbyder til lange gåture, cykelture og hyggelige besøg
+        ved den lille Ristinge Havn.
+      </p>
+      <p>
+        Hesselbjerg Nord er det perfekte udgangspunkt for en ferie med ro,
+        nærvær og smukke naturoplevelser tæt på havet.
+      </p>
+    </div>
   </div>
-  <footer>&copy; 2026 Hesselbjerg Nord</footer>
+  <footer>&copy; 2026 Hesselbjerg Nord Grundejerforening</footer>
 
   <script>
     const loginModal = document.getElementById('loginModal');

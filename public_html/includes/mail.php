@@ -18,7 +18,7 @@ function mail_config(): array
 {
     return sms_config() + [
         'mail_from' => 'bestyrelsen@hesselbjergnord.dk',
-        'mail_from_name' => 'Grundejerforeningen Hesselbjerg Nord',
+        'mail_from_name' => 'Hesselbjerg Nord Grundejerforening',
         'smtp_host' => '',
         'smtp_port' => 587,
         'smtp_user' => '',
