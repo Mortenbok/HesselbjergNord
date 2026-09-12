@@ -397,14 +397,13 @@ $loggedIn = $user !== null;
       <a href="kontingent.html">Kontingent</a>
       <a href="aktiviteter.html">Aktiviteter</a>
       <a href="hjertestarter.html">Hjertestarter</a>
-      <a href="ny-beboer.php">Ny beboer</a>
+      <?php if (!$loggedIn): ?>
+        <a href="ny-beboer.php">Ny beboer</a>
+      <?php endif; ?>
       <?php if ($loggedIn): ?>
         <a href="medlemsfotos.php">Medlemsfotos</a>
         <a href="generalforsamling.php">Generalforsamling</a>
         <a href="regnskab.php">Regnskab</a>
-        <?php if (($user["role"] ?? "") === "bestyrelse"): ?>
-          <a href="beboere.php">Beboere</a>
-        <?php endif; ?>
       <?php endif; ?>
     </div>
     <div class="nav-account">

@@ -253,13 +253,9 @@ $photos = $stmt->fetchAll();
       <a href="kontingent.html">Kontingent</a>
       <a href="aktiviteter.html">Aktiviteter</a>
       <a href="hjertestarter.html">Hjertestarter</a>
-      <a href="ny-beboer.php">Ny beboer</a>
       <a href="medlemsfotos.php" class="active">Medlemsfotos</a>
       <a href="generalforsamling.php">Generalforsamling</a>
       <a href="regnskab.php">Regnskab</a>
-      <?php if (($user["role"] ?? "") === "bestyrelse"): ?>
-        <a href="beboere.php">Beboere</a>
-      <?php endif; ?>
     </div>
     <div class="nav-account">
       <span class="nav-user">Logget ind som <?php echo htmlspecialchars($user['display_name'], ENT_QUOTES, 'UTF-8'); ?></span>

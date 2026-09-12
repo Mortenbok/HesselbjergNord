@@ -44,7 +44,7 @@ const BOARD_MEMBERS = [
         'initials' => 'JH',
         'photo' => '',
         'phone' => '+4527136912',
-        'mail' => 'kasser@hesselbjergnord.dk',
+        'mail' => 'kasserer@hesselbjergnord.dk',
         'address' => 'Tjørnevænget 2',
     ],
     [

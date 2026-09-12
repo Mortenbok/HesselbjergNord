@@ -531,13 +531,9 @@ function documents_render_page(PDO $pdo, string $category, array $page, array $u
       <a href="kontingent.html">Kontingent</a>
       <a href="aktiviteter.html">Aktiviteter</a>
       <a href="hjertestarter.html">Hjertestarter</a>
-      <a href="ny-beboer.php">Ny beboer</a>
       <a href="medlemsfotos.php"<?php echo $page['nav'] === 'medlemsfotos.php' ? ' class="active"' : ''; ?>>Medlemsfotos</a>
       <a href="generalforsamling.php"<?php echo $page['nav'] === 'generalforsamling.php' ? ' class="active"' : ''; ?>>Generalforsamling</a>
       <a href="regnskab.php"<?php echo $page['nav'] === 'regnskab.php' ? ' class="active"' : ''; ?>>Regnskab</a>
-      <?php if (($user['role'] ?? '') === 'bestyrelse'): ?>
-        <a href="beboere.php">Beboere</a>
-      <?php endif; ?>
     </div>
     <div class="nav-account">
       <span class="nav-user">Logget ind som <?php echo $e($user['display_name']); ?></span>

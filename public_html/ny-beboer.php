@@ -611,11 +611,10 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
       <a href="betalingsservice.html">Betalingsservice</a>
       <a href="aktiviteter.html">Aktiviteter</a>
       <a href="hjertestarter.html">Hjertestarter</a>
-      <a href="ny-beboer.php" class="active">Ny beboer</a>
+      <a href="ny-beboer.php" class="active" data-guest-only>Ny beboer</a>
       <a href="medlemsfotos.php" data-members-only hidden>Medlemsfotos</a>
       <a href="generalforsamling.php" data-members-only hidden>Generalforsamling</a>
       <a href="regnskab.php" data-members-only hidden>Regnskab</a>
-      <a href="beboere.php" data-board-only hidden>Beboere</a>
     </div>
     <div class="nav-account">
       <span class="nav-user" data-user-name hidden></span>
@@ -732,7 +731,7 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
           <p class="privacy">
             Oplysningerne bruges kun af bestyrelsen og videregives ikke.
             De bliver automatisk slettet ved salg og fraflytning ved at skrive til
-            <a href="mailto:kasser@hesselbjergnord.dk">kasser@hesselbjergnord.dk</a>.
+            <a href="mailto:kasserer@hesselbjergnord.dk">kasserer@hesselbjergnord.dk</a>.
           </p>
 
           <button type="submit" class="submit-btn">Send tilmelding</button>
@@ -794,9 +793,10 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
           return;
         }
 
-        if (status.role === 'bestyrelse') {
-          document.querySelectorAll('[data-board-only]').forEach((el) => { el.hidden = false; });
-        }
+
+        // Tilmeldingen er til nye beboere — den skal ikke fylde i menuen,
+        // når man allerede er logget ind.
+        document.querySelectorAll('[data-guest-only]').forEach((el) => { el.hidden = true; });
 
         document.querySelectorAll('[data-members-only], [data-logout]').forEach((el) => {
           el.hidden = false;
