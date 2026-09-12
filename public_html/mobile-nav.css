@@ -1,0 +1,109 @@
+/* ---------------------------------------------------------------------------
+ * Mobilmenu — fælles for alle sider.
+ *
+ * Menuknappen indsættes af mobile-nav.js, som også sætter klassen
+ * .has-toggle på <nav>. Derfor gælder reglerne herunder KUN, når JavaScript
+ * er slået til; uden JavaScript står menuen som før og ombrydes i flere rækker.
+ *
+ * Filen indlæses EFTER sidens egen <style>, så den vinder over de fælles
+ * nav-regler, hver side har sin egen kopi af.
+ * ------------------------------------------------------------------------- */
+
+/* Knappen findes ikke på store skærme. */
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 44px;              /* 44px er den mindste behagelige trykflade. */
+  height: 44px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.10);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.nav-toggle span {
+  display: block;
+  height: 2px;
+  width: 100%;
+  background: #fff;
+  border-radius: 2px;
+  transition: transform 0.25s ease, opacity 0.2s ease;
+}
+
+/* Åben menu: de tre streger bliver til et kryds. */
+nav.open .nav-toggle span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+nav.open .nav-toggle span:nth-child(2) { opacity: 0; }
+nav.open .nav-toggle span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+@media (max-width: 760px) {
+  nav.has-toggle {
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .nav-toggle { display: flex; }
+
+  /* Linklisten foldes sammen og lægger sig under bjælken, når den åbnes. */
+  nav.has-toggle .nav-links {
+    display: none;
+    order: 3;
+    width: 100%;
+    flex: 1 0 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    margin-top: 6px;
+    padding: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 12px;
+    /* Menuen ligger oven på baggrundsbilledet, så den skal have sin egen
+       flade at stå på for at kunne læses. */
+    background: rgba(12, 18, 26, 0.94);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+    max-height: min(70vh, 460px);
+    overflow-y: auto;
+  }
+
+  nav.has-toggle.open .nav-links { display: flex; }
+
+  nav.has-toggle .nav-links a {
+    display: block;
+    padding: 13px 14px;       /* Høje rækker, så de er nemme at ramme. */
+    border-radius: 8px;
+    font-size: 1rem;
+    text-align: left;
+    white-space: normal;      /* Lange ord som "Generalforsamling" må brydes. */
+  }
+
+  nav.has-toggle .nav-links a:hover,
+  nav.has-toggle .nav-links a:focus-visible {
+    background: rgba(255, 255, 255, 0.14);
+  }
+
+  /* Login/Log ud bliver i bjælken, så der altid er én vej ind. */
+  nav.has-toggle .nav-account {
+    order: 2;
+    margin-right: 0;
+    gap: 8px;
+  }
+
+  nav.has-toggle .nav-user {
+    max-width: 40vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/* Meget smalle telefoner: skjul navnet, så knapperne kan være der. */
+@media (max-width: 400px) {
+  nav.has-toggle .nav-user { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-toggle span { transition: none; }
+}

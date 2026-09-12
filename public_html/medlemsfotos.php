@@ -241,6 +241,8 @@ $photos = $stmt->fetchAll();
     color: rgba(255,255,255,0.8);
   }
 </style>
+<link rel="stylesheet" href="mobile-nav.css">
+<script src="mobile-nav.js" defer></script>
 </head>
 <body>
   <nav>

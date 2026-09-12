@@ -518,6 +518,8 @@ function documents_render_page(PDO $pdo, string $category, array $page, array $u
     .field { width: 100%; }
   }
 </style>
+<link rel="stylesheet" href="mobile-nav.css">
+<script src="mobile-nav.js" defer></script>
 </head>
 <body>
   <nav>

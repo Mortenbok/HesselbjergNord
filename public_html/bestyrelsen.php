@@ -384,6 +384,8 @@ $loggedIn = $user !== null;
     .member-contact dt { margin-top: 8px; }
   }
 </style>
+<link rel="stylesheet" href="mobile-nav.css">
+<script src="mobile-nav.js" defer></script>
 </head>
 <body>
   <nav>

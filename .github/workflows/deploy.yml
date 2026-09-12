@@ -1,0 +1,46 @@
+# Uploader public_html/ til webhotellet, så den online version svarer til den,
+# du ser på localhost.
+#
+# FØR FØRSTE KØRSEL — læg tre secrets op i GitHub
+# (Settings → Secrets and variables → Actions → New repository secret):
+#
+#   FTP_SERVER     fx ftp.simply.com
+#   FTP_USERNAME   FTP-brugeren fra Simply.com kontrolpanelet
+#   FTP_PASSWORD   adgangskoden til den bruger
+#
+# Kørslen startes i hånden under fanen "Actions" → "Deploy til hesselbjergnord.dk"
+# → "Run workflow". Den kører med vilje IKKE automatisk ved hver push.
+
+name: Deploy til hesselbjergnord.dk
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Hent koden
+        uses: actions/checkout@v4
+
+      - name: Upload public_html til serveren
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          local-dir: ./public_html/
+          server-dir: /public_html/
+
+          # Slet ALDRIG filer på serveren, som ikke ligger i git.
+          # Medlemmernes billeder i uploads/ findes kun på serveren, og et
+          # "clean slate" ville slette dem for altid.
+          dangerous-clean-slate: false
+
+          exclude: |
+            **/.git*
+            **/.git*/**
+            uploads/**
+            bestyrelse/**
