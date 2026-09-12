@@ -80,3 +80,29 @@ CREATE TABLE IF NOT EXISTS documents (
 --
 -- INSERT INTO users (username, display_name, password_hash, role)
 -- VALUES ('bestyrelsen', 'Bestyrelsen', '$2y$10$INDSÆT_HASH_HER', 'bestyrelse');
+
+-- ---------------------------------------------------------------------------
+-- residents — tilmeldinger fra "Ny beboer"-formularen
+-- ---------------------------------------------------------------------------
+-- Formularen er offentlig, så alle kan sende oplysninger ind. Selve listen
+-- kan kun ses af bestyrelsen på beboere.php.
+--
+-- Bemærk: her ligger personoplysninger om navngivne mennesker. Slet rækker,
+-- når de er skrevet ind i medlemslisten — se GDPR-noten i beboere.php.
+CREATE TABLE IF NOT EXISTS residents (
+  id INT NOT NULL AUTO_INCREMENT,
+  name VARCHAR(255) NOT NULL,
+  address VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  phone VARCHAR(32) NOT NULL DEFAULT '',
+  moved_in DATE NULL DEFAULT NULL,
+  note TEXT NULL DEFAULT NULL,
+  consent TINYINT(1) NOT NULL DEFAULT 0,
+  status ENUM('ny', 'behandlet') NOT NULL DEFAULT 'ny',
+  handled_by INT NULL DEFAULT NULL,
+  handled_at DATETIME NULL DEFAULT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_residents_status (status, created_at),
+  KEY idx_residents_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

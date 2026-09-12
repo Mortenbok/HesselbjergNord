@@ -1,12 +1,74 @@
+<?php
+/**
+ * Beboere — tilmeldinger fra "Ny beboer"-formularen.
+ *
+ * Kun bestyrelsen har adgang. Siden viser personoplysninger om navngivne
+ * mennesker, så den må aldrig kunne ses uden login.
+ *
+ * GDPR: Slet rækken, når beboeren er skrevet ind i medlemslisten. Oplysninger
+ * skal ikke ligge her længere, end foreningen har brug for dem.
+ */
+
+require __DIR__ . '/includes/auth.php';
+require __DIR__ . '/includes/db.php';
+
+auth_require('index.html');
+
+$user = auth_user();
+
+// Medlemmer må ikke se de andres oplysninger — kun bestyrelsen.
+if (($user['role'] ?? '') !== 'bestyrelse') {
+    http_response_code(403);
+    $denied = true;
+} else {
+    $denied = false;
+}
+
+$message = null;
+
+if (!$denied && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!auth_csrf_valid($_POST['csrf_token'] ?? null)) {
+        $message = ['bad', 'Handlingen var udløbet. Prøv igen.'];
+    } else {
+        $id = (int)($_POST['id'] ?? 0);
+        $action = (string)($_POST['action'] ?? '');
+
+        if ($action === 'handled' && $id > 0) {
+            $pdo->prepare(
+                'UPDATE residents
+                    SET status = :s, handled_by = :u, handled_at = NOW()
+                  WHERE id = :id'
+            )->execute([':s' => 'behandlet', ':u' => $user['id'], ':id' => $id]);
+            $message = ['ok', 'Tilmeldingen er markeret som behandlet.'];
+        } elseif ($action === 'delete' && $id > 0) {
+            $pdo->prepare('DELETE FROM residents WHERE id = :id')->execute([':id' => $id]);
+            $message = ['ok', 'Tilmeldingen er slettet.'];
+        }
+    }
+}
+
+$rows = [];
+if (!$denied) {
+    $rows = $pdo->query(
+        "SELECT r.*, u.display_name AS handler
+           FROM residents r
+      LEFT JOIN users u ON u.id = r.handled_by
+       ORDER BY (r.status = 'ny') DESC, r.created_at DESC"
+    )->fetchAll();
+}
+
+$csrf = auth_csrf_token();
+$e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
+?>
 <!DOCTYPE html>
 <html lang="da">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Tilmeld kontingentet til Betalingsservice i Hesselbjerg Nord.">
+<meta name="robots" content="noindex, nofollow">
 <!-- Siden er endnu ikke i menuen. Fjern denne linje, når den tages i brug. -->
 <meta name="robots" content="noindex, nofollow">
-<title>Betalingsservice — Hesselbjerg Nord</title>
+<title>Beboere — Hesselbjerg Nord</title>
 <link rel="icon" type="image/jpeg" href="favicon.jpg">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -380,6 +442,78 @@
       padding: 16px 20px;
     }
   }
+  /* ---- Beboere: liste for bestyrelsen ----------------------------------- */
+  .res-list { display: grid; gap: 14px; }
+
+  .res {
+    padding: 18px;
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 14px;
+    background: rgba(14, 22, 27, 0.72);
+  }
+
+  .res.is-new { border-color: rgba(120, 190, 255, 0.45); }
+
+  .res header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .res h2 { font-size: 1.15rem; }
+
+  .tag {
+    flex: none;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .tag.ny { background: rgba(90,150,220,0.35); color: #d7ecff; }
+  .tag.behandlet { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.75); }
+
+  .res dl {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 6px 14px;
+    font-size: 0.94rem;
+  }
+
+  .res dt { color: rgba(255,255,255,0.62); }
+  .res dd.note { white-space: normal; line-height: 1.55; }
+
+  .res-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+
+  .res-actions button {
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .res-actions button.danger {
+    border-color: rgba(220,100,100,0.5);
+    background: rgba(130,40,40,0.35);
+  }
+
+  .note-gdpr { font-size: 0.9rem; color: rgba(255,255,255,0.8); }
+
+  .panel.ok { border-color: rgba(80,190,120,0.5); background: rgba(30,90,50,0.35); }
+  .panel.bad { border-color: rgba(220,90,90,0.5); background: rgba(120,35,35,0.35); }
+
+  /* Telefon: etiket over værdi, så lange mails ikke bliver klemt. */
+  @media (max-width: 560px) {
+    .res dl { grid-template-columns: 1fr; gap: 2px; }
+    .res dt { margin-top: 8px; font-size: 0.8rem; }
+    .res-actions form, .res-actions button { width: 100%; }
+  }
 </style>
 <link rel="stylesheet" href="mobile-nav.css">
 <script src="mobile-nav.js" defer></script>
@@ -391,7 +525,7 @@
       <a href="vedtaegter.html">Vedtægter</a>
       <a href="bestyrelsen.php">Bestyrelsen</a>
       <a href="kontingent.html">Kontingent</a>
-      <a href="betalingsservice.html" class="active">Betalingsservice</a>
+      <a href="betalingsservice.html">Betalingsservice</a>
       <a href="aktiviteter.html">Aktiviteter</a>
       <a href="hjertestarter.html">Hjertestarter</a>
       <a href="ny-beboer.php">Ny beboer</a>
@@ -432,113 +566,84 @@
         </div>
       </form>
     </div>
-  </div>
 
   <div class="container">
-    <h1>Betalingsservice</h1>
-    <p class="lead">
-      Du kan tilmelde kontingentet til Betalingsservice, så det bliver trukket
-      automatisk fra din konto. Så skal du ikke huske at betale hvert år, og
-      foreningen slipper for at rykke.
-    </p>
+    <h1>Beboere</h1>
 
-    <!-- =====================================================================
-         TIL BESTYRELSEN — SLET DENNE BOKS, NÅR LINKET ER SAT IND
-         ===================================================================== -->
-    <div class="todo">
-      <strong>Tilmeldingslinket mangler.</strong>
-      Knappen nedenfor virker først, når foreningens eget BS-tilmeldingslink er
-      sat ind. Linket kan <em>ikke</em> skrives i hånden — det indeholder en
-      kontrolkode (<code>pbscheck</code>), som Betalingsservice danner ud fra
-      foreningens kreditornummer.
-      <ol>
-        <li>Foreningen skal have en Betalingsservice-kreditoraftale. Den oprettes gennem banken.</li>
-        <li>Log på Mastercard Connect Nordics med MitID, og gå til BS Customer Portal → Tilmeldingslink.</li>
-        <li>Vælg linktype, udfyld kreditoroplysninger, og dan linket.</li>
-        <li>Erstat <code>INDSAET_TILMELDINGSLINK_HER</code> i <code>betalingsservice.html</code> med det dannede link, og slet denne boks.</li>
-      </ol>
-    </div>
+    <?php if ($denied): ?>
+      <div class="panel bad">
+        <h2>Ingen adgang</h2>
+        <p>Kun bestyrelsen kan se tilmeldingerne fra nye beboere.</p>
+      </div>
+    <?php else: ?>
+      <p class="lead">
+        Tilmeldinger fra <a href="ny-beboer.php">Ny beboer</a>. Nye står øverst.
+      </p>
 
-    <div class="panel">
-      <h2>Sådan tilmelder du dig</h2>
-      <ol class="steps">
-        <li>
-          <div>
-            <strong>Find oplysningerne frem</strong>
-            <span>Du skal bruge MitID, dit reg.- og kontonummer samt dit medlemsnummer.</span>
-          </div>
-        </li>
-        <li>
-          <div>
-            <strong>Klik på knappen herunder</strong>
-            <span>Formularen åbner i et nyt vindue hos Betalingsservice. Den er ikke en del af foreningens hjemmeside.</span>
-          </div>
-        </li>
-        <li>
-          <div>
-            <strong>Udfyld og godkend med MitID</strong>
-            <span>Du bekræfter aftalen med MitID, præcis som når du godkender andre betalinger.</span>
-          </div>
-        </li>
-        <li>
-          <div>
-            <strong>Se aftalen på din næste betalingsoversigt</strong>
-            <span>Tilmeldingen bekræftes på oversigten fra din bank. Kontakt kassereren, hvis den ikke dukker op.</span>
-          </div>
-        </li>
-      </ol>
-    </div>
+      <?php if ($message !== null): ?>
+        <div class="panel <?php echo $e($message[0]); ?>" role="status"><?php echo $e($message[1]); ?></div>
+      <?php endif; ?>
 
-    <div class="panel signup">
-      <!-- ===== TILMELDINGSLINK — INDSÆT FORENINGENS EGET LINK HER ========= -->
-      <a class="signup-btn"
-         href="INDSAET_TILMELDINGSLINK_HER"
-         target="_blank" rel="noopener">Tilmeld Betalingsservice</a>
-      <!-- ================================================================== -->
+      <div class="panel note-gdpr">
+        <strong>Husk:</strong> slet en tilmelding, når beboeren er skrevet ind i
+        medlemslisten. Oplysningerne skal ikke ligge her længere end nødvendigt.
+      </div>
 
-      <p class="signup-note">Åbner Betalingsservice i et nyt vindue. Du godkender med MitID.</p>
-    </div>
+      <?php if ($rows === []): ?>
+        <div class="panel"><p>Der er endnu ingen tilmeldinger.</p></div>
+      <?php else: ?>
+        <div class="res-list">
+          <?php foreach ($rows as $r): ?>
+            <article class="res<?php echo $r['status'] === 'ny' ? ' is-new' : ''; ?>">
+              <header>
+                <h2><?php echo $e($r['name']); ?></h2>
+                <span class="tag <?php echo $e($r['status']); ?>">
+                  <?php echo $r['status'] === 'ny' ? 'Ny' : 'Behandlet'; ?>
+                </span>
+              </header>
 
-    <div class="panel">
-      <h2>Det skal du have klar</h2>
-      <ul class="checklist">
-        <li>
-          <div>
-            <strong>MitID</strong>
-            <span>Til at godkende aftalen.</span>
-          </div>
-        </li>
-        <li>
-          <div>
-            <strong>Reg.nr. og kontonummer</strong>
-            <span>På den konto, kontingentet skal trækkes fra.</span>
-          </div>
-        </li>
-        <li>
-          <div>
-            <strong>Dit medlemsnummer</strong>
-            <span>Står på opkrævningen fra foreningen. Er du i tvivl, så spørg kassereren.</span>
-          </div>
-        </li>
-      </ul>
-    </div>
+              <dl>
+                <dt>Adresse</dt><dd><?php echo $e($r['address']); ?></dd>
+                <dt>Mail</dt>
+                <dd><a href="mailto:<?php echo $e($r['email']); ?>"><?php echo $e($r['email']); ?></a></dd>
+                <dt>Telefon</dt>
+                <dd>
+                  <?php if ($r['phone'] !== ''): ?>
+                    <a href="tel:<?php echo $e(preg_replace('/\s+/', '', $r['phone'])); ?>"><?php echo $e($r['phone']); ?></a>
+                  <?php else: ?>&mdash;<?php endif; ?>
+                </dd>
+                <dt>Indflyttet</dt><dd><?php echo $r['moved_in'] ? $e($r['moved_in']) : '&mdash;'; ?></dd>
+                <dt>Modtaget</dt><dd><?php echo $e($r['created_at']); ?></dd>
+                <?php if (!empty($r['note'])): ?>
+                  <dt>Bemærkning</dt><dd class="note"><?php echo nl2br($e($r['note'])); ?></dd>
+                <?php endif; ?>
+                <?php if ($r['status'] === 'behandlet' && $r['handler']): ?>
+                  <dt>Behandlet af</dt><dd><?php echo $e($r['handler']); ?> <?php echo $e($r['handled_at']); ?></dd>
+                <?php endif; ?>
+              </dl>
 
-    <div class="panel">
-      <h2>Spørgsmål og svar</h2>
-      <dl class="faq">
-        <dt>Binder jeg mig til noget?</dt>
-        <dd>Nej. En Betalingsservice-aftale kan altid afmeldes igen — enten i din netbank eller på din betalingsoversigt.</dd>
-
-        <dt>Hvad hvis kontingentet ændrer sig?</dt>
-        <dd>Beløbet fremgår af betalingsoversigten, inden det trækkes. Du kan afvise en enkelt betaling, hvis noget ser forkert ud.</dd>
-
-        <dt>Kan jeg stadig betale manuelt?</dt>
-        <dd>Ja. Tilmelding til Betalingsservice er frivillig — du kan fortsat betale ved bankoverførsel.</dd>
-
-        <dt>Indtaster jeg mine kontooplysninger på foreningens hjemmeside?</dt>
-        <dd>Nej. Knappen sender dig videre til Betalingsservice, og alle oplysninger indtastes dér. Foreningen ser hverken dit kontonummer eller dit MitID.</dd>
-      </dl>
-    </div>
+              <div class="res-actions">
+                <?php if ($r['status'] === 'ny'): ?>
+                  <form method="post">
+                    <input type="hidden" name="csrf_token" value="<?php echo $e($csrf); ?>">
+                    <input type="hidden" name="id" value="<?php echo (int)$r['id']; ?>">
+                    <input type="hidden" name="action" value="handled">
+                    <button type="submit">Markér som behandlet</button>
+                  </form>
+                <?php endif; ?>
+                <form method="post" onsubmit="return confirm('Slet tilmeldingen fra <?php echo $e($r['name']); ?>? Det kan ikke fortrydes.');">
+                  <input type="hidden" name="csrf_token" value="<?php echo $e($csrf); ?>">
+                  <input type="hidden" name="id" value="<?php echo (int)$r['id']; ?>">
+                  <input type="hidden" name="action" value="delete">
+                  <button type="submit" class="danger">Slet</button>
+                </form>
+              </div>
+            </article>
+          <?php endforeach; ?>
+        </div>
+      <?php endif; ?>
+    <?php endif; ?>
+  </div>
   </div>
 
   <footer>&copy; 2026 Hesselbjerg Nord</footer>
@@ -666,5 +771,3 @@
       }
     }
   </script>
-</body>
-</html>

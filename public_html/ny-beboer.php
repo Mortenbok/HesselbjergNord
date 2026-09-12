@@ -1,12 +1,126 @@
+<?php
+/**
+ * Ny beboer — offentlig tilmeldingsformular.
+ *
+ * Formularen kan udfyldes af alle; listen kan kun ses af bestyrelsen på
+ * beboere.php. Der gemmes personoplysninger om navngivne mennesker, så
+ * felterne holdes på det, foreningen faktisk skal bruge.
+ *
+ * Beskyttelse mod misbrug:
+ *   - CSRF-token, samme mekanisme som resten af siden.
+ *   - Honningkrukke: et skjult felt, som kun robotter udfylder.
+ *   - Karantæne: samme session må sende én gang i minuttet.
+ */
+
+require __DIR__ . '/includes/auth.php';
+require __DIR__ . '/includes/db.php';
+
+auth_start_session();
+
+/** Indflytning må højst ligge et år tilbage. */
+define('RESIDENT_MOVED_MIN', date('Y-m-d', strtotime('-1 year')));
+
+$errors = [];
+$done = false;
+$form = ['name' => '', 'address' => '', 'email' => '', 'phone' => '', 'moved_in' => '', 'note' => ''];
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    foreach ($form as $key => $_) {
+        $form[$key] = trim((string)($_POST[$key] ?? ''));
+    }
+
+    if (!auth_csrf_valid($_POST['csrf_token'] ?? null)) {
+        $errors[] = 'Formularen var udløbet. Prøv at sende den igen.';
+    }
+
+    // Robotter udfylder alt, også det, et menneske aldrig ser. Vi svarer
+    // "tak" uden at gemme noget, så afsenderen ikke kan regne fælden ud.
+    if ($_POST['website'] ?? '') {
+        $done = true;
+    }
+
+    $last = $_SESSION['resident_last_post'] ?? 0;
+    if (!$done && time() - $last < 60) {
+        $errors[] = 'Du har lige sendt en tilmelding. Vent et minut, før du sender igen.';
+    }
+
+    if (!$done && $errors === []) {
+        // Fulde navn: mindst to led på hver mindst to bogstaver, så
+        // forkortelser som "M. Bo" eller "Jens K." bliver afvist.
+        $parts = preg_split('/\s+/', $form['name'], -1, PREG_SPLIT_NO_EMPTY);
+        $abbreviated = false;
+        foreach ($parts as $part) {
+            if (mb_strlen(rtrim($part, '.')) < 2 || str_ends_with($part, '.')) {
+                $abbreviated = true;
+            }
+        }
+        if (count($parts) < 2) {
+            $errors[] = 'Skriv både fornavn og efternavn.';
+        } elseif ($abbreviated) {
+            $errors[] = 'Skriv navnet helt ud — undlad forkortelser som "M." eller "Jens K.".';
+        }
+
+        if (mb_strlen($form['address']) < 3) {
+            $errors[] = 'Skriv din adresse i Hesselbjerg Nord.';
+        }
+        if (!filter_var($form['email'], FILTER_VALIDATE_EMAIL)) {
+            $errors[] = 'Skriv en gyldig mailadresse.';
+        }
+
+        // Danske numre er otte cifre. Mellemrum må gerne stå i feltet.
+        $digits = preg_replace('/\s+/', '', $form['phone']);
+        if ($form['phone'] !== '' && !preg_match('/^\d{8}$/', $digits)) {
+            $errors[] = 'Telefonnummeret skal være 8 cifre.';
+        }
+
+        if ($form['moved_in'] !== '') {
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $form['moved_in'])) {
+                $errors[] = 'Indflytningsdatoen ser ikke rigtig ud.';
+            } elseif ($form['moved_in'] < RESIDENT_MOVED_MIN) {
+                $errors[] = 'Indflytningsdatoen må højst ligge et år tilbage.';
+            }
+        }
+
+        if (mb_strlen($form['note']) > 2000) {
+            $errors[] = 'Bemærkningen må højst fylde 2000 tegn.';
+        }
+        if (empty($_POST['consent'])) {
+            $errors[] = 'Du skal give samtykke, før vi må gemme dine oplysninger.';
+        }
+    }
+
+    if (!$done && $errors === []) {
+        $stmt = $pdo->prepare(
+            'INSERT INTO residents (name, address, email, phone, moved_in, note, consent)
+             VALUES (:name, :address, :email, :phone, :moved_in, :note, 1)'
+        );
+        $stmt->execute([
+            ':name' => $form['name'],
+            ':address' => $form['address'],
+            ':email' => $form['email'],
+            ':phone' => $form['phone'],
+            ':moved_in' => $form['moved_in'] !== '' ? $form['moved_in'] : null,
+            ':note' => $form['note'] !== '' ? $form['note'] : null,
+        ]);
+
+        $_SESSION['resident_last_post'] = time();
+        $done = true;
+        $form = array_map(static fn() => '', $form);
+    }
+}
+
+$csrf = auth_csrf_token();
+$e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
+?>
 <!DOCTYPE html>
 <html lang="da">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Tilmeld kontingentet til Betalingsservice i Hesselbjerg Nord.">
+<meta name="description" content="Er du flyttet til Hesselbjerg Nord? Tilmeld dig hos grundejerforeningen her.">
 <!-- Siden er endnu ikke i menuen. Fjern denne linje, når den tages i brug. -->
 <meta name="robots" content="noindex, nofollow">
-<title>Betalingsservice — Hesselbjerg Nord</title>
+<title>Ny beboer — Hesselbjerg Nord</title>
 <link rel="icon" type="image/jpeg" href="favicon.jpg">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -380,6 +494,94 @@
       padding: 16px 20px;
     }
   }
+  /* ---- Ny beboer: formular ---------------------------------------------- */
+  .signup-form { display: flex; flex-direction: column; }
+
+  .signup-form label {
+    margin: 14px 0 6px;
+    font-size: 0.92rem;
+    color: rgba(255,255,255,0.9);
+  }
+
+  .signup-form input[type="text"],
+  .signup-form input[type="email"],
+  .signup-form input[type="tel"],
+  .signup-form input[type="date"],
+  .signup-form textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.22);
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    font: inherit;
+    /* 16px forhindrer, at iPhone zoomer ind, når feltet får fokus. */
+    font-size: 16px;
+  }
+
+  .signup-form textarea { resize: vertical; min-height: 96px; }
+
+  .signup-form input:focus-visible,
+  .signup-form textarea:focus-visible {
+    outline: 2px solid rgba(255,255,255,0.7);
+    outline-offset: 1px;
+  }
+
+  .req { color: #ffc9a8; }
+
+  .consent {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 18px;
+    font-size: 0.92rem;
+    line-height: 1.5;
+  }
+
+  .consent input { width: 20px; height: 20px; margin-top: 2px; flex: none; }
+
+  .privacy {
+    margin-top: 12px;
+    font-size: 0.92rem;
+    color: rgba(255,255,255,0.9);
+    line-height: 1.55;
+  }
+
+  /* Browserens standardblå kan ikke ses på den mørke flade, så links
+     arver tekstfarven og markeres med en understregning i stedet. */
+  .container a,
+  .privacy a,
+  .consent a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .submit-btn {
+    margin-top: 20px;
+    align-self: flex-start;
+    padding: 13px 26px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.45);
+    background: rgba(255,255,255,0.14);
+    color: #fff;
+    font: inherit;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+
+  .submit-btn:hover, .submit-btn:focus-visible { background: rgba(255,255,255,0.24); }
+
+  .panel.ok { border-color: rgba(80,190,120,0.5); background: rgba(30,90,50,0.35); }
+  .panel.bad { border-color: rgba(220,90,90,0.5); background: rgba(120,35,35,0.35); }
+  .panel.bad ul { margin: 8px 0 0 18px; }
+
+  /* Honningkrukken må ikke kunne ses eller nås med tastatur. */
+  .hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+  @media (max-width: 560px) {
+    .submit-btn { align-self: stretch; text-align: center; }
+  }
 </style>
 <link rel="stylesheet" href="mobile-nav.css">
 <script src="mobile-nav.js" defer></script>
@@ -391,10 +593,10 @@
       <a href="vedtaegter.html">Vedtægter</a>
       <a href="bestyrelsen.php">Bestyrelsen</a>
       <a href="kontingent.html">Kontingent</a>
-      <a href="betalingsservice.html" class="active">Betalingsservice</a>
+      <a href="betalingsservice.html">Betalingsservice</a>
       <a href="aktiviteter.html">Aktiviteter</a>
       <a href="hjertestarter.html">Hjertestarter</a>
-      <a href="ny-beboer.php">Ny beboer</a>
+      <a href="ny-beboer.php" class="active">Ny beboer</a>
       <a href="medlemsfotos.php" data-members-only hidden>Medlemsfotos</a>
       <a href="generalforsamling.php" data-members-only hidden>Generalforsamling</a>
       <a href="regnskab.php" data-members-only hidden>Regnskab</a>
@@ -435,110 +637,93 @@
   </div>
 
   <div class="container">
-    <h1>Betalingsservice</h1>
+    <h1>Ny beboer</h1>
     <p class="lead">
-      Du kan tilmelde kontingentet til Betalingsservice, så det bliver trukket
-      automatisk fra din konto. Så skal du ikke huske at betale hvert år, og
-      foreningen slipper for at rykke.
+      Velkommen til Hesselbjerg Nord. Udfyld formularen, så ved bestyrelsen,
+      hvem der er flyttet ind, og du får besked om generalforsamling,
+      kontingent og arrangementer.
     </p>
 
-    <!-- =====================================================================
-         TIL BESTYRELSEN — SLET DENNE BOKS, NÅR LINKET ER SAT IND
-         ===================================================================== -->
-    <div class="todo">
-      <strong>Tilmeldingslinket mangler.</strong>
-      Knappen nedenfor virker først, når foreningens eget BS-tilmeldingslink er
-      sat ind. Linket kan <em>ikke</em> skrives i hånden — det indeholder en
-      kontrolkode (<code>pbscheck</code>), som Betalingsservice danner ud fra
-      foreningens kreditornummer.
-      <ol>
-        <li>Foreningen skal have en Betalingsservice-kreditoraftale. Den oprettes gennem banken.</li>
-        <li>Log på Mastercard Connect Nordics med MitID, og gå til BS Customer Portal → Tilmeldingslink.</li>
-        <li>Vælg linktype, udfyld kreditoroplysninger, og dan linket.</li>
-        <li>Erstat <code>INDSAET_TILMELDINGSLINK_HER</code> i <code>betalingsservice.html</code> med det dannede link, og slet denne boks.</li>
-      </ol>
-    </div>
+    <?php if ($done): ?>
+      <div class="panel ok" role="status">
+        <h2>Tak for din tilmelding</h2>
+        <p>
+          Bestyrelsen har modtaget dine oplysninger og kontakter dig, hvis der
+          mangler noget. Du er velkommen til at skrive til
+          <a href="mailto:bestyrelsen@hesselbjergnord.dk">bestyrelsen@hesselbjergnord.dk</a>.
+        </p>
+      </div>
+    <?php else: ?>
 
-    <div class="panel">
-      <h2>Sådan tilmelder du dig</h2>
-      <ol class="steps">
-        <li>
-          <div>
-            <strong>Find oplysningerne frem</strong>
-            <span>Du skal bruge MitID, dit reg.- og kontonummer samt dit medlemsnummer.</span>
+      <?php if ($errors !== []): ?>
+        <div class="panel bad" role="alert">
+          <strong>Tilmeldingen blev ikke sendt:</strong>
+          <ul>
+            <?php foreach ($errors as $msg): ?>
+              <li><?php echo $e($msg); ?></li>
+            <?php endforeach; ?>
+          </ul>
+        </div>
+      <?php endif; ?>
+
+      <div class="panel">
+        <form method="post" class="signup-form" autocomplete="on">
+          <input type="hidden" name="csrf_token" value="<?php echo $e($csrf); ?>">
+
+          <!-- Honningkrukke: skjult for mennesker, udfyldes kun af robotter. -->
+          <div class="hp" aria-hidden="true">
+            <label for="website">Lad dette felt stå tomt</label>
+            <input id="website" type="text" name="website" tabindex="-1" autocomplete="off">
           </div>
-        </li>
-        <li>
-          <div>
-            <strong>Klik på knappen herunder</strong>
-            <span>Formularen åbner i et nyt vindue hos Betalingsservice. Den er ikke en del af foreningens hjemmeside.</span>
-          </div>
-        </li>
-        <li>
-          <div>
-            <strong>Udfyld og godkend med MitID</strong>
-            <span>Du bekræfter aftalen med MitID, præcis som når du godkender andre betalinger.</span>
-          </div>
-        </li>
-        <li>
-          <div>
-            <strong>Se aftalen på din næste betalingsoversigt</strong>
-            <span>Tilmeldingen bekræftes på oversigten fra din bank. Kontakt kassereren, hvis den ikke dukker op.</span>
-          </div>
-        </li>
-      </ol>
-    </div>
 
-    <div class="panel signup">
-      <!-- ===== TILMELDINGSLINK — INDSÆT FORENINGENS EGET LINK HER ========= -->
-      <a class="signup-btn"
-         href="INDSAET_TILMELDINGSLINK_HER"
-         target="_blank" rel="noopener">Tilmeld Betalingsservice</a>
-      <!-- ================================================================== -->
+          <label for="nbName">Fulde navn <span class="req">*</span></label>
+          <input id="nbName" type="text" name="name" required maxlength="255"
+                 autocomplete="name" placeholder="fx Jette Hansen"
+                 value="<?php echo $e($form['name']); ?>">
 
-      <p class="signup-note">Åbner Betalingsservice i et nyt vindue. Du godkender med MitID.</p>
-    </div>
+          <label for="nbAddress">Adresse i Hesselbjerg Nord <span class="req">*</span></label>
+          <input id="nbAddress" type="text" name="address" required maxlength="255"
+                 autocomplete="street-address" placeholder="fx Klitrosevej 12"
+                 value="<?php echo $e($form['address']); ?>">
 
-    <div class="panel">
-      <h2>Det skal du have klar</h2>
-      <ul class="checklist">
-        <li>
-          <div>
-            <strong>MitID</strong>
-            <span>Til at godkende aftalen.</span>
-          </div>
-        </li>
-        <li>
-          <div>
-            <strong>Reg.nr. og kontonummer</strong>
-            <span>På den konto, kontingentet skal trækkes fra.</span>
-          </div>
-        </li>
-        <li>
-          <div>
-            <strong>Dit medlemsnummer</strong>
-            <span>Står på opkrævningen fra foreningen. Er du i tvivl, så spørg kassereren.</span>
-          </div>
-        </li>
-      </ul>
-    </div>
+          <label for="nbEmail">Mail <span class="req">*</span></label>
+          <input id="nbEmail" type="email" name="email" required maxlength="255"
+                 autocomplete="email" value="<?php echo $e($form['email']); ?>">
 
-    <div class="panel">
-      <h2>Spørgsmål og svar</h2>
-      <dl class="faq">
-        <dt>Binder jeg mig til noget?</dt>
-        <dd>Nej. En Betalingsservice-aftale kan altid afmeldes igen — enten i din netbank eller på din betalingsoversigt.</dd>
+          <label for="nbPhone">Telefon</label>
+          <input id="nbPhone" type="tel" name="phone" maxlength="11"
+                 pattern="[0-9 ]{8,11}" title="Otte cifre, fx 12 34 56 78"
+                 autocomplete="tel" inputmode="tel" placeholder="fx 12 34 56 78"
+                 value="<?php echo $e($form['phone']); ?>">
 
-        <dt>Hvad hvis kontingentet ændrer sig?</dt>
-        <dd>Beløbet fremgår af betalingsoversigten, inden det trækkes. Du kan afvise en enkelt betaling, hvis noget ser forkert ud.</dd>
+          <label for="nbMoved">Indflytningsdato</label>
+          <input id="nbMoved" type="date" name="moved_in"
+                 min="<?php echo $e(RESIDENT_MOVED_MIN); ?>"
+                 value="<?php echo $e($form['moved_in']); ?>">
 
-        <dt>Kan jeg stadig betale manuelt?</dt>
-        <dd>Ja. Tilmelding til Betalingsservice er frivillig — du kan fortsat betale ved bankoverførsel.</dd>
+          <label for="nbNote">Bemærkninger</label>
+          <textarea id="nbNote" name="note" rows="4" maxlength="2000"
+                    placeholder="Noget bestyrelsen bør vide?"><?php echo $e($form['note']); ?></textarea>
 
-        <dt>Indtaster jeg mine kontooplysninger på foreningens hjemmeside?</dt>
-        <dd>Nej. Knappen sender dig videre til Betalingsservice, og alle oplysninger indtastes dér. Foreningen ser hverken dit kontonummer eller dit MitID.</dd>
-      </dl>
-    </div>
+          <label class="consent">
+            <input type="checkbox" name="consent" value="1" required>
+            <span>
+              Jeg giver samtykke til, at grundejerforeningen gemmer mine
+              oplysninger for at kunne kontakte mig om foreningens forhold.
+              <span class="req">*</span>
+            </span>
+          </label>
+
+          <p class="privacy">
+            Oplysningerne bruges kun af bestyrelsen og videregives ikke.
+            De bliver automatisk slettet ved salg og fraflytning ved at skrive til
+            <a href="mailto:kasser@hesselbjergnord.dk">kasser@hesselbjergnord.dk</a>.
+          </p>
+
+          <button type="submit" class="submit-btn">Send tilmelding</button>
+        </form>
+      </div>
+    <?php endif; ?>
   </div>
 
   <footer>&copy; 2026 Hesselbjerg Nord</footer>
@@ -667,4 +852,3 @@
     }
   </script>
 </body>
-</html>

@@ -77,6 +77,26 @@ try {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
 
+
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS residents (
+            id INT NOT NULL AUTO_INCREMENT,
+            name VARCHAR(255) NOT NULL,
+            address VARCHAR(255) NOT NULL,
+            email VARCHAR(255) NOT NULL,
+            phone VARCHAR(32) NOT NULL DEFAULT '',
+            moved_in DATE NULL DEFAULT NULL,
+            note TEXT NULL DEFAULT NULL,
+            consent TINYINT(1) NOT NULL DEFAULT 0,
+            status ENUM('ny', 'behandlet') NOT NULL DEFAULT 'ny',
+            handled_by INT NULL DEFAULT NULL,
+            handled_at DATETIME NULL DEFAULT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY idx_residents_status (status, created_at),
+            KEY idx_residents_created (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
     // Tabellen kan stamme fra en tidligere version uden disse kolonner.
     $existing = $pdo->query('SHOW COLUMNS FROM member_photos')->fetchAll(PDO::FETCH_COLUMN, 0);
 
