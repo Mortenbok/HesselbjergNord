@@ -1,36 +1,33 @@
-# Lægger public_html/ op på webhotellet hos Simply.com, så den online udgave
-# svarer til den, der ligger i git.
+# Lægger public_html/ op på webhotellet hos Simply.com.
 #
 # ---------------------------------------------------------------------------
-# FØR FØRSTE KØRSEL
+# SÅDAN VIRKER DEN
 # ---------------------------------------------------------------------------
-# 1) Find FTP-oplysningerne i Simply.com kontrolpanelet under "FTP".
+# AUTOMATISK: hver gang der pushes til main, bliver ændringerne lagt op med
+# det samme. Der skal ikke trykkes på noget.
 #
-# 2) Læg dem op som secrets i GitHub:
-#    Settings → Secrets and variables → Actions → New repository secret
-#
-#      FTP_SERVER     serveradressen, fx ftp.simply.com
-#      FTP_USER       FTP-brugernavnet
-#      FTP_PASS       adgangskoden
-#
-# 3) Kør den FØRSTE gang med "Kun prøvekørsel" sat til true. Så skriver den
-#    i loggen, hvad den VILLE gøre, uden at røre serveren. Se efter, at
-#    server-dir passer, før du kører for alvor.
+# I HÅNDEN: fanen "Actions" → "Deploy til hesselbjergnord.dk" → "Run workflow".
+# Her kan du vælge "Kun prøvekørsel", som skriver i loggen, hvad den VILLE
+# gøre, uden at røre serveren. Brug den, hvis du er i tvivl.
 #
 # ---------------------------------------------------------------------------
-# SÅDAN KØRER DU DEN
+# HUSK
 # ---------------------------------------------------------------------------
-# Fanen "Actions" → "Deploy til hesselbjergnord.dk" → "Run workflow".
+# Alt, hvad du pusher til main, er live umiddelbart efter. Er en ændring ikke
+# færdig, så lad være med at pushe den til main — eller sæt push-udløseren
+# nedenfor til igen ved at skrive # foran de to linjer under "push:".
 #
-# Den kører MED VILJE ikke automatisk ved hver push: commits i dette
-# arkiv er løbende arbejde, og alt skal ikke nødvendigvis være live med
-# det samme. Vil du have automatisk udgivelse, så fjern kommentaren fra
-# de to linjer under "push:" nedenfor.
+# Secrets, der skal være på plads (Settings → Secrets and variables → Actions):
+#   FTP_SERVER   serveradressen, fx ftp.simply.com
+#   FTP_USER     FTP-brugernavnet
+#   FTP_PASS     adgangskoden
 # ---------------------------------------------------------------------------
 
 name: Deploy til hesselbjergnord.dk
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       dry_run:
@@ -42,8 +39,12 @@ on:
         type: choice
         default: ftps
         options: [ftps, ftp, sftp]
-  # push:
-  #   branches: [main]
+
+# To udgivelser må ikke køre oven i hinanden og skrive i de samme filer.
+# En igangværende kørsel får lov at gøre sig færdig; den næste venter.
+concurrency:
+  group: deploy-hesselbjergnord
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -65,7 +66,9 @@ jobs:
           local-dir: ./public_html/
           server-dir: /public_html/
 
-          dry-run: ${{ inputs.dry_run }}
+          # Prøvekørsel kan KUN vælges, når den startes i hånden.
+          # Et push skal altid lægge tingene rigtigt op.
+          dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || false }}
 
           # Sletter ALDRIG filer på serveren, der ikke findes i git.
           # Det er ikke en detalje: medlemmernes billeder i uploads/ og
