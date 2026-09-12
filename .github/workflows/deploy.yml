@@ -1,20 +1,49 @@
-# Uploader public_html/ til webhotellet, så den online version svarer til den,
-# du ser på localhost.
+# Lægger public_html/ op på webhotellet hos Simply.com, så den online udgave
+# svarer til den, der ligger i git.
 #
-# FØR FØRSTE KØRSEL — læg tre secrets op i GitHub
-# (Settings → Secrets and variables → Actions → New repository secret):
+# ---------------------------------------------------------------------------
+# FØR FØRSTE KØRSEL
+# ---------------------------------------------------------------------------
+# 1) Find FTP-oplysningerne i Simply.com kontrolpanelet under "FTP".
 #
-#   FTP_SERVER     fx ftp.simply.com
-#   FTP_USERNAME   FTP-brugeren fra Simply.com kontrolpanelet
-#   FTP_PASSWORD   adgangskoden til den bruger
+# 2) Læg dem op som secrets i GitHub:
+#    Settings → Secrets and variables → Actions → New repository secret
 #
-# Kørslen startes i hånden under fanen "Actions" → "Deploy til hesselbjergnord.dk"
-# → "Run workflow". Den kører med vilje IKKE automatisk ved hver push.
+#      FTP_SERVER     serveradressen, fx ftp.simply.com
+#      FTP_USER       FTP-brugernavnet
+#      FTP_PASS       adgangskoden
+#
+# 3) Kør den FØRSTE gang med "Kun prøvekørsel" sat til true. Så skriver den
+#    i loggen, hvad den VILLE gøre, uden at røre serveren. Se efter, at
+#    server-dir passer, før du kører for alvor.
+#
+# ---------------------------------------------------------------------------
+# SÅDAN KØRER DU DEN
+# ---------------------------------------------------------------------------
+# Fanen "Actions" → "Deploy til hesselbjergnord.dk" → "Run workflow".
+#
+# Den kører MED VILJE ikke automatisk ved hver push: commits i dette
+# arkiv er løbende arbejde, og alt skal ikke nødvendigvis være live med
+# det samme. Vil du have automatisk udgivelse, så fjern kommentaren fra
+# de to linjer under "push:" nedenfor.
+# ---------------------------------------------------------------------------
 
 name: Deploy til hesselbjergnord.dk
 
 on:
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Kun prøvekørsel (rører ikke serveren)"
+        type: boolean
+        default: true
+      protocol:
+        description: "Forbindelsestype"
+        type: choice
+        default: ftps
+        options: [ftps, ftp, sftp]
+  # push:
+  #   branches: [main]
 
 jobs:
   deploy:
@@ -24,23 +53,30 @@ jobs:
       - name: Hent koden
         uses: actions/checkout@v4
 
-      - name: Upload public_html til serveren
+      - name: Læg public_html op på serveren
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          protocol: ftps
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
+          protocol: ${{ inputs.protocol || 'ftps' }}
+          port: ${{ inputs.protocol == 'sftp' && 22 || 21 }}
+
           local-dir: ./public_html/
           server-dir: /public_html/
 
-          # Slet ALDRIG filer på serveren, som ikke ligger i git.
-          # Medlemmernes billeder i uploads/ findes kun på serveren, og et
-          # "clean slate" ville slette dem for altid.
+          dry-run: ${{ inputs.dry_run }}
+
+          # Sletter ALDRIG filer på serveren, der ikke findes i git.
+          # Det er ikke en detalje: medlemmernes billeder i uploads/ og
+          # adgangskoderne i includes/config.local.php findes KUN på
+          # serveren, og en oprydning ville fjerne dem for altid.
           dangerous-clean-slate: false
 
           exclude: |
             **/.git*
             **/.git*/**
+            **/.github/**
             uploads/**
             bestyrelse/**
+            includes/config.local.php
