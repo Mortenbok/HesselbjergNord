@@ -1,18 +1,21 @@
 <?php
 /**
- * Beskeder — SMS til beboerne.
+ * Beskeder — SMS og mail til beboerne.
  *
- * Kun bestyrelsen har adgang. En udsendelse koster penge og kan ikke kaldes
- * tilbage, så siden kræver, at afsenderen først ser modtagerlisten og derefter
- * bekræfter i et ekstra trin.
+ * Kun bestyrelsen har adgang. En udsendelse koster penge (SMS) eller kan ikke
+ * kaldes tilbage (begge dele), så siden kræver, at afsenderen først ser
+ * modtagerlisten og derefter bekræfter i et ekstra trin.
  *
- * Modtagerne er de beboere, der selv har oplyst et telefonnummer i
- * "Ny beboer"-formularen og har givet samtykke.
+ * Modtagerne er beboere, der har givet samtykke i "Ny beboer"-formularen:
+ *   SMS   — dem, der har oplyst et brugbart dansk telefonnummer
+ *   Mail  — dem, der har en gyldig mailadresse (mail er påkrævet i formularen,
+ *           så det er i praksis alle)
  */
 
 require __DIR__ . '/includes/auth.php';
 require __DIR__ . '/includes/db.php';
 require __DIR__ . '/includes/sms.php';
+require __DIR__ . '/includes/mail.php';
 
 auth_require('index.html');
 
@@ -23,31 +26,43 @@ if ($denied) {
     http_response_code(403);
 }
 
-/** Beboere med et brugbart dansk nummer og samtykke. */
-function message_recipients(PDO $pdo): array
+/**
+ * Beboere, der kan modtage på den valgte kanal.
+ *
+ * Nøglen er telefonnummeret henholdsvis mailadressen, så to beboere med
+ * samme kontaktoplysning kun får én besked.
+ */
+function message_recipients(PDO $pdo, string $channel): array
 {
     $rows = $pdo->query(
-        "SELECT id, name, phone FROM residents
-          WHERE consent = 1 AND phone <> ''
-       ORDER BY name"
+        "SELECT id, name, phone, email FROM residents WHERE consent = 1 ORDER BY name"
     )->fetchAll();
 
     $out = [];
+
     foreach ($rows as $row) {
-        $msisdn = sms_msisdn($row['phone']);
-        if ($msisdn !== null) {
-            $out[$msisdn] = ['id' => (int)$row['id'], 'name' => $row['name'], 'msisdn' => $msisdn];
+        if ($channel === 'sms') {
+            $msisdn = $row['phone'] !== '' ? sms_msisdn($row['phone']) : null;
+            if ($msisdn !== null) {
+                $out[$msisdn] = ['id' => (int)$row['id'], 'name' => $row['name'], 'msisdn' => $msisdn, 'email' => ''];
+            }
+        } else {
+            $mail = trim((string)$row['email']);
+            if (filter_var($mail, FILTER_VALIDATE_EMAIL)) {
+                $out[strtolower($mail)] = ['id' => (int)$row['id'], 'name' => $row['name'], 'msisdn' => '', 'email' => $mail];
+            }
         }
     }
 
-    // Nøglen er nummeret, så to beboere på samme nummer kun får én besked.
     return array_values($out);
 }
 
+$channel = ($_POST['channel'] ?? 'sms') === 'email' ? 'email' : 'sms';
+$subject = trim((string)($_POST['subject'] ?? ''));
 $body = trim((string)($_POST['body'] ?? ''));
 $message = null;
 $confirming = false;
-$recipients = $denied ? [] : message_recipients($pdo);
+$recipients = $denied ? [] : message_recipients($pdo, $channel);
 $length = sms_length($body);
 
 if (!$denied && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -55,45 +70,75 @@ if (!$denied && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = ['bad', 'Handlingen var udløbet. Prøv igen.'];
     } elseif ($body === '') {
         $message = ['bad', 'Skriv en besked, før du sender.'];
+    } elseif ($channel === 'email' && $subject === '') {
+        $message = ['bad', 'Skriv et emne, før du sender en mail.'];
     } elseif ($recipients === []) {
-        $message = ['bad', 'Der er ingen modtagere med telefonnummer endnu.'];
+        $message = ['bad', $channel === 'sms'
+            ? 'Der er ingen modtagere med telefonnummer endnu.'
+            : 'Der er ingen modtagere med mailadresse endnu.'];
     } elseif (($_POST['step'] ?? '') !== 'send') {
-        // Første klik viser kun, hvad der vil ske.
         $confirming = true;
     } else {
-        $result = sms_send(array_column($recipients, 'msisdn'), $body);
+        if ($channel === 'sms') {
+            $result = sms_send(array_column($recipients, 'msisdn'), $body);
+            $okCount = $result['ok'] ? count($recipients) : 0;
+            $failed = $result['ok'] ? [] : array_column($recipients, 'msisdn');
+            $error = $result['error'];
+        } else {
+            $result = mail_send($recipients, $subject, $body);
+            $okCount = $result['ok'];
+            $failed = $result['failed'];
+            $error = $result['error'] !== '' ? $result['error']
+                : ($failed !== [] ? count($failed) . ' modtagere kunne ikke nås.' : '');
+        }
+
+        $status = $okCount > 0 && $failed === [] ? 'sendt' : ($okCount > 0 ? 'delvis' : 'fejl');
 
         $stmt = $pdo->prepare(
-            'INSERT INTO messages (body, sender_name, sent_by, sent_by_name, recipient_count, parts, status, error)
-             VALUES (:body, :sender, :by, :byname, :count, :parts, :status, :error)'
+            'INSERT INTO messages (body, channel, subject, sender_name, sent_by, sent_by_name,
+                                   recipient_count, ok_count, parts, status, error)
+             VALUES (:body, :channel, :subject, :sender, :by, :byname, :count, :ok, :parts, :status, :error)'
         );
         $stmt->execute([
             ':body' => $body,
-            ':sender' => sms_config()['sms_sender'],
+            ':channel' => $channel,
+            ':subject' => $channel === 'email' ? $subject : '',
+            ':sender' => $channel === 'sms' ? sms_config()['sms_sender'] : mail_from()[0],
             ':by' => $user['id'],
             ':byname' => $user['display_name'],
             ':count' => count($recipients),
-            ':parts' => $length['parts'],
-            ':status' => $result['ok'] ? 'sendt' : 'fejl',
-            ':error' => mb_substr($result['error'], 0, 255),
+            ':ok' => $okCount,
+            ':parts' => $channel === 'sms' ? $length['parts'] : 1,
+            ':status' => $status === 'delvis' ? 'sendt' : $status,
+            ':error' => mb_substr($error, 0, 255),
         ]);
 
         $messageId = (int)$pdo->lastInsertId();
 
-        if ($result['ok']) {
+        if ($okCount > 0) {
             $rcpt = $pdo->prepare(
-                'INSERT INTO message_recipients (message_id, resident_id, name, msisdn)
-                 VALUES (:m, :r, :n, :p)'
+                'INSERT INTO message_recipients (message_id, resident_id, name, msisdn, email)
+                 VALUES (:m, :r, :n, :p, :e)'
             );
             foreach ($recipients as $r) {
-                $rcpt->execute([':m' => $messageId, ':r' => $r['id'], ':n' => $r['name'], ':p' => $r['msisdn']]);
+                $contact = $channel === 'sms' ? $r['msisdn'] : $r['email'];
+                if (in_array($contact, $failed, true)) {
+                    continue;
+                }
+                $rcpt->execute([
+                    ':m' => $messageId, ':r' => $r['id'], ':n' => $r['name'],
+                    ':p' => $r['msisdn'], ':e' => $r['email'],
+                ]);
             }
 
-            $message = ['ok', 'Beskeden er sendt til ' . count($recipients) . ' modtagere.'];
+            $message = $failed === []
+                ? ['ok', 'Beskeden er sendt til ' . $okCount . ' modtagere.']
+                : ['warn', 'Sendt til ' . $okCount . ' af ' . count($recipients) . ' modtagere. ' . $error];
             $body = '';
+            $subject = '';
             $length = sms_length('');
         } else {
-            $message = ['bad', 'Beskeden blev ikke sendt. ' . $result['error']];
+            $message = ['bad', 'Beskeden blev ikke sendt. ' . $error];
         }
     }
 }
@@ -556,6 +601,33 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
     .actions button { width: 100%; }
     .cancel { text-align: center; }
   }
+
+  /* ---- Kanalvalg og emnefelt -------------------------------------------- */
+  .channel { border: 0; display: flex; gap: 22px; margin-bottom: 14px; }
+  .channel legend { font-size: 0.92rem; color: rgba(255,255,255,0.9); margin-bottom: 8px; }
+  .channel label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 1rem; }
+  .channel input { width: 20px; height: 20px; }
+  .channel input:disabled + span { opacity: 0.6; }
+
+  #subjectRow label { display: block; margin: 4px 0 6px; font-size: 0.92rem; color: rgba(255,255,255,0.9); }
+
+  #msgSubject {
+    width: 100%;
+    margin-bottom: 14px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.22);
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    font: inherit;
+    font-size: 16px;
+  }
+
+  #msgSubject[readonly] { opacity: 0.75; }
+  .hidden-row { display: none; }
+
+  .log-subject { margin: 6px 0 2px; }
+  .tag.kanal { background: rgba(255,255,255,0.14); color: rgba(255,255,255,0.85); margin-right: 6px; }
 </style>
 <link rel="stylesheet" href="mobile-nav.css">
 <script src="mobile-nav.js" defer></script>
@@ -620,12 +692,12 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
       </div>
     <?php else: ?>
 
-      <?php if (!sms_enabled()): ?>
+      <?php if ($channel === 'sms' && !sms_enabled()): ?>
         <div class="panel warn">
-          <strong>Afsendelse er ikke sat op endnu.</strong>
+          <strong>SMS er ikke sat op endnu.</strong>
           <p>
             Læg en GatewayAPI-nøgle i <code>includes/config.local.php</code>.
-            Indtil da kan beskeder skrives, men ikke sendes.
+            Indtil da kan SMS skrives, men ikke sendes. Mail virker uafhængigt af det.
           </p>
         </div>
       <?php endif; ?>
@@ -636,20 +708,51 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
 
       <div class="panel">
         <h2>Ny besked</h2>
-        <p class="muted">
-          Sendes som SMS til de <strong><?php echo count($recipients); ?></strong> beboere,
-          der har oplyst et telefonnummer.
-        </p>
 
-        <form method="post">
+        <form method="post" id="msgForm">
           <input type="hidden" name="csrf_token" value="<?php echo $e($csrf); ?>">
 
+          <fieldset class="channel">
+            <legend>Send som</legend>
+            <label>
+              <input type="radio" name="channel" value="sms"
+                     <?php echo $channel === 'sms' ? 'checked' : ''; ?>
+                     <?php echo $confirming ? 'disabled' : ''; ?>>
+              <span>SMS</span>
+            </label>
+            <label>
+              <input type="radio" name="channel" value="email"
+                     <?php echo $channel === 'email' ? 'checked' : ''; ?>
+                     <?php echo $confirming ? 'disabled' : ''; ?>>
+              <span>Mail</span>
+            </label>
+          </fieldset>
+
+          <?php if ($confirming): ?>
+            <input type="hidden" name="channel" value="<?php echo $e($channel); ?>">
+          <?php endif; ?>
+
+          <p class="muted">
+            Sendes til <strong><?php echo count($recipients); ?></strong> beboere
+            <?php echo $channel === 'sms' ? 'med telefonnummer' : 'med mailadresse'; ?>.
+          </p>
+
+          <div id="subjectRow" class="<?php echo $channel === 'email' ? '' : 'hidden-row'; ?>">
+            <label for="msgSubject">Emne</label>
+            <input id="msgSubject" type="text" name="subject" maxlength="255"
+                   placeholder="Fx: Indkaldelse til generalforsamling"
+                   <?php echo $confirming ? 'readonly' : ''; ?>
+                   value="<?php echo $e($subject); ?>">
+          </div>
+
           <label for="msgBody">Tekst</label>
-          <textarea id="msgBody" name="body" rows="5" maxlength="1000"
+          <textarea id="msgBody" name="body" rows="<?php echo $channel === 'email' ? 10 : 5; ?>"
+                    maxlength="<?php echo $channel === 'email' ? 5000 : 1000; ?>"
                     placeholder="Fx: Husk generalforsamling torsdag kl. 19 i klubhuset."
                     <?php echo $confirming ? 'readonly' : ''; ?>><?php echo $e($body); ?></textarea>
 
-          <p class="counter" id="counter" aria-live="polite">
+          <p class="counter" id="counter" aria-live="polite"
+             <?php echo $channel === 'email' ? 'hidden' : ''; ?>>
             <?php echo $length['units']; ?> tegn &middot;
             <?php echo $length['parts']; ?> SMS pr. modtager
             <?php if ($length['unicode']): ?>
@@ -661,22 +764,28 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
             <div class="panel confirm">
               <h3>Er du sikker?</h3>
               <p>
-                Beskeden sendes til <strong><?php echo count($recipients); ?></strong>
-                modtagere som <strong><?php echo $length['parts']; ?></strong> SMS hver
-                — i alt <strong><?php echo count($recipients) * $length['parts']; ?></strong> SMS.
+                <?php if ($channel === 'sms'): ?>
+                  Beskeden sendes som SMS til <strong><?php echo count($recipients); ?></strong>
+                  modtagere som <strong><?php echo $length['parts']; ?></strong> SMS hver
+                  — i alt <strong><?php echo count($recipients) * $length['parts']; ?></strong> SMS.
+                <?php else: ?>
+                  Mailen sendes til <strong><?php echo count($recipients); ?></strong> modtagere.
+                  Hver enkelt får sin egen mail, så ingen kan se de andres adresser.
+                <?php endif; ?>
                 Det kan ikke fortrydes.
               </p>
               <details>
                 <summary>Vis modtagere</summary>
                 <ul class="rcpt">
                   <?php foreach ($recipients as $r): ?>
-                    <li><?php echo $e($r['name']); ?> &middot; <?php echo $e($r['msisdn']); ?></li>
+                    <li><?php echo $e($r['name']); ?> &middot;
+                        <?php echo $e($channel === 'sms' ? $r['msisdn'] : $r['email']); ?></li>
                   <?php endforeach; ?>
                 </ul>
               </details>
               <div class="actions">
                 <button type="submit" name="step" value="send" class="danger"
-                        <?php echo sms_enabled() ? '' : 'disabled'; ?>>
+                        <?php echo ($channel === 'sms' && !sms_enabled()) ? 'disabled' : ''; ?>>
                   Ja, send nu
                 </button>
                 <a class="cancel" href="besked.php">Annuller</a>
@@ -698,15 +807,23 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
               <li class="<?php echo $e($h['status']); ?>">
                 <div class="log-top">
                   <span class="log-when"><?php echo $e($h['created_at']); ?></span>
-                  <span class="tag <?php echo $e($h['status']); ?>">
-                    <?php echo $h['status'] === 'sendt' ? 'Sendt' : 'Fejlet'; ?>
+                  <span>
+                    <span class="tag kanal"><?php echo $h['channel'] === 'email' ? 'Mail' : 'SMS'; ?></span>
+                    <span class="tag <?php echo $e($h['status']); ?>">
+                      <?php echo $h['status'] === 'sendt' ? 'Sendt' : 'Fejlet'; ?>
+                    </span>
                   </span>
                 </div>
+                <?php if ($h['subject'] !== ''): ?>
+                  <p class="log-subject"><strong><?php echo $e($h['subject']); ?></strong></p>
+                <?php endif; ?>
                 <p class="log-body"><?php echo nl2br($e($h['body'])); ?></p>
                 <p class="log-meta">
-                  <?php echo (int)$h['recipient_count']; ?> modtagere &middot;
-                  <?php echo (int)$h['parts']; ?> SMS hver &middot;
-                  <?php echo $e($h['sent_by_name']); ?>
+                  <?php echo (int)$h['ok_count']; ?> af <?php echo (int)$h['recipient_count']; ?> modtagere
+                  <?php if ($h['channel'] === 'sms'): ?>
+                    &middot; <?php echo (int)$h['parts']; ?> SMS hver
+                  <?php endif; ?>
+                  &middot; <?php echo $e($h['sent_by_name']); ?>
                   <?php if ($h['error'] !== ''): ?>
                     <br><span class="warn-text"><?php echo $e($h['error']); ?></span>
                   <?php endif; ?>
@@ -752,6 +869,40 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
 
       box.addEventListener('input', update);
       update();
+    })();
+  </script>
+  <script>
+    /* Emnefeltet hører kun til mail, og tegntælleren kun til SMS. */
+    (function () {
+      var form = document.getElementById('msgForm');
+      if (!form) return;
+
+      var subjectRow = document.getElementById('subjectRow');
+      var subject = document.getElementById('msgSubject');
+      var counter = document.getElementById('counter');
+      var box = document.getElementById('msgBody');
+
+      function channel() {
+        var picked = form.querySelector('input[name="channel"]:checked');
+        return picked ? picked.value : 'sms';
+      }
+
+      function sync() {
+        var isMail = channel() === 'email';
+        if (subjectRow) subjectRow.classList.toggle('hidden-row', !isMail);
+        if (subject) subject.required = isMail;
+        if (counter) counter.hidden = isMail;
+        if (box) {
+          box.rows = isMail ? 10 : 5;
+          box.maxLength = isMail ? 5000 : 1000;
+        }
+      }
+
+      form.querySelectorAll('input[name="channel"]').forEach(function (el) {
+        el.addEventListener('change', sync);
+      });
+
+      sync();
     })();
   </script>
   <footer>&copy; 2026 Hesselbjerg Nord</footer>

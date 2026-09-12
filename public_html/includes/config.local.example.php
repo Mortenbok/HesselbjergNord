@@ -17,4 +17,9 @@ return [
 
     // Afsendernavn, som beboerne ser. Højst 11 tegn, kun bogstaver og tal.
     'sms_sender' => 'Hesselbjerg',
+
+    // Afsender på mails. Skal være en adresse på foreningens eget domæne,
+    // ellers ryger mailen ofte i modtagerens spamfilter.
+    'mail_from' => 'bestyrelsen@hesselbjergnord.dk',
+    'mail_from_name' => 'Grundejerforeningen Hesselbjerg Nord',
 ];

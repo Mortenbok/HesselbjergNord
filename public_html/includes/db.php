@@ -130,6 +130,28 @@ try {
                 ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
+
+    // messages kan stamme fra en version, der kun kunne sende SMS.
+    $msgCols = $pdo->query('SHOW COLUMNS FROM messages')->fetchAll(PDO::FETCH_COLUMN, 0);
+
+    if (!in_array('channel', $msgCols, true)) {
+        $pdo->exec("ALTER TABLE messages ADD COLUMN channel ENUM('sms', 'email') NOT NULL DEFAULT 'sms' AFTER body");
+    }
+
+    if (!in_array('subject', $msgCols, true)) {
+        $pdo->exec("ALTER TABLE messages ADD COLUMN subject VARCHAR(255) NOT NULL DEFAULT '' AFTER channel");
+    }
+
+    if (!in_array('ok_count', $msgCols, true)) {
+        $pdo->exec('ALTER TABLE messages ADD COLUMN ok_count INT NOT NULL DEFAULT 0 AFTER recipient_count');
+    }
+
+    $rcptCols = $pdo->query('SHOW COLUMNS FROM message_recipients')->fetchAll(PDO::FETCH_COLUMN, 0);
+
+    if (!in_array('email', $rcptCols, true)) {
+        $pdo->exec("ALTER TABLE message_recipients ADD COLUMN email VARCHAR(255) NOT NULL DEFAULT '' AFTER msisdn");
+        $pdo->exec("ALTER TABLE message_recipients MODIFY msisdn VARCHAR(16) NOT NULL DEFAULT ''");
+    }
     // Tabellen kan stamme fra en tidligere version uden disse kolonner.
     $existing = $pdo->query('SHOW COLUMNS FROM member_photos')->fetchAll(PDO::FETCH_COLUMN, 0);
 
