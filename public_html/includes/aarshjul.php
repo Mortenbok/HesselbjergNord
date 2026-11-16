@@ -17,6 +17,7 @@ const AARSHJUL_KATEGORIER = [
     'bestyrelsen' => ['navn' => 'Bestyrelsen', 'farve' => '#8ad2ff'],
     'generalforsamling' => ['navn' => 'Generalforsamling', 'farve' => '#ffd24a'],
     'socialt' => ['navn' => 'Socialt', 'farve' => '#8ae2a8'],
+    'andet' => ['navn' => 'Andet', 'farve' => '#c9a9ff'],
 ];
 
 /** Måneder, som de skrives på siden. */
@@ -713,7 +714,9 @@ function aarshjul_render_page(array $poster, ?array $user, array $message, int $
           <div>
             <?php echo aarshjul_svg($poster, $aar); ?>
             <div class="signatur">
-              <?php foreach (AARSHJUL_KATEGORIER as $kat): ?>
+              <?php foreach (AARSHJUL_KATEGORIER as $noegle => $kat): ?>
+                <?php /* En kategori uden poster hører ikke til i signaturen. */ ?>
+                <?php if (!$poster[$noegle]) { continue; } ?>
                 <span>
                   <i class="prik" style="background: <?php echo $e($kat['farve']); ?>"></i>
                   <?php echo $e($kat['navn']); ?>

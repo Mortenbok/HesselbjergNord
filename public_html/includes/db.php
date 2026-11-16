@@ -100,7 +100,7 @@ try {
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS aarshjul (
             id INT NOT NULL AUTO_INCREMENT,
-            kategori ENUM('bestyrelsen', 'generalforsamling', 'socialt') NOT NULL,
+            kategori ENUM('bestyrelsen', 'generalforsamling', 'socialt', 'andet') NOT NULL,
             titel VARCHAR(200) NOT NULL,
             tidspunkt VARCHAR(120) NOT NULL DEFAULT '',
             maaned TINYINT NULL DEFAULT NULL,
@@ -113,6 +113,15 @@ try {
             KEY idx_aarshjul_sort (sortering)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
+
+    // "Andet" kom til efter, at tabellen var oprettet. Udvidelsen er ren
+    // tilføjelse: ingen eksisterende rækker bliver ugyldige af den.
+    $aarshjulKategori = $pdo->query("SHOW COLUMNS FROM aarshjul LIKE 'kategori'")->fetch();
+
+    if ($aarshjulKategori && strpos($aarshjulKategori['Type'], "'andet'") === false) {
+        $pdo->exec("ALTER TABLE aarshjul MODIFY kategori
+            ENUM('bestyrelsen', 'generalforsamling', 'socialt', 'andet') NOT NULL");
+    }
 
     // Årshjulet fyldes ud én gang med det, bestyrelsen oplyste. Derefter
     // rettes det kun fra aarshjul.php — her rives intet over.

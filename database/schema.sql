@@ -96,7 +96,7 @@ CREATE TABLE IF NOT EXISTS documents (
 -- Begge regnes ud for det år, siden vises i, og skal aldrig rettes.
 CREATE TABLE IF NOT EXISTS aarshjul (
   id INT NOT NULL AUTO_INCREMENT,
-  kategori ENUM('bestyrelsen', 'generalforsamling', 'socialt') NOT NULL,
+  kategori ENUM('bestyrelsen', 'generalforsamling', 'socialt', 'andet') NOT NULL,
   titel VARCHAR(200) NOT NULL,
   tidspunkt VARCHAR(120) NOT NULL DEFAULT '',
   maaned TINYINT NULL DEFAULT NULL,
