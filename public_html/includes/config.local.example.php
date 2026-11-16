@@ -8,11 +8,11 @@
  */
 
 return [
-    // SureSMS: Client Id og Secret Id fra suresms.com.
+    // SureSMS: en API-nøgle fra https://app.suresms.com/UserApi/Index.
     // sms_sender er det navn, modtageren ser som afsender
-    // (højst 11 tegn, bogstaver og tal).
-    'suresms_client_id' => '',
-    'suresms_secret_id' => '',
+    // (højst 11 tegn, bogstaver og tal — og det skal være godkendt
+    // under Sender-ID på kontoen).
+    'suresms_apikey' => '',
     'sms_sender' => 'Hesselbjerg',
 
     // Kun nødvendig på en maskine bag en TLS-inspicerende proxy,

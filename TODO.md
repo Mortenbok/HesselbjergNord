@@ -103,12 +103,15 @@ Beslut for hver enkelt:
 
 ## 4. Løse ender
 
-- [ ] **SureSMS-login** ind i `includes/config.local.php`, så SMS kan
-      sendes: `suresms_client_id` og `suresms_secret_id`. Filen ligger
-      hverken i git eller i FTP-overførslen, så den skal lægges på
-      serveren i hånden. Prøv opsætningen af med
-      `php tools/sms/proev-sms.php` — den spørger om prisen uden at
-      sende noget. Mail virker allerede.
+- [ ] **SureSMS API-nøgle** ind i `includes/config.local.php` som
+      `suresms_apikey`. Nøglen laves på
+      <https://app.suresms.com/UserApi/Index>. Filen ligger hverken i
+      git eller i FTP-overførslen, så den skal lægges på serveren i
+      hånden. Prøv den af med `php tools/sms/proev-sms.php` — uden et
+      nummer sender den intet. Mail virker allerede.
+      Bemærk: et Client Id og et Secret Id virker IKKE — hverken mod
+      `apiv2.suresms.com/json/token`, `oauth2/api/Account/Gettoken`
+      eller `Script/SendSMS.aspx`. Det skal være en API-nøgle.
 - [ ] **Syv bestyrelseslogins mangler.** Der er kun én bruger
       (`MortenBoKristensen`). De oprettes på `opret-medlemmer.php` —
       husk at sætte Rolle til **Bestyrelse**. Siden er ikke linket fra

@@ -88,22 +88,30 @@ function besked_send_hold(PDO $pdo, array $msg, int $antal): array
     $sidsteFejl = '';
 
     if ($msg['channel'] === 'sms') {
-        // SureSMS tager hele holdet i ét kald — numrene adskilles med
-        // semikolon — og svarer ja eller nej for dem alle under ét.
+        // sms_send() henter ét token og sender så ét kald pr. modtager.
+        // Derfor får vi en liste over netop dem, der faldt fra, og kan
+        // mærke hver enkelt rigtigt — som ved mail.
         $svar = sms_send(array_column($hold, 'msisdn'), (string)$msg['body']);
+        $faldtFra = array_flip($svar['failed']);
+        $sidsteFejl = (string)$svar['error'];
 
         foreach ($hold as $m) {
+            $gik = !isset($faldtFra[$m['msisdn']]);
+
+            if ($gik) {
+                $ok++;
+            } else {
+                $fejl++;
+            }
+
             $noter->execute([
-                ':f' => $svar['ok'] ? '' : mb_substr((string)$svar['error'], 0, 255),
+                ':f' => $gik ? '' : mb_substr($sidsteFejl, 0, 255),
                 ':id' => (int)$m['id'],
             ]);
         }
 
-        if ($svar['ok']) {
-            $ok = count($hold);
-        } else {
-            $fejl = count($hold);
-            $sidsteFejl = (string)$svar['error'];
+        if ($fejl === 0) {
+            $sidsteFejl = '';
         }
     } else {
         foreach ($hold as $m) {
@@ -830,10 +838,11 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
         <div class="panel warn">
           <strong>SMS er ikke sat op endnu.</strong>
           <p>
-            Læg <code>suresms_client_id</code> og <code>suresms_secret_id</code>
-            i <code>includes/config.local.php</code>. Begge dele står på din
-            konto hos SureSMS. Indtil da kan SMS skrives, men ikke sendes —
-            mail virker uafhængigt af det.
+            Lav en API-nøgle på
+            <code>app.suresms.com/UserApi/Index</code>, og skriv den som
+            <code>suresms_apikey</code> i <code>includes/config.local.php</code>.
+            Indtil da kan SMS skrives, men ikke sendes — mail virker
+            uafhængigt af det.
           </p>
         </div>
       <?php endif; ?>
