@@ -1222,5 +1222,12 @@
         "bfe": "3073368",
         "matrikel": "2h 460354",
         "bekraeftet": true
+    },
+    "fyrrevanget1a": {
+        "adresse": "Fyrrevænget 1A",
+        "bfe": "3073428",
+        "matrikel": "",
+        "bekraeftet": false,
+        "haandholdt": true
     }
 }

@@ -155,6 +155,27 @@ function bfe_af_ejendom(string $ejendomUuid): ?string
     return null;
 }
 
+/**
+ * Findes ejendommen i matriklen, og er den gældende?
+ *
+ * Bruges til at kontrollere de håndholdte numre. Returnerer status —
+ * fx "Gældende" — eller null, hvis nummeret slet ikke findes.
+ */
+function ejendom_status(string $bfe): ?string
+{
+    if (!ctype_digit($bfe)) {
+        return null;
+    }
+
+    $q = '{ MAT_SamletFastEjendom(registreringstid: "' . TID . '", virkningstid: "' . TID . '",
+            first: 2, where: { BFEnummer: { eq: ' . $bfe . ' } })
+          { nodes { BFEnummer status } } }';
+
+    $data = graphql($q);
+
+    return $data['MAT_SamletFastEjendom']['nodes'][0]['status'] ?? null;
+}
+
 /** 3. Bygningerne på husnummeret peger på det jordstykke, huset ligger på. */
 function jordstykke_id(string $uuid): ?string
 {
@@ -198,6 +219,21 @@ const BFE_EKSTRA = [
     'Ristingevej 123',
 ];
 
+/**
+ * BFE-numre, BBR ikke kan føre os til. Slået op i hånden på OIS og skrevet
+ * her, så en ny kørsel ikke taber dem igen.
+ *
+ * Værktøjet tror ikke blindt på tallene: nummeret skal findes som en
+ * gældende ejendom i matriklen, ellers siges der fra.
+ */
+const BFE_HAANDHOLDT = [
+    // Fyrrevænget 1A står i DAR, men BBR har hverken grund eller bygning
+    // på adressen. Huset ligger på jordstykke 10320, matr. 6f — og det
+    // jordstykke hører til ejendom 3073428. Fyrrevænget 1 er en anden
+    // ejendom (jordstykke 10313), så nummeret kan ikke lånes derfra.
+    'Fyrrevænget 1A' => '3073428',
+];
+
 $adresser = array_slice($argv, 1) ?: array_merge(HBN_HUSSTANDE, BFE_EKSTRA);
 
 $cachefil = __DIR__ . '/cache.json';
@@ -228,6 +264,36 @@ foreach ($adresser as $i => $adresse) {
     preg_match('/^(.*?)[\s,]*(\d{1,3}\s*[a-zA-ZæøåÆØÅ]?)$/u', $adresse, $m);
     $vej = adresse_find_vej($m[1]) ?? trim($m[1]);
     $nr = adresse_husnummer($m[2]);
+
+    // Står nummeret på den håndholdte liste, kontrollerer vi det mod
+    // matriklen i stedet for at gå BBR-vejen, som alligevel ikke fører
+    // nogen steder hen for netop de adresser.
+    if (isset(BFE_HAANDHOLDT[$adresse])) {
+        $haand = BFE_HAANDHOLDT[$adresse];
+        $status = ejendom_status($haand);
+
+        if ($status === null) {
+            printf("%3d/%d  %-26s HÅNDHOLDT %s findes ikke i matriklen\n",
+                $i + 1, count($adresser), $adresse, $haand);
+            $sprunget[] = $adresse . " (håndholdt nummer $haand findes ikke)";
+            continue;
+        }
+
+        $cache[$noegleAdr] = [
+            'adresse' => adresse_saml($vej, $nr),
+            'bfe' => $haand,
+            'matrikel' => '',
+            'bekraeftet' => false,
+            'haandholdt' => true,
+        ];
+
+        file_put_contents($cachefil, json_encode($cache, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
+        printf("%3d/%d  %-26s %s  håndholdt, ejendommen er %s\n",
+            $i + 1, count($adresser), $adresse, $haand, mb_strtolower($status));
+        $fundet++;
+        continue;
+    }
 
     $uuid = husnummer_uuid($vej, $nr);
 
@@ -278,11 +344,17 @@ foreach ($adresser as $i => $adresse) {
 
 echo "\n$fundet af " . count($adresser) . " adresser har et BFE-nummer.\n";
 
-$kunEn = array_filter($cache, static fn($r) => empty($r['bekraeftet']));
+$haandholdte = array_filter($cache, static fn($r) => !empty($r['haandholdt']));
+$kunEn = array_filter($cache, static fn($r) => empty($r['bekraeftet']) && empty($r['haandholdt']));
 
 if ($kunEn) {
     echo count($kunEn) . " af dem er kun fundet ad én vej:\n";
     foreach ($kunEn as $r) { echo "  - " . $r['adresse'] . " = " . $r['bfe'] . "\n"; }
+}
+
+if ($haandholdte) {
+    echo count($haandholdte) . " er slået op i hånden og kontrolleret mod matriklen:\n";
+    foreach ($haandholdte as $r) { echo "  - " . $r['adresse'] . " = " . $r['bfe'] . "\n"; }
 }
 
 if ($uenige) {

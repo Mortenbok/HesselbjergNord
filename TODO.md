@@ -135,16 +135,14 @@ Beslut for hver enkelt:
       `Adressekartotek 2026 - faerdig.csv` (213 rækker). Filen må ALDRIG
       lægges i git — depotet er offentligt, og filen rummer navne,
       hjemmeadresser, mails og telefonnumre på ~200 mennesker.
-- [x] **BFE-numre.** Hentet 16. 11. 2026 hos Datafordeleren for 204
-      adresser — foreningens 203 plus Ristingevej 121 og 123 — og lagt i
-      `includes/bfe.php`. Ejer-knappen i kartoteket er derfor et direkte
-      link til OIS på alle rækker på nær én.
-- [ ] **Fyrrevænget 1A har intet BFE-nummer.** BBR kender hverken en
-      grund eller en bygning på adressen, selv om DAR har adressen.
-      Slå den op i hånden på boligejer.dk, og skriv nummeret i feltet
-      *BFE-nummer* på `beboer-ret.php`. Står adressen slet ikke i
-      kartoteket, kan linjen i `includes/husstande.php` slettes i stedet
-      — listen kommer fra OpenStreetMap og er ikke et folkeregister.
+- [x] **BFE-numre.** Hentet 16. 11. 2026 hos Datafordeleren for alle
+      205 adresser — foreningens 203 plus Ristingevej 121 og 123 — og
+      lagt i `includes/bfe.php`. Ejer-knappen i kartoteket er derfor et
+      direkte link til OIS på hver eneste række.
+      Fyrrevænget 1A er den eneste, der er slået op i hånden: BBR har
+      hverken grund eller bygning på adressen. Nummeret står i
+      `BFE_HAANDHOLDT` i `tools/bfe/hent-bfe.php` og kontrolleres mod
+      matriklen ved hver kørsel.
 - [ ] **Seks BFE-numre er kun fundet ad én vej** (Enebærvænget 9,
       Hylleskovvænget 7, Lindevænget 4, Rosenvænget 500A, Syrenvænget 26,
       Ørnevænget 2). Det er ubebyggede grunde, så kun grundvejen gav svar

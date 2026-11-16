@@ -96,6 +96,7 @@ const HBN_BFE = [
     'fyrrevanget11'     => '3073582',   // Fyrrevænget 11
     'fyrrevanget13'     => '3073570',   // Fyrrevænget 13
     'fyrrevanget15'     => '3073569',   // Fyrrevænget 15
+    'fyrrevanget1a'     => '3073428',   // Fyrrevænget 1A (slået op i hånden)
     'fyrrevanget2'      => '3073433',   // Fyrrevænget 2
     'fyrrevanget3'      => '3073435',   // Fyrrevænget 3
     'fyrrevanget4'      => '3073432',   // Fyrrevænget 4

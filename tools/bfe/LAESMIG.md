@@ -85,3 +85,25 @@ ser på OIS, vises under OIS' egen aftale.
 
 Derfor stopper automatikken ved BFE-nummeret, og det sidste klik ud til
 OIS er med vilje.
+
+## Adresser, opslaget ikke kan klare
+
+To slags adresser falder uden for den automatiske kæde:
+
+**Veje uden for vedtægterne.** Ristingevej 121 og 123 står i kartoteket,
+men Ristingevej er ikke en af de 20 veje i vedtægternes § 1. De står i
+`BFE_EKSTRA` i `hent-bfe.php`, og `bfe_kendt()` falder tilbage på
+vejnavnet, som det er skrevet, når det ikke kan rettes til en af
+foreningens veje.
+
+**Adresser uden noget i BBR.** Fyrrevænget 1A findes i DAR, men BBR har
+hverken en grund eller en bygning på den, så der er intet at følge. Sådan
+en slås op i hånden på OIS og skrives i `BFE_HAANDHOLDT`:
+
+    const BFE_HAANDHOLDT = [
+        'Fyrrevænget 1A' => '3073428',
+    ];
+
+Værktøjet tror ikke blindt på tallet — det slår ejendommen op i matriklen
+og siger fra, hvis nummeret ikke findes. I `bfe.php` bliver linjen mærket
+`(slået op i hånden)`, så ingen tror, den er hentet som resten.

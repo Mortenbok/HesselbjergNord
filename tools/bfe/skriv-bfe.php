@@ -32,11 +32,16 @@ foreach ($cache as $noegle => $r) {
 }
 
 foreach ($cache as $noegle => $r) {
+    // Numre, BBR ikke kunne føre os til, er slået op i hånden. Det skal
+    // kunne ses i filen, så ingen tror, de er hentet som resten.
+    $note = !empty($r['haandholdt']) ? ' (slået op i hånden)' : '';
+
     $linjer[] = sprintf(
-        "    %-{$bredde}s => '%s',   // %s",
+        "    %-{$bredde}s => '%s',   // %s%s",
         "'" . $noegle . "'",
         $r['bfe'],
-        $r['adresse']
+        $r['adresse'],
+        $note
     );
 }
 
