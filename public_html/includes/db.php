@@ -33,6 +33,7 @@ try {
             display_name VARCHAR(255) NOT NULL,
             password_hash VARCHAR(255) NOT NULL,
             role ENUM('bestyrelse', 'medlem') NOT NULL DEFAULT 'medlem',
+            address VARCHAR(255) NOT NULL DEFAULT '',
             is_active TINYINT(1) NOT NULL DEFAULT 1,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             last_login_at DATETIME NULL DEFAULT NULL,
@@ -95,6 +96,53 @@ try {
 
         $pdo->exec("ALTER TABLE documents MODIFY category
             ENUM('dagsorden', 'referat', 'regnskab') NOT NULL");
+    }
+
+    // Brugere hører til en adresse, så et adgangskort kan se, om kontoen
+    // tilhører den husstand, kortet er delt ud til.
+    $userCols = $pdo->query('SHOW COLUMNS FROM users')->fetchAll(PDO::FETCH_COLUMN, 0);
+
+    if (!in_array('address', $userCols, true)) {
+        $pdo->exec("ALTER TABLE users ADD COLUMN address VARCHAR(255) NOT NULL DEFAULT '' AFTER role");
+        $pdo->exec('ALTER TABLE users ADD KEY idx_users_address (address)');
+    }
+
+    // ---------------------------------------------------------------------
+    // adgangskort — ét kort pr. husstand, uddelt som postkort med QR-kode
+    // ---------------------------------------------------------------------
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS adgangskort (
+            id INT NOT NULL AUTO_INCREMENT,
+            adresse VARCHAR(255) NOT NULL,
+            kode CHAR(8) NOT NULL,
+            spaerret TINYINT(1) NOT NULL DEFAULT 0,
+            antal_brug INT NOT NULL DEFAULT 0,
+            sidst_brugt DATETIME NULL DEFAULT NULL,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY uniq_adgangskort_kode (kode),
+            UNIQUE KEY uniq_adgangskort_adresse (adresse)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+
+    // Første gang laves ét kort pr. husstand fra listen i husstande.php.
+    // Derefter styres kortene kun fra adgangskort.php — her røres de ikke.
+    if ((int)$pdo->query('SELECT COUNT(*) FROM adgangskort')->fetchColumn() === 0) {
+        require_once __DIR__ . '/husstande.php';
+        require_once __DIR__ . '/adgang.php';
+
+        $saet = $pdo->prepare('INSERT INTO adgangskort (adresse, kode) VALUES (:a, :k)');
+        $brugte = [];
+
+        foreach (HBN_HUSSTANDE as $adresse) {
+            // Koden skal være unik; gentag indtil der er fundet en ledig.
+            do {
+                $kode = adgang_ny_kode();
+            } while (isset($brugte[$kode]));
+
+            $brugte[$kode] = true;
+            $saet->execute([':a' => $adresse, ':k' => $kode]);
+        }
     }
 
     $pdo->exec("

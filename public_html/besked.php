@@ -650,6 +650,7 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
       <a href="medlemsfotos.php" data-members-only hidden>Medlemsfotos</a>
       <a href="generalforsamling.php" data-members-only hidden>Generalforsamling</a>
       <a href="besked.php" class="active" data-board-only hidden>Beskeder</a>
+      <a href="adgangskort.php" data-board-only hidden>Adgangskort</a>
     </div>
     <div class="nav-account">
       <span class="nav-user" data-user-name hidden></span>
@@ -669,8 +670,8 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
       <form method="post" action="login.php">
         <input type="hidden" name="next" value="medlemsfotos.php">
 
-        <label for="loginUser">Brugernavn</label>
-        <input id="loginUser" type="text" name="username" placeholder="Brugernavn"
+        <label for="loginUser">Brugernavn eller mail</label>
+        <input id="loginUser" type="text" name="username" placeholder="Brugernavn eller mail"
                autocomplete="username" required>
 
         <label for="loginPass">Adgangskode</label>

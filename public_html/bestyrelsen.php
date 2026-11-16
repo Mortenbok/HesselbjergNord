@@ -404,6 +404,7 @@ $loggedIn = $user !== null;
         <a href="generalforsamling.php">Generalforsamling</a>
         <?php if (($user['role'] ?? '') === 'bestyrelse'): ?>
           <a href="besked.php">Beskeder</a>
+          <a href="adgangskort.php">Adgangskort</a>
         <?php endif; ?>
       <?php endif; ?>
     </div>
@@ -429,8 +430,8 @@ $loggedIn = $user !== null;
         <form method="post" action="login.php">
           <input type="hidden" name="next" value="bestyrelsen.php">
 
-          <label for="loginUser">Brugernavn</label>
-          <input id="loginUser" type="text" name="username" placeholder="Brugernavn"
+          <label for="loginUser">Brugernavn eller mail</label>
+          <input id="loginUser" type="text" name="username" placeholder="Brugernavn eller mail"
                  autocomplete="username" required>
 
           <label for="loginPass">Adgangskode</label>

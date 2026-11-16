@@ -106,9 +106,23 @@ Beslut for hver enkelt:
 - [ ] **GatewayAPI-nøgle** ind i `includes/config.local.php`, så SMS kan
       sendes. Mail virker allerede.
 - [ ] **Syv bestyrelseslogins mangler.** Der er kun én bruger
-      (`MortenBoKristensen`). `setup.php` har låst sig selv, så resten
-      skal oprettes direkte i databasen — eller vi bygger en
-      "Brugere"-side til bestyrelsen.
+      (`MortenBoKristensen`). De oprettes på `opret-medlemmer.php` —
+      husk at sætte Rolle til **Bestyrelse**. Siden er ikke linket fra
+      nogen menu; skriv adressen direkte. (`setup.php` er låst for
+      altid og kan ikke bruges til det.)
+- [ ] **Del adgangskortene ud.** 203 postkort, ét pr. husstand, hentet
+      fra OpenStreetMap. Før de printes:
+      1. Scan ét kort med en telefon, og gå hele vejen igennem.
+         QR-koderne er afprøvet maskinelt, men ikke med et rigtigt
+         kamera på rigtigt papir.
+      2. Gennemgå listen på `adgangskort.php` mod jeres egen
+         medlemsliste. OpenStreetMap er ikke et folkeregister:
+         **Rosenvænget 500A** ser forkert ud, og huse, der mangler i
+         OSM, har slet ikke fået et kort. Tilføj og fjern på siden.
+      3. Print først derefter. Husk, at printfilen indeholder ALLE
+         koder — den må ikke sendes rundt eller gemmes.
+- [ ] **Overvej at slette `setup.php`** fra git og serveren. Den er
+      låst og kan ikke misbruges, men den er overflødig.
 - [ ] **Skift SMTP-adgangskoden.** Den har været skrevet i en chat.
       Rettes ét sted: `includes/config.local.php`.
 - [ ] **Tilmeldingslinket til Betalingsservice mangler.**

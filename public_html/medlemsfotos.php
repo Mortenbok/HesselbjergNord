@@ -276,6 +276,7 @@ $photos = $stmt->fetchAll();
       <a href="generalforsamling.php">Generalforsamling</a>
       <?php if (($user['role'] ?? '') === 'bestyrelse'): ?>
         <a href="besked.php">Beskeder</a>
+        <a href="adgangskort.php">Adgangskort</a>
       <?php endif; ?>
     </div>
     <div class="nav-account">

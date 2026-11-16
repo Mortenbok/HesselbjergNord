@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
   display_name VARCHAR(255) NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
   role ENUM('bestyrelse', 'medlem') NOT NULL DEFAULT 'medlem',
+  address VARCHAR(255) NOT NULL DEFAULT '',
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   last_login_at DATETIME NULL DEFAULT NULL,
@@ -82,6 +83,32 @@ CREATE TABLE IF NOT EXISTS documents (
 --
 -- INSERT INTO users (username, display_name, password_hash, role)
 -- VALUES ('bestyrelsen', 'Bestyrelsen', '$2y$10$INDSÆT_HASH_HER', 'bestyrelse');
+
+-- ---------------------------------------------------------------------------
+-- adgangskort — ét postkort med QR-kode pr. husstand
+-- ---------------------------------------------------------------------------
+-- Kortet hører til adressen, ikke til personen. At kortet er afleveret i
+-- postkassen er beviset for, at modtageren hører til adressen — derfor skal
+-- bestyrelsen ikke godkende nogen i hånden.
+--
+-- Koden brænder ikke ved brug: begge ejere kan oprette hver deres login, og
+-- et glemt kodeord klares ved at scanne igen. Skifter huset ejer, får kortet
+-- en ny kode fra adgangskort.php, og det gamle postkort dør.
+--
+-- includes/db.php laver ét kort pr. adresse i includes/husstande.php, første
+-- gang tabellen er tom.
+CREATE TABLE IF NOT EXISTS adgangskort (
+  id INT NOT NULL AUTO_INCREMENT,
+  adresse VARCHAR(255) NOT NULL,
+  kode CHAR(8) NOT NULL,
+  spaerret TINYINT(1) NOT NULL DEFAULT 0,
+  antal_brug INT NOT NULL DEFAULT 0,
+  sidst_brugt DATETIME NULL DEFAULT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uniq_adgangskort_kode (kode),
+  UNIQUE KEY uniq_adgangskort_adresse (adresse)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------------
 -- aarshjul — indholdet på aarshjul.php (Årshjul / Aktiviteter)
