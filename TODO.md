@@ -135,10 +135,10 @@ Beslut for hver enkelt:
       `Adressekartotek 2026 - faerdig.csv` (213 rækker). Filen må ALDRIG
       lægges i git — depotet er offentligt, og filen rummer navne,
       hjemmeadresser, mails og telefonnumre på ~200 mennesker.
-- [x] **BFE-numre.** Hentet 16. 11. 2026 hos Datafordeleren for 202 af
-      foreningens 203 adresser og lagt i `includes/bfe.php`. Ejer-knappen
-      i kartoteket er derfor et direkte link til OIS på alle rækker på
-      nær én.
+- [x] **BFE-numre.** Hentet 16. 11. 2026 hos Datafordeleren for 204
+      adresser — foreningens 203 plus Ristingevej 121 og 123 — og lagt i
+      `includes/bfe.php`. Ejer-knappen i kartoteket er derfor et direkte
+      link til OIS på alle rækker på nær én.
 - [ ] **Fyrrevænget 1A har intet BFE-nummer.** BBR kender hverken en
       grund eller en bygning på adressen, selv om DAR har adressen.
       Slå den op i hånden på boligejer.dk, og skriv nummeret i feltet
@@ -166,7 +166,13 @@ Beslut for hver enkelt:
 - [ ] **Ristingevej 121 og 123 står i kartoteket**, men Ristingevej er
       ikke en af de 20 veje i vedtægternes § 1. Enten mangler vejen i
       vedtægterne, eller også hører de to huse ikke til foreningen.
-      Hjemmesiden afviser i dag adressen som "uden for foreningen".
+      **Spørgsmålet er stadig uafklaret og skal afgøres på en
+      generalforsamling** — det er vedtægterne, der skal rettes, ikke
+      hjemmesiden.
+      De to huse har nu deres BFE-numre (10067097 og 3073368), så
+      Ejer-knappen virker på dem. Men `ny-beboer.php` afviser fortsat
+      Ristingevej som "uden for foreningen", og det er med vilje: vejen
+      kommer først ind i `HBN_VEJE`, når vedtægterne siger, den hører til.
 - [ ] **`residents`-tabellen er ikke længere i brug.** `ny-beboer.php`
       skriver nu i `beboerkartotek`. De gamle rækker i `residents` kan
       slettes, når bestyrelsen har set dem efter — og `beboere.php`

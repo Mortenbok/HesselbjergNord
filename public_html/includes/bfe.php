@@ -181,6 +181,8 @@ const HBN_BFE = [
     'musvitvanget6'     => '3073558',   // Musvitvænget 6
     'musvitvanget7'     => '3073541',   // Musvitvænget 7
     'musvitvanget8'     => '3073559',   // Musvitvænget 8
+    'ristingevej121'    => '10067097',   // Ristingevej 121
+    'ristingevej123'    => '3073368',   // Ristingevej 123
     'rosenvanget1'      => '3073379',   // Rosenvænget 1
     'rosenvanget2'      => '3073370',   // Rosenvænget 2
     'rosenvanget3'      => '3073378',   // Rosenvænget 3
@@ -235,14 +237,21 @@ const HBN_BFE = [
 /**
  * Det BFE-nummer, vi kender til adressen. Tom streng, hvis vi ikke har et.
  *
- * Adressen må gerne være skrevet i fri tekst — nøglen foldes, så både
- * "Hyldeskovvænget 4" og "Hylleskovvænget 4" rammer den samme ejendom.
+ * Adressen må gerne være skrevet i fri tekst. Først prøves den rettede
+ * stavemåde, så både "Hyldeskovvænget 4" og "Hylleskovvænget 4" rammer
+ * den samme ejendom. Ligger adressen ikke på en af vedtægternes veje,
+ * bruges vejnavnet, som det står — Ristingevej 121 og 123 står i
+ * kartoteket uden at være blandt de 20 veje.
  */
 function bfe_kendt(string $adresse): string
 {
-    $noegle = adresse_noegle_af_fritekst($adresse);
+    foreach ([adresse_noegle_af_fritekst($adresse), adresse_noegle_fri($adresse)] as $noegle) {
+        if ($noegle !== '' && isset(HBN_BFE[$noegle])) {
+            return HBN_BFE[$noegle];
+        }
+    }
 
-    return $noegle === '' ? '' : (HBN_BFE[$noegle] ?? '');
+    return '';
 }
 
 /**

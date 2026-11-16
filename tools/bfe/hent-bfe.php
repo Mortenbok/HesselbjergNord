@@ -188,7 +188,17 @@ function bfe_af_jordstykke(string $jordstykke): ?array
 
 /* ------------------------------------------------------------------ */
 
-$adresser = array_slice($argv, 1) ?: HBN_HUSSTANDE;
+/**
+ * Adresser, der står i beboerkartoteket uden at ligge på en af
+ * vedtægternes 20 veje. De skal med, for medlemmerne er der — se punktet
+ * om Ristingevej i TODO.md.
+ */
+const BFE_EKSTRA = [
+    'Ristingevej 121',
+    'Ristingevej 123',
+];
+
+$adresser = array_slice($argv, 1) ?: array_merge(HBN_HUSSTANDE, BFE_EKSTRA);
 
 $cachefil = __DIR__ . '/cache.json';
 $cache = is_readable($cachefil) ? json_decode(file_get_contents($cachefil), true) : [];
@@ -198,7 +208,10 @@ $sprunget = [];
 $uenige = [];
 
 foreach ($adresser as $i => $adresse) {
-    $noegleAdr = adresse_noegle_af_fritekst($adresse);
+    // Ligger adressen på en af foreningens veje, bruges den rettede
+    // stavemåde. Ellers tages vejnavnet, som det står — Ristingevej er
+    // ikke i vedtægterne, men husene skal stadig kunne slås op.
+    $noegleAdr = adresse_noegle_af_fritekst($adresse) ?: adresse_noegle_fri($adresse);
 
     if ($noegleAdr === '') {
         printf("%3d/%d  %-26s KUNNE IKKE TYDES\n", $i + 1, count($adresser), $adresse);
@@ -213,7 +226,7 @@ foreach ($adresser as $i => $adresse) {
     }
 
     preg_match('/^(.*?)[\s,]*(\d{1,3}\s*[a-zA-ZæøåÆØÅ]?)$/u', $adresse, $m);
-    $vej = adresse_find_vej($m[1]);
+    $vej = adresse_find_vej($m[1]) ?? trim($m[1]);
     $nr = adresse_husnummer($m[2]);
 
     $uuid = husnummer_uuid($vej, $nr);

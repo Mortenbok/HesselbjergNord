@@ -1210,5 +1210,17 @@
         "bfe": "3073467",
         "matrikel": "8aa 460354",
         "bekraeftet": true
+    },
+    "ristingevej121": {
+        "adresse": "Ristingevej 121",
+        "bfe": "10067097",
+        "matrikel": "14a 460354",
+        "bekraeftet": true
+    },
+    "ristingevej123": {
+        "adresse": "Ristingevej 123",
+        "bfe": "3073368",
+        "matrikel": "2h 460354",
+        "bekraeftet": true
     }
 }

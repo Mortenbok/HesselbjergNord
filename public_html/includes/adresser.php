@@ -159,6 +159,38 @@ function adresse_noegle(string $vej, string $nummer): string
 }
 
 /**
+ * Nøglen ud fra en adresse, UDEN at vejen skal være en af foreningens.
+ *
+ * adresse_noegle_af_fritekst() nedenfor retter stavemåden til den rigtige
+ * vej og giver tom streng, hvis vejen ikke står i vedtægterne. Det er det
+ * rigtige, når en ny beboer melder sig — men ikke, når vi bare skal kunne
+ * slå en adresse op. Ristingevej 121 og 123 står i kartoteket uden at være
+ * blandt de 20 veje, og de skal stadig kunne finde deres BFE-nummer.
+ *
+ * Vejnavnet foldes, som det er skrevet. Tom streng, hvis adressen slet
+ * ikke kan deles i vej og husnummer.
+ */
+function adresse_noegle_fri(string $adresse): string
+{
+    $adresse = trim(preg_replace('/\s+/', ' ', $adresse) ?? '');
+    $adresse = preg_replace('/[,\s]+\d{4}\s+\p{L}+\s*$/u', '', $adresse) ?? $adresse;
+    $adresse = preg_replace('/[,\s]+\d{4}\s*$/u', '', $adresse) ?? $adresse;
+
+    if (!preg_match('/^(.*?)[\s,]*(\d{1,3}\s*[a-zA-ZæøåÆØÅ]?)$/u', $adresse, $m)) {
+        return '';
+    }
+
+    $vej = adresse_fold($m[1]);
+    $nummer = adresse_husnummer($m[2]);
+
+    if ($vej === '' || $nummer === null) {
+        return '';
+    }
+
+    return $vej . mb_strtolower($nummer);
+}
+
+/**
  * Nøglen ud fra en adresse skrevet i fri tekst, som de ældre rækker i
  * databasen indeholder. Tom streng, hvis den ikke kan tydes.
  */
