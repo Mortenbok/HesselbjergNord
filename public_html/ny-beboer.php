@@ -607,6 +607,7 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
       <a href="index.html">Forside</a>
       <a href="bestyrelsen.php">Bestyrelsen</a>
       <a href="hjertestarter.html">Hjertestarter</a>
+      <a href="omraade.html">Området</a>
       <a href="ny-beboer.php" class="active" data-guest-only>Ny beboer</a>
       <a href="vedtaegter.php" data-members-only hidden>Vedtægter</a>
       <a href="medlemsfotos.php" data-members-only hidden>Medlemsfotos</a>

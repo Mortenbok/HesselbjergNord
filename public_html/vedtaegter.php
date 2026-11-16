@@ -66,7 +66,14 @@ $pdfStoerrelse = $pdfFindes
     ? number_format(filesize($pdfPath) / 1024, 0, ',', '.') . ' KB'
     : '';
 
-/** Vejene i § 1 — sat som liste, så de brydes pænt på en telefon. */
+/**
+ * Vejene i § 1 — sat som liste, så de brydes pænt på en telefon.
+ *
+ * Teksten står præcis som i de vedtagne vedtægter. Bemærk, at "Hyldeskovvænget"
+ * er en slåfejl i 2017-udgaven: vejen hedder Hylleskovvænget. Teksten rettes
+ * IKKE her — en vedtægtsændring hører til på en generalforsamling (§ 9).
+ * I stedet står der en fodnote under listen.
+ */
 $veje = [
     'Ahornvænget', 'Askevænget', 'Birkevænget', 'Blåbærvænget', 'Duevænget',
     'Elmevænget', 'Enebærvænget', 'Fyrrevænget', 'Granvænget', 'Gulspurvevænget',
@@ -282,6 +289,17 @@ $underskrivere = [
     font-weight: 300;
   }
   .vedtaegter li { margin-bottom: 4px; }
+  .fodnote {
+    margin-top: 12px;
+    padding-left: 12px;
+    border-left: 2px solid rgba(150, 210, 255, 0.45);
+    font-size: 0.85rem;
+    font-weight: 300;
+    line-height: 1.55;
+    color: rgba(255,255,255,0.62);
+    max-width: 64ch;
+  }
+  .fodnote a { color: rgba(170, 215, 255, 0.9); }
   .veje {
     list-style: none;
     margin: 4px 0 10px;
@@ -333,6 +351,7 @@ $underskrivere = [
       <a href="index.html">Forside</a>
       <a href="bestyrelsen.php">Bestyrelsen</a>
       <a href="hjertestarter.html">Hjertestarter</a>
+      <a href="omraade.html">Området</a>
       <a href="vedtaegter.php" class="active">Vedtægter</a>
       <a href="medlemsfotos.php">Medlemsfotos</a>
       <a href="generalforsamling.php">Generalforsamling</a>
@@ -386,6 +405,10 @@ $underskrivere = [
               <li><?php echo $e($vej); ?></li>
             <?php endforeach; ?>
           </ul>
+          <p class="fodnote">Teksten står, som den blev vedtaget. Vejen, der her
+            hedder <em>Hyldeskovvænget</em>, hedder i dag <em>Hylleskovvænget</em>
+            — en slåfejl i 2017-udgaven, som kun en generalforsamling kan rette
+            (§ 9). Se vejene på kortet under <a href="omraade.html">Området</a>.</p>
         </section>
 
         <section>

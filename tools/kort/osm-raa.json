@@ -1,0 +1,731 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.11 87bfad18",
+  "osm3s": {
+    "timestamp_osm_base": "2026-11-16T08:05:36Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+
+{
+  "type": "way",
+  "id": 34145848,
+  "bounds": {
+    "minlat": 54.8165482,
+    "minlon": 10.6614025,
+    "maxlat": 54.8174598,
+    "maxlon": 10.6615339
+  },
+  "nodes": [
+    391552433,
+    13543832606,
+    944079657
+  ],
+  "geometry": [
+    { "lat": 54.8174598, "lon": 10.6615339 },
+    { "lat": 54.8174369, "lon": 10.6615306 },
+    { "lat": 54.8165482, "lon": 10.6614025 }
+  ],
+  "tags": {
+    "highway": "residential",
+    "maxspeed": "25",
+    "name": "Fyrrevænget",
+    "name:etymology:wikidata": "Q12024",
+    "source:maxspeed": "sign",
+    "surface": "paved"
+  }
+},
+{
+  "type": "way",
+  "id": 34145849,
+  "bounds": {
+    "minlat": 54.8148709,
+    "minlon": 10.6499581,
+    "maxlat": 54.8152632,
+    "maxlon": 10.6611534
+  },
+  "nodes": [
+    391552435,
+    3782219127,
+    945329325,
+    944079663,
+    944079694,
+    1735807631,
+    944079627,
+    945329298,
+    5768009406,
+    391552454,
+    5768009404,
+    945329338,
+    945329313,
+    945329428,
+    391552455
+  ],
+  "geometry": [
+    { "lat": 54.8148968, "lon": 10.6611534 },
+    { "lat": 54.8148709, "lon": 10.6609815 },
+    { "lat": 54.8149072, "lon": 10.6599261 },
+    { "lat": 54.8149492, "lon": 10.6586581 },
+    { "lat": 54.8149508, "lon": 10.6571346 },
+    { "lat": 54.8149919, "lon": 10.6555950 },
+    { "lat": 54.8149910, "lon": 10.6555329 },
+    { "lat": 54.8150176, "lon": 10.6542760 },
+    { "lat": 54.8150547, "lon": 10.6532782 },
+    { "lat": 54.8150756, "lon": 10.6529336 },
+    { "lat": 54.8151335, "lon": 10.6519653 },
+    { "lat": 54.8151575, "lon": 10.6515925 },
+    { "lat": 54.8152140, "lon": 10.6506290 },
+    { "lat": 54.8152324, "lon": 10.6504581 },
+    { "lat": 54.8152632, "lon": 10.6499581 }
+  ],
+  "tags": {
+    "highway": "service",
+    "maxspeed": "25",
+    "name": "Klitrosevej",
+    "name:etymology:wikidata": "Q158359",
+    "service": "driveway",
+    "source:maxspeed": "sign",
+    "surface": "dirt",
+    "tracktype": "grade2"
+  }
+},
+{
+  "type": "way",
+  "id": 34145851,
+  "bounds": {
+    "minlat": 54.8150756,
+    "minlon": 10.6529336,
+    "maxlat": 54.8158829,
+    "maxlon": 10.6530625
+  },
+  "nodes": [
+    391552454,
+    391552461
+  ],
+  "geometry": [
+    { "lat": 54.8150756, "lon": 10.6529336 },
+    { "lat": 54.8158829, "lon": 10.6530625 }
+  ],
+  "tags": {
+    "highway": "service",
+    "name": "Ahornvænget",
+    "name:etymology:wikidata": "Q156944",
+    "service": "driveway",
+    "surface": "dirt",
+    "tracktype": "grade2"
+  }
+},
+{
+  "type": "way",
+  "id": 80975806,
+  "bounds": {
+    "minlat": 54.8163777,
+    "minlon": 10.6533707,
+    "maxlat": 54.8169855,
+    "maxlon": 10.6556504
+  },
+  "nodes": [
+    944079649,
+    944079668,
+    945370466,
+    13543832689,
+    945370472
+  ],
+  "geometry": [
+    { "lat": 54.8165418, "lon": 10.6556504 },
+    { "lat": 54.8165192, "lon": 10.6549180 },
+    { "lat": 54.8163777, "lon": 10.6534554 },
+    { "lat": 54.8164691, "lon": 10.6533707 },
+    { "lat": 54.8169855, "lon": 10.6533889 }
+  ],
+  "tags": {
+    "highway": "track",
+    "name": "Lindevænget",
+    "name:etymology:wikidata": "Q127849",
+    "surface": "unpaved",
+    "tracktype": "grade3"
+  }
+},
+{
+  "type": "way",
+  "id": 80975812,
+  "bounds": {
+    "minlat": 54.8114144,
+    "minlon": 10.6595172,
+    "maxlat": 54.8115488,
+    "maxlon": 10.6610472
+  },
+  "nodes": [
+    531676684,
+    944079641
+  ],
+  "geometry": [
+    { "lat": 54.8114144, "lon": 10.6610472 },
+    { "lat": 54.8115488, "lon": 10.6595172 }
+  ],
+  "tags": {
+    "highway": "residential",
+    "maxspeed": "25",
+    "name": "Musvitvænget",
+    "name:etymology:wikidata": "Q25485",
+    "source:maxspeed": "sign",
+    "surface": "gravel",
+    "tracktype": "grade2"
+  }
+},
+{
+  "type": "way",
+  "id": 80975820,
+  "bounds": {
+    "minlat": 54.8165418,
+    "minlon": 10.6556504,
+    "maxlat": 54.8166001,
+    "maxlon": 10.6569635
+  },
+  "nodes": [
+    944079649,
+    944079676
+  ],
+  "geometry": [
+    { "lat": 54.8165418, "lon": 10.6556504 },
+    { "lat": 54.8166001, "lon": 10.6569635 }
+  ],
+  "tags": {
+    "highway": "track",
+    "maxspeed": "25",
+    "name": "Syrenvænget",
+    "name:etymology:wikidata": "Q157449",
+    "oneway": "yes",
+    "source:maxspeed": "sign",
+    "surface": "unpaved",
+    "tracktype": "grade3"
+  }
+},
+{
+  "type": "way",
+  "id": 80975829,
+  "bounds": {
+    "minlat": 54.8123291,
+    "minlon": 10.6594275,
+    "maxlat": 54.8123986,
+    "maxlon": 10.6610192
+  },
+  "nodes": [
+    944079648,
+    944079647
+  ],
+  "geometry": [
+    { "lat": 54.8123291, "lon": 10.6610192 },
+    { "lat": 54.8123986, "lon": 10.6594275 }
+  ],
+  "tags": {
+    "highway": "residential",
+    "maxspeed": "25",
+    "name": "Ørnevænget",
+    "name:etymology:wikidata": "Q2092297",
+    "source:maxspeed": "sign",
+    "surface": "gravel",
+    "tracktype": "grade2"
+  }
+},
+{
+  "type": "way",
+  "id": 80975831,
+  "bounds": {
+    "minlat": 54.8165418,
+    "minlon": 10.6556504,
+    "maxlat": 54.8174290,
+    "maxlon": 10.6557030
+  },
+  "nodes": [
+    944079690,
+    944079649
+  ],
+  "geometry": [
+    { "lat": 54.8174290, "lon": 10.6557030 },
+    { "lat": 54.8165418, "lon": 10.6556504 }
+  ],
+  "tags": {
+    "highway": "track",
+    "maxspeed": "25",
+    "name": "Rønnevænget",
+    "name:etymology:wikidata": "Q146198",
+    "oneway": "yes",
+    "source:maxspeed": "sign",
+    "surface": "unpaved",
+    "tracktype": "grade3"
+  }
+},
+{
+  "type": "way",
+  "id": 80975851,
+  "bounds": {
+    "minlat": 54.8149508,
+    "minlon": 10.6571346,
+    "maxlat": 54.8161682,
+    "maxlon": 10.6571985
+  },
+  "nodes": [
+    944079694,
+    944079637
+  ],
+  "geometry": [
+    { "lat": 54.8149508, "lon": 10.6571346 },
+    { "lat": 54.8161682, "lon": 10.6571985 }
+  ],
+  "tags": {
+    "highway": "service",
+    "maxspeed": "25",
+    "name": "Tjørnevænget",
+    "name:etymology:wikidata": "Q132557",
+    "service": "driveway",
+    "source:maxspeed": "sign",
+    "surface": "dirt",
+    "tracktype": "grade2"
+  }
+},
+{
+  "type": "way",
+  "id": 80975859,
+  "bounds": {
+    "minlat": 54.8165482,
+    "minlon": 10.6569635,
+    "maxlat": 54.8166247,
+    "maxlon": 10.6614025
+  },
+  "nodes": [
+    944079657,
+    944079680,
+    944079669,
+    5766129906,
+    944079622,
+    5766129904,
+    944079676
+  ],
+  "geometry": [
+    { "lat": 54.8165482, "lon": 10.6614025 },
+    { "lat": 54.8165569, "lon": 10.6608515 },
+    { "lat": 54.8165788, "lon": 10.6595072 },
+    { "lat": 54.8166055, "lon": 10.6587479 },
+    { "lat": 54.8166247, "lon": 10.6582018 },
+    { "lat": 54.8166023, "lon": 10.6570745 },
+    { "lat": 54.8166001, "lon": 10.6569635 }
+  ],
+  "tags": {
+    "highway": "track",
+    "maxspeed": "25",
+    "name": "Syrenvænget",
+    "name:etymology:wikidata": "Q157449",
+    "source:maxspeed": "sign",
+    "surface": "compacted",
+    "tracktype": "grade3"
+  }
+},
+{
+  "type": "way",
+  "id": 80975888,
+  "bounds": {
+    "minlat": 54.8112542,
+    "minlon": 10.6610472,
+    "maxlat": 54.8114144,
+    "maxlon": 10.6630160
+  },
+  "nodes": [
+    531676684,
+    944079700
+  ],
+  "geometry": [
+    { "lat": 54.8114144, "lon": 10.6610472 },
+    { "lat": 54.8112542, "lon": 10.6630160 }
+  ],
+  "tags": {
+    "highway": "residential",
+    "maxspeed": "25",
+    "name": "Gulspurvevænget",
+    "name:etymology:wikidata": "Q26205",
+    "source:maxspeed": "sign",
+    "surface": "gravel",
+    "tracktype": "grade2"
+  }
+},
+{
+  "type": "way",
+  "id": 80975890,
+  "bounds": {
+    "minlat": 54.8121747,
+    "minlon": 10.6610192,
+    "maxlat": 54.8123291,
+    "maxlon": 10.6634134
+  },
+  "nodes": [
+    944079648,
+    13306595066,
+    13306602316,
+    944079682
+  ],
+  "geometry": [
+    { "lat": 54.8123291, "lon": 10.6610192 },
+    { "lat": 54.8122813, "lon": 10.6617601 },
+    { "lat": 54.8121801, "lon": 10.6633294 },
+    { "lat": 54.8121747, "lon": 10.6634134 }
+  ],
+  "tags": {
+    "highway": "residential",
+    "maxspeed": "25",
+    "name": "Duevænget",
+    "name:etymology:wikidata": "Q10856",
+    "source:maxspeed": "sign",
+    "surface": "gravel",
+    "tracktype": "grade2"
+  }
+},
+{
+  "type": "way",
+  "id": 80975899,
+  "bounds": {
+    "minlat": 54.8114144,
+    "minlon": 10.6610076,
+    "maxlat": 54.8165482,
+    "maxlon": 10.6614025
+  },
+  "nodes": [
+    944079657,
+    945329382,
+    391552435,
+    945329451,
+    944079673,
+    945329275,
+    944079648,
+    531676684
+  ],
+  "geometry": [
+    { "lat": 54.8165482, "lon": 10.6614025 },
+    { "lat": 54.8152465, "lon": 10.6612122 },
+    { "lat": 54.8148968, "lon": 10.6611534 },
+    { "lat": 54.8147262, "lon": 10.6611689 },
+    { "lat": 54.8143973, "lon": 10.6611363 },
+    { "lat": 54.8127572, "lon": 10.6610076 },
+    { "lat": 54.8123291, "lon": 10.6610192 },
+    { "lat": 54.8114144, "lon": 10.6610472 }
+  ],
+  "tags": {
+    "highway": "residential",
+    "maxspeed": "25",
+    "name": "Fyrrevænget",
+    "name:etymology:wikidata": "Q12024",
+    "source:maxspeed": "sign",
+    "surface": "pebblestone"
+  }
+},
+{
+  "type": "way",
+  "id": 80975903,
+  "bounds": {
+    "minlat": 54.8130939,
+    "minlon": 10.6611363,
+    "maxlat": 54.8143973,
+    "maxlon": 10.6626760
+  },
+  "nodes": [
+    944079673,
+    944079665,
+    944079658,
+    5761240637,
+    944079687
+  ],
+  "geometry": [
+    { "lat": 54.8143973, "lon": 10.6611363 },
+    { "lat": 54.8143280, "lon": 10.6625963 },
+    { "lat": 54.8142648, "lon": 10.6626760 },
+    { "lat": 54.8134963, "lon": 10.6625134 },
+    { "lat": 54.8130939, "lon": 10.6624269 }
+  ],
+  "tags": {
+    "highway": "residential",
+    "maxspeed": "25",
+    "name": "Hylleskovvænget",
+    "source:maxspeed": "sign",
+    "surface": "gravel",
+    "tracktype": "grade2"
+  }
+},
+{
+  "type": "way",
+  "id": 80975911,
+  "bounds": {
+    "minlat": 54.8149492,
+    "minlon": 10.6586581,
+    "maxlat": 54.8161567,
+    "maxlon": 10.6587181
+  },
+  "nodes": [
+    944079663,
+    944079696
+  ],
+  "geometry": [
+    { "lat": 54.8149492, "lon": 10.6586581 },
+    { "lat": 54.8161567, "lon": 10.6587181 }
+  ],
+  "tags": {
+    "highway": "service",
+    "maxspeed": "25",
+    "name": "Granvænget",
+    "name:etymology:wikidata": "Q26782",
+    "service": "driveway",
+    "source:maxspeed": "sign",
+    "surface": "dirt",
+    "tracktype": "grade2"
+  }
+},
+{
+  "type": "way",
+  "id": 80990052,
+  "bounds": {
+    "minlat": 54.8149910,
+    "minlon": 10.6555329,
+    "maxlat": 54.8165418,
+    "maxlon": 10.6556504
+  },
+  "nodes": [
+    944079649,
+    944079688,
+    944079627
+  ],
+  "geometry": [
+    { "lat": 54.8165418, "lon": 10.6556504 },
+    { "lat": 54.8158144, "lon": 10.6555961 },
+    { "lat": 54.8149910, "lon": 10.6555329 }
+  ],
+  "tags": {
+    "highway": "service",
+    "maxspeed": "25",
+    "name": "Rønnevænget",
+    "name:etymology:wikidata": "Q146198",
+    "service": "driveway",
+    "source:maxspeed": "sign",
+    "surface": "dirt",
+    "tracktype": "grade3"
+  }
+},
+{
+  "type": "way",
+  "id": 81117792,
+  "bounds": {
+    "minlat": 54.8149381,
+    "minlon": 10.6506290,
+    "maxlat": 54.8152140,
+    "maxlon": 10.6507257
+  },
+  "nodes": [
+    945329313,
+    5910339435,
+    5910339436,
+    945329257
+  ],
+  "geometry": [
+    { "lat": 54.8152140, "lon": 10.6506290 },
+    { "lat": 54.8151965, "lon": 10.6506517 },
+    { "lat": 54.8151625, "lon": 10.6506738 },
+    { "lat": 54.8149381, "lon": 10.6507257 }
+  ],
+  "tags": {
+    "highway": "service",
+    "name": "Rosenvænget",
+    "name:etymology:wikidata": "Q34687",
+    "surface": "unpaved",
+    "tracktype": "grade2"
+  }
+},
+{
+  "type": "way",
+  "id": 81117802,
+  "bounds": {
+    "minlat": 54.8149072,
+    "minlon": 10.6599154,
+    "maxlat": 54.8161499,
+    "maxlon": 10.6599859
+  },
+  "nodes": [
+    945329325,
+    3782219129,
+    945329521
+  ],
+  "geometry": [
+    { "lat": 54.8149072, "lon": 10.6599261 },
+    { "lat": 54.8149822, "lon": 10.6599154 },
+    { "lat": 54.8161499, "lon": 10.6599859 }
+  ],
+  "tags": {
+    "highway": "service",
+    "name": "Birkevænget",
+    "name:etymology:wikidata": "Q25243",
+    "service": "driveway",
+    "surface": "dirt",
+    "tracktype": "grade2"
+  }
+},
+{
+  "type": "way",
+  "id": 81117806,
+  "bounds": {
+    "minlat": 54.8150176,
+    "minlon": 10.6542760,
+    "maxlat": 54.8160829,
+    "maxlon": 10.6543279
+  },
+  "nodes": [
+    945329298,
+    945329296
+  ],
+  "geometry": [
+    { "lat": 54.8150176, "lon": 10.6542760 },
+    { "lat": 54.8160829, "lon": 10.6543279 }
+  ],
+  "tags": {
+    "highway": "service",
+    "name": "Hasselvænget",
+    "name:etymology:wikidata": "Q145889",
+    "noexit": "yes",
+    "service": "driveway",
+    "surface": "dirt",
+    "tracktype": "grade2"
+  }
+},
+{
+  "type": "way",
+  "id": 81117812,
+  "bounds": {
+    "minlat": 54.8152324,
+    "minlon": 10.6504581,
+    "maxlat": 54.8156584,
+    "maxlon": 10.6505939
+  },
+  "nodes": [
+    945329428,
+    945329367
+  ],
+  "geometry": [
+    { "lat": 54.8152324, "lon": 10.6504581 },
+    { "lat": 54.8156584, "lon": 10.6505939 }
+  ],
+  "tags": {
+    "highway": "service",
+    "name": "Askevænget",
+    "name:etymology:wikidata": "Q128887",
+    "noexit": "yes",
+    "service": "driveway",
+    "surface": "unpaved",
+    "tracktype": "grade2"
+  }
+},
+{
+  "type": "way",
+  "id": 81117832,
+  "bounds": {
+    "minlat": 54.8151575,
+    "minlon": 10.6515925,
+    "maxlat": 54.8157750,
+    "maxlon": 10.6516912
+  },
+  "nodes": [
+    945329338,
+    5768009119,
+    945329286
+  ],
+  "geometry": [
+    { "lat": 54.8151575, "lon": 10.6515925 },
+    { "lat": 54.8157672, "lon": 10.6516899 },
+    { "lat": 54.8157750, "lon": 10.6516912 }
+  ],
+  "tags": {
+    "highway": "service",
+    "name": "Elmevænget",
+    "name:etymology:wikidata": "Q131113",
+    "service": "driveway",
+    "surface": "dirt",
+    "tracktype": "grade2"
+  }
+},
+{
+  "type": "way",
+  "id": 81123073,
+  "bounds": {
+    "minlat": 54.8165192,
+    "minlon": 10.6548908,
+    "maxlat": 54.8170453,
+    "maxlon": 10.6549180
+  },
+  "nodes": [
+    944079668,
+    945370467
+  ],
+  "geometry": [
+    { "lat": 54.8165192, "lon": 10.6549180 },
+    { "lat": 54.8170453, "lon": 10.6548908 }
+  ],
+  "tags": {
+    "highway": "track",
+    "name": "Lindevænget",
+    "name:etymology:wikidata": "Q127849",
+    "surface": "unpaved",
+    "tracktype": "grade3"
+  }
+},
+{
+  "type": "way",
+  "id": 81123074,
+  "bounds": {
+    "minlat": 54.8161650,
+    "minlon": 10.6479088,
+    "maxlat": 54.8162511,
+    "maxlon": 10.6497819
+  },
+  "nodes": [
+    945370461,
+    945370473
+  ],
+  "geometry": [
+    { "lat": 54.8162511, "lon": 10.6497819 },
+    { "lat": 54.8161650, "lon": 10.6479088 }
+  ],
+  "tags": {
+    "highway": "track",
+    "name": "Enebærvænget",
+    "name:etymology:wikidata": "Q25662",
+    "surface": "unpaved",
+    "tracktype": "grade2"
+  }
+},
+{
+  "type": "way",
+  "id": 81123078,
+  "bounds": {
+    "minlat": 54.8159144,
+    "minlon": 10.6498931,
+    "maxlat": 54.8167085,
+    "maxlon": 10.6515001
+  },
+  "nodes": [
+    945329260,
+    945370468,
+    5768009036,
+    945370464
+  ],
+  "geometry": [
+    { "lat": 54.8159144, "lon": 10.6498931 },
+    { "lat": 54.8161034, "lon": 10.6515001 },
+    { "lat": 54.8166301, "lon": 10.6513081 },
+    { "lat": 54.8167085, "lon": 10.6512795 }
+  ],
+  "tags": {
+    "highway": "service",
+    "name": "Blåbærvænget",
+    "name:etymology:wikidata": "Q5812410",
+    "service": "driveway",
+    "surface": "unpaved",
+    "tracktype": "grade2"
+  }
+}
+
+  ]
+}

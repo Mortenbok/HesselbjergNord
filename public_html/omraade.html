@@ -3,40 +3,33 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Område — Grundejerforeningen Hesselbjerg Nord</title>
+<meta name="description" content="Kort over Grundejerforeningen Hesselbjerg Nords område på Sydlangeland — de 20 veje, foreningen dækker.">
+<title>Området — Grundejerforeningen Hesselbjerg Nord</title>
 <link rel="icon" type="image/jpeg" href="favicon.jpg">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-
   html, body {
-    height: 100%;
+    min-height: 100%;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   }
-
   body {
-    background: url('omraade.jpg') no-repeat center center fixed;
+    background: url('beach-bg.jpg') no-repeat center center fixed;
     background-size: cover;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    color: #fff;
     position: relative;
+    color: #fff;
   }
-
   body::before {
     content: "";
-    position: absolute;
+    position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.35);
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 0;
   }
-
   nav {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
+    position: relative;
     z-index: 2;
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -44,7 +37,6 @@
     padding: 20px 15px;
     background: linear-gradient(to bottom, rgba(0,0,0,0.45), transparent);
   }
-
   .nav-links {
     display: flex;
     justify-content: center;
@@ -52,9 +44,7 @@
     gap: 10px;
     flex: 1;
   }
-
-  nav a,
-  .login-btn {
+  nav a, .login-btn {
     color: #fff;
     text-decoration: none;
     font-size: 0.95rem;
@@ -64,13 +54,21 @@
     text-shadow: 0 1px 4px rgba(0,0,0,0.6);
     transition: background 0.25s ease;
   }
-
-  nav a:hover,
-  nav a.active,
-  .login-btn:hover {
+  nav a:hover, .login-btn:hover, nav a.active {
     background: rgba(255,255,255,0.18);
   }
-
+  .nav-account {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-right: 10px;
+  }
+  .nav-user {
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.85);
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+    white-space: nowrap;
+  }
   .login-btn {
     background: rgba(255,255,255,0.08);
     border: 1px solid rgba(255,255,255,0.4);
@@ -79,150 +77,121 @@
     font-family: inherit;
   }
 
-  .nav-account {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-right: 10px;
-  }
-
-  .nav-user {
-    font-size: 0.9rem;
-    color: rgba(255,255,255,0.85);
-    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
-    white-space: nowrap;
-  }
-
-  .login-error {
-    display: none;
-    margin-bottom: 14px;
-    padding: 10px 12px;
-    border-radius: 10px;
-    background: rgba(180, 40, 40, 0.35);
-    color: #ffdede;
-    font-size: 0.9rem;
-    text-align: left;
-  }
-
-  .login-error.show {
-    display: block;
-  }
-
-  .modal {
-    position: fixed;
-    inset: 0;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 20;
-  }
-
-  .modal.open {
-    display: flex;
-  }
-
-  .modal-content {
-    background: rgba(14, 22, 27, 0.92);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 16px;
-    padding: 24px;
-    width: min(92vw, 380px);
-    box-shadow: 0 20px 50px rgba(0,0,0,0.35);
-  }
-
-  .modal-content h2 {
-    margin-bottom: 18px;
-    text-align: center;
-    font-size: 1.5rem;
-  }
-
-  .modal-content label {
-    display: block;
-    margin-bottom: 8px;
-    font-size: 0.9rem;
-    color: rgba(255,255,255,0.9);
-  }
-
-  .modal-content input {
-    width: 100%;
-    margin-bottom: 14px;
-    padding: 10px 12px;
-    border-radius: 10px;
-    border: 1px solid rgba(255,255,255,0.2);
-    background: rgba(255,255,255,0.08);
-    color: #fff;
-    font: inherit;
-  }
-
-  .modal-actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-    margin-top: 8px;
-  }
-
-  .modal-actions button {
-    background: rgba(255,255,255,0.12);
-    color: #fff;
-    border: 1px solid rgba(255,255,255,0.4);
-    border-radius: 10px;
-    padding: 10px 16px;
-    cursor: pointer;
-    font: inherit;
-  }
-
-  .close-btn {
-    background: transparent;
-    border: none;
-    color: rgba(255,255,255,0.8);
-    font-size: 1.5rem;
-    cursor: pointer;
-    line-height: 1;
-  }
-
-  .content {
+  .container {
     position: relative;
     z-index: 1;
-    padding: 40px 30px;
-    max-width: 600px;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px 20px 70px;
   }
-
-  h1 {
-    font-size: clamp(2rem, 6vw, 3.5rem);
-    letter-spacing: 2px;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.6);
-    margin-bottom: 15px;
-  }
-
-  p.subtitle {
-    font-size: clamp(1rem, 2.5vw, 1.4rem);
-    text-shadow: 0 1px 6px rgba(0,0,0,0.6);
-    margin-bottom: 30px;
-    font-weight: 300;
-  }
-
-  .badge {
-    display: inline-block;
-    padding: 10px 24px;
-    border: 2px solid rgba(255,255,255,0.8);
-    border-radius: 30px;
-    font-size: 0.95rem;
-    letter-spacing: 3px;
-    text-transform: uppercase;
+  .panel {
+    background: rgba(10, 20, 25, 0.42);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     backdrop-filter: blur(4px);
-    background: rgba(255,255,255,0.08);
   }
+  h1 {
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    margin-bottom: 10px;
+  }
+  .lead {
+    font-weight: 300;
+    color: rgba(255,255,255,0.9);
+    max-width: 64ch;
+    line-height: 1.55;
+  }
+
+  /* Nøgletal over kortet. */
+  .fakta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+  }
+  .fakta div {
+    padding: 10px 16px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 12px;
+  }
+  .fakta b { display: block; font-size: 1.25rem; }
+  .fakta span { font-size: 0.8rem; color: rgba(255,255,255,0.6); }
+
+  /* Selve kortet. */
+  #kort {
+    height: clamp(380px, 62vh, 620px);
+    margin-top: 22px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.22);
+    background: #14202a;
+    z-index: 1;
+  }
+  .leaflet-container { font: inherit; }
+  .leaflet-popup-content { font-size: 0.95rem; }
+  .kort-hjaelp {
+    margin-top: 10px;
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.6);
+  }
+
+  /* Vejlisten under kortet. */
+  .veje-titel {
+    margin-top: 30px;
+    padding-top: 22px;
+    border-top: 1px solid rgba(255,255,255,0.16);
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: rgba(150, 210, 255, 0.95);
+    margin-bottom: 14px;
+  }
+  .veje {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 8px;
+  }
+  .veje button {
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    font-weight: 300;
+    color: #fff;
+    cursor: pointer;
+    padding: 9px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.16);
+    background: rgba(255,255,255,0.05);
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+  .veje button:hover, .veje button:focus-visible {
+    background: rgba(150, 210, 255, 0.22);
+    border-color: rgba(150, 210, 255, 0.6);
+    outline: none;
+  }
+  .veje .laengde {
+    display: block;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.55);
+  }
+
+  .kilde {
+    margin-top: 24px;
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.5;
+  }
+  .kilde a { color: rgba(170, 215, 255, 0.9); }
 
   footer {
-    position: absolute;
-    bottom: 20px;
-    width: 100%;
-    text-align: center;
+    position: relative;
     z-index: 1;
+    text-align: center;
+    padding: 10px 10px 30px;
     font-size: 0.85rem;
-    color: rgba(255,255,255,0.75);
+    color: rgba(255,255,255,0.8);
     text-shadow: 0 1px 4px rgba(0,0,0,0.6);
   }
 </style>
@@ -235,6 +204,7 @@
       <a href="index.html">Forside</a>
       <a href="bestyrelsen.php">Bestyrelsen</a>
       <a href="hjertestarter.html">Hjertestarter</a>
+      <a href="omraade.html" class="active">Området</a>
       <a href="ny-beboer.php" data-guest-only>Ny beboer</a>
       <a href="vedtaegter.php" data-members-only hidden>Vedtægter</a>
       <a href="medlemsfotos.php" data-members-only hidden>Medlemsfotos</a>
@@ -244,172 +214,183 @@
     </div>
     <div class="nav-account">
       <span class="nav-user" data-user-name hidden></span>
-      <button type="button" class="login-btn" data-open-login>Login</button>
+      <a href="index.html?login=1" class="login-btn" data-open-login>Login</a>
       <a href="logout.php" class="login-btn" data-logout hidden>Log ud</a>
     </div>
   </nav>
 
-  <div class="modal" id="loginModal" aria-hidden="true">
-    <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <h2 id="loginTitle">Log ind</h2>
-        <button type="button" class="close-btn" aria-label="Luk" data-close-login>&times;</button>
+  <div class="container">
+    <div class="panel">
+      <h1>Området</h1>
+      <p class="lead">Grundejerforeningen Hesselbjerg Nord dækker 20 veje i
+        sommerhusområdet nord for Hesselbjerg på Sydlangeland — mellem Ristinge
+        Strand og Ristinge Klint. Kortet herunder viser, hvilke veje der hører
+        til foreningen.</p>
+
+      <div class="fakta">
+        <div><b>20</b><span>veje i foreningen</span></div>
+        <div><b>4,1 km</b><span>vej i alt</span></div>
+        <div><b>42 ha</b><span>område i alt</span></div>
+        <div><b>1,0 × 0,7 km</b><span>udstrækning</span></div>
       </div>
-      <p class="login-error" id="loginError" role="alert"></p>
 
-      <form method="post" action="login.php">
-        <input type="hidden" name="next" value="medlemsfotos.php">
+      <div id="kort"></div>
+      <p class="kort-hjaelp">Tryk på en vej i kortet eller i listen for at se, hvor den ligger.
+        Skift mellem kort og luftfoto øverst til højre i kortet.</p>
 
-        <label for="loginUser">Brugernavn</label>
-        <input id="loginUser" type="text" name="username" placeholder="Brugernavn"
-               autocomplete="username" required>
+      <h2 class="veje-titel">Foreningens veje</h2>
+      <ul class="veje" id="vejliste"></ul>
 
-        <label for="loginPass">Adgangskode</label>
-        <input id="loginPass" type="password" name="password" placeholder="Adgangskode"
-               autocomplete="current-password" required>
-
-        <div class="modal-actions">
-          <button type="button" data-close-login>Annuller</button>
-          <button type="submit">Log ind</button>
-        </div>
-      </form>
+      <p class="kilde">
+        Kortgrundlag og vejenes forløb: &copy;
+        <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>-bidragydere
+        (ODbL). Luftfoto: Esri, Maxar, Earthstar Geographics.
+        Vejenes placering er hentet fra OpenStreetMap og er vejledende —
+        den er ikke en matrikulær afgrænsning af foreningens område.
+      </p>
     </div>
   </div>
 
-  <div class="content">
-    <h1>Område</h1>
-    <p class="subtitle">Siden er under opbygning<br>Kom snart tilbage</p>
-    <span class="badge">Under opbygning</span>
-  </div>
-  <footer>&copy; 2026 Grundejerforeningen Hesselbjerg Nord</footer>
+  <footer>&copy; <span id="aar">2026</span> Grundejerforeningen Hesselbjerg Nord</footer>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
   <script>
-    const loginModal = document.getElementById('loginModal');
-    const openLoginButtons = document.querySelectorAll('[data-open-login]');
-    const closeLoginButtons = document.querySelectorAll('[data-close-login]');
+  (function () {
+    'use strict';
 
-    openLoginButtons.forEach((button) => {
-      button.addEventListener('click', () => {
-        loginModal.classList.add('open');
-        loginModal.setAttribute('aria-hidden', 'false');
-      });
+    document.getElementById('aar').textContent = new Date().getFullYear();
+
+    var DATA = {"roads":{"Ahornvænget":[[[10.652934,54.815076],[10.653063,54.815883]]],"Askevænget":[[[10.650458,54.815232],[10.650594,54.815658]]],"Birkevænget":[[[10.659926,54.814907],[10.659915,54.814982],[10.659986,54.81615]]],"Blåbærvænget":[[[10.649893,54.815914],[10.6515,54.816103],[10.651308,54.81663],[10.65128,54.816709]]],"Duevænget":[[[10.661019,54.812329],[10.66176,54.812281],[10.663329,54.81218],[10.663413,54.812175]]],"Elmevænget":[[[10.651593,54.815158],[10.65169,54.815767],[10.651691,54.815775]]],"Enebærvænget":[[[10.649782,54.816251],[10.647909,54.816165]]],"Fyrrevænget":[[[10.661534,54.81746],[10.661531,54.817437],[10.661403,54.816548]],[[10.661403,54.816548],[10.661212,54.815247],[10.661153,54.814897],[10.661169,54.814726],[10.661136,54.814397],[10.661008,54.812757],[10.661019,54.812329],[10.661047,54.811414]]],"Granvænget":[[[10.658658,54.814949],[10.658718,54.816157]]],"Gulspurvevænget":[[[10.661047,54.811414],[10.663016,54.811254]]],"Hasselvænget":[[[10.654276,54.815018],[10.654328,54.816083]]],"Hylleskovvænget":[[[10.661136,54.814397],[10.662596,54.814328],[10.662676,54.814265],[10.662513,54.813496],[10.662427,54.813094]]],"Klitrosevej":[[[10.661153,54.814897],[10.660982,54.814871],[10.659926,54.814907],[10.658658,54.814949],[10.657135,54.814951],[10.655595,54.814992],[10.655533,54.814991],[10.654276,54.815018],[10.653278,54.815055],[10.652934,54.815076],[10.651965,54.815134],[10.651593,54.815158],[10.650629,54.815214],[10.650458,54.815232],[10.649958,54.815263]]],"Lindevænget":[[[10.65565,54.816542],[10.654918,54.816519],[10.653455,54.816378],[10.653371,54.816469],[10.653389,54.816986]],[[10.654918,54.816519],[10.654891,54.817045]]],"Musvitvænget":[[[10.661047,54.811414],[10.659517,54.811549]]],"Rosenvænget":[[[10.650629,54.815214],[10.650652,54.815197],[10.650674,54.815163],[10.650726,54.814938]]],"Rønnevænget":[[[10.655703,54.817429],[10.65565,54.816542]],[[10.65565,54.816542],[10.655596,54.815814],[10.655533,54.814991]]],"Syrenvænget":[[[10.65565,54.816542],[10.656964,54.8166]],[[10.661403,54.816548],[10.660852,54.816557],[10.659507,54.816579],[10.658748,54.816606],[10.658202,54.816625],[10.657075,54.816602],[10.656964,54.8166]]],"Tjørnevænget":[[[10.657135,54.814951],[10.657199,54.816168]]],"Ørnevænget":[[[10.661019,54.812329],[10.659428,54.812399]]]},"area":[[[10.662439,54.817713],[10.66222,54.817915],[10.662033,54.817933],[10.661714,54.818059],[10.661433,54.818068],[10.661339,54.818014],[10.661012,54.817987],[10.660638,54.817771],[10.660607,54.81761],[10.660513,54.817542],[10.66049,54.8173],[10.660256,54.817165],[10.65971,54.817138],[10.659087,54.817197],[10.657684,54.81721],[10.657216,54.817232],[10.656748,54.817345],[10.656725,54.817547],[10.656358,54.817915],[10.655961,54.817996],[10.655306,54.817987],[10.654612,54.817583],[10.654145,54.817484],[10.654106,54.81743],[10.653615,54.817565],[10.653147,54.817565],[10.652773,54.817484],[10.652531,54.817345],[10.652406,54.817179],[10.652336,54.816707],[10.65211,54.817057],[10.651869,54.817197],[10.651494,54.817277],[10.650933,54.817268],[10.650653,54.817197],[10.650411,54.817057],[10.65038,54.816949],[10.650169,54.816779],[10.649967,54.816837],[10.649546,54.816851],[10.649172,54.816792],[10.647862,54.816765],[10.647418,54.816693],[10.647028,54.816464],[10.646903,54.81628],[10.646903,54.816056],[10.647044,54.815854],[10.64741,54.815642],[10.647683,54.815571],[10.64815,54.815562],[10.648548,54.815629],[10.648969,54.815575],[10.649008,54.815395],[10.648891,54.815252],[10.648992,54.815184],[10.649156,54.814865],[10.649374,54.814825],[10.649538,54.814708],[10.649865,54.814668],[10.649912,54.81456],[10.650162,54.814421],[10.650442,54.814403],[10.650606,54.81434],[10.65098,54.814349],[10.651455,54.814538],[10.652087,54.814551],[10.654191,54.814421],[10.658946,54.814335],[10.659531,54.814286],[10.659921,54.814187],[10.660116,54.814039],[10.660092,54.813594],[10.660014,54.813509],[10.659929,54.813078],[10.659617,54.81297],[10.658993,54.812943],[10.658853,54.81284],[10.658635,54.812799],[10.658377,54.812498],[10.658518,54.812121],[10.658744,54.811982],[10.658518,54.811726],[10.658494,54.811524],[10.658759,54.811128],[10.659289,54.810971],[10.659851,54.810953],[10.660038,54.810899],[10.660599,54.810881],[10.660903,54.810819],[10.661558,54.810801],[10.661776,54.810747],[10.662431,54.810729],[10.662649,54.810675],[10.663304,54.810684],[10.663592,54.810756],[10.663935,54.810958],[10.663974,54.811425],[10.663865,54.811649],[10.664333,54.811905],[10.664481,54.812197],[10.664379,54.812265],[10.664333,54.812453],[10.663966,54.812669],[10.663779,54.812687],[10.663701,54.812741],[10.663234,54.812781],[10.66346,54.813006],[10.663631,54.814084],[10.663725,54.814174],[10.663709,54.814389],[10.663491,54.814578],[10.66346,54.814686],[10.663218,54.814825],[10.662937,54.814897],[10.662516,54.81491],[10.662283,54.815059],[10.662244,54.815553],[10.662337,54.815755],[10.662368,54.816402],[10.662477,54.816779],[10.662462,54.817641],[10.662439,54.817713]]],"hektar":42.3,"center":[54.814357,10.655661],"bounds":[[54.811254,10.647909],[54.81746,10.663413]]};
+
+    var kort = L.map('kort', { scrollWheelZoom: false });
+
+    var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-bidragydere'
     });
 
-    closeLoginButtons.forEach((button) => {
-      button.addEventListener('click', () => {
-        loginModal.classList.remove('open');
-        loginModal.setAttribute('aria-hidden', 'true');
-      });
+    var luftfoto = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      { maxZoom: 19, attribution: 'Luftfoto: Esri, Maxar, Earthstar Geographics' }
+    );
+
+    osm.addTo(kort);
+    L.control.layers({ 'Kort': osm, 'Luftfoto': luftfoto }, null, { position: 'topright' }).addTo(kort);
+
+    // Selve området: en zone på 65 m ud til hver side af vejene. Et konvekst
+    // hylster ville lægge skoven og søen sydvest for området ind under
+    // foreningen — zonen følger i stedet vejene, som den skal.
+    DATA.area.forEach(function (ring) {
+      L.polygon(ring.map(function (p) { return [p[1], p[0]]; }), {
+        color: "#8ad2ff",
+        weight: 2,
+        opacity: 0.9,
+        dashArray: "7 6",
+        fillColor: "#8ad2ff",
+        fillOpacity: 0.14,
+        interactive: false
+      }).addTo(kort);
     });
 
-    loginModal.addEventListener('click', (event) => {
-      if (event.target === loginModal) {
-        loginModal.classList.remove('open');
-        loginModal.setAttribute('aria-hidden', 'true');
+    // Hver vej tegnes som en bred, mørk streg med en lysere ovenpå, så den
+    // kan ses både på kort og på luftfoto.
+    var lag = {};
+
+    Object.keys(DATA.roads).forEach(function (navn) {
+      var gruppe = L.layerGroup().addTo(kort);
+
+      DATA.roads[navn].forEach(function (segment) {
+        var punkter = segment.map(function (p) { return [p[1], p[0]]; });
+
+        L.polyline(punkter, { color: '#05121b', weight: 9, opacity: 0.55 }).addTo(gruppe);
+
+        var streg = L.polyline(punkter, { color: '#ffd24a', weight: 4, opacity: 0.95 }).addTo(gruppe);
+        streg.bindPopup('<strong>' + navn + '</strong>');
+        streg.on('click', function () { fremhaev(navn); });
+      });
+
+      lag[navn] = gruppe;
+    });
+
+    var aktiv = null;
+
+    function fremhaev(navn) {
+      if (aktiv && lag[aktiv]) {
+        lag[aktiv].eachLayer(function (l) {
+          if (l.options.weight === 6) l.setStyle({ color: '#ffd24a', weight: 4 });
+        });
       }
-    });
 
-    const loginForm = loginModal.querySelector('form');
-    const loginError = document.getElementById('loginError');
+      aktiv = navn;
 
-    // Fejlkoder fra login.php (bruges kun, når JavaScript er slået fra og
-    // browseren er blevet sendt tilbage hertil med ?error=...).
-    const LOGIN_ERRORS = {
-      empty: 'Udfyld både brugernavn og adgangskode.',
-      throttled: 'For mange forsøg. Vent et minut, og prøv igen.',
-      auth: 'Forkert brugernavn eller adgangskode.',
-      request: 'Ugyldig forespørgsel.',
-    };
+      lag[navn].eachLayer(function (l) {
+        if (l.options.weight === 4) l.setStyle({ color: '#ff7a59', weight: 6 });
+      });
 
-    function showLoginError(message) {
-      loginError.textContent = message;
-      loginError.classList.add('show');
+      kort.fitBounds(lag[navn].getLayers()[0].getBounds(), { maxZoom: 18, padding: [60, 60] });
+
+      document.querySelectorAll('#vejliste button').forEach(function (b) {
+        b.style.background = b.dataset.navn === navn ? 'rgba(255,122,89,0.3)' : '';
+      });
     }
 
+    // Vejlisten under kortet.
+    var liste = document.getElementById('vejliste');
+    var mLat = 111320;
+    var mLon = 111320 * Math.cos(DATA.center[0] * Math.PI / 180);
+
+    Object.keys(DATA.roads).sort(function (a, b) {
+      return a.localeCompare(b, 'da');
+    }).forEach(function (navn) {
+      var meter = 0;
+
+      DATA.roads[navn].forEach(function (segment) {
+        for (var i = 1; i < segment.length; i++) {
+          var dx = (segment[i][0] - segment[i-1][0]) * mLon;
+          var dy = (segment[i][1] - segment[i-1][1]) * mLat;
+          meter += Math.sqrt(dx * dx + dy * dy);
+        }
+      });
+
+      var li = document.createElement('li');
+      var knap = document.createElement('button');
+      knap.type = 'button';
+      knap.dataset.navn = navn;
+      knap.innerHTML = navn + '<span class="laengde">' + Math.round(meter) + ' m</span>';
+      knap.addEventListener('click', function () { fremhaev(navn); });
+      li.appendChild(knap);
+      liste.appendChild(li);
+    });
+
+    kort.fitBounds([[DATA.bounds[0][0], DATA.bounds[0][1]], [DATA.bounds[1][0], DATA.bounds[1][1]]],
+      { padding: [30, 30] });
+
+    // Rullehjulet skal ikke stjæle siden, når man scroller forbi kortet.
+    kort.on('click', function () { kort.scrollWheelZoom.enable(); });
+    kort.on('mouseout', function () { kort.scrollWheelZoom.disable(); });
+  })();
+  </script>
+
+  <script>
     // Navigationen tilpasses efter, om den besøgende er logget ind.
     fetch('session-status.php', { credentials: 'same-origin' })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((status) => {
-        if (!status || !status.loggedIn) {
-          return;
-        }
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (status) {
+        if (!status || !status.loggedIn) return;
 
-
-        // Tilmeldingen er til nye beboere — den skal ikke fylde i menuen,
-        // når man allerede er logget ind.
         if (status.role === 'bestyrelse') {
-          document.querySelectorAll('[data-board-only]').forEach((el) => { el.hidden = false; });
+          document.querySelectorAll('[data-board-only]').forEach(function (el) { el.hidden = false; });
         }
 
-        document.querySelectorAll('[data-guest-only]').forEach((el) => { el.hidden = true; });
-
-        document.querySelectorAll('[data-members-only], [data-logout]').forEach((el) => {
-          el.hidden = false;
-        });
-
-        document.querySelectorAll('[data-open-login]').forEach((el) => {
-          el.hidden = true;
-        });
-
-        document.querySelectorAll('[data-user-name]').forEach((el) => {
+        document.querySelectorAll('[data-guest-only]').forEach(function (el) { el.hidden = true; });
+        document.querySelectorAll('[data-members-only], [data-logout]').forEach(function (el) { el.hidden = false; });
+        document.querySelectorAll('[data-open-login]').forEach(function (el) { el.hidden = true; });
+        document.querySelectorAll('[data-user-name]').forEach(function (el) {
           el.textContent = status.displayName || '';
           el.hidden = !status.displayName;
         });
       })
-      .catch(() => {
-        // Uden svar bliver menuen stående som "ikke logget ind".
-      });
-
-    loginForm.addEventListener('submit', (event) => {
-      event.preventDefault();
-      loginError.classList.remove('show');
-
-      const submitButton = loginForm.querySelector('button[type="submit"]');
-      submitButton.disabled = true;
-
-      fetch('login.php', {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: { 'Accept': 'application/json' },
-        body: new FormData(loginForm),
-      })
-        .then((response) => response.json())
-        .then((result) => {
-          if (result.ok) {
-            window.location.href = result.redirect || 'medlemsfotos.php';
-            return;
-          }
-
-          submitButton.disabled = false;
-          showLoginError(result.message || 'Login mislykkedes.');
-        })
-        .catch(() => {
-          submitButton.disabled = false;
-          showLoginError('Der kunne ikke oprettes forbindelse. Prøv igen.');
-        });
-    });
-
-    // index.html?login=1 åbner loginvinduet med det samme — det er dertil,
-    // medlemssider sender besøgende uden login.
-    const params = new URLSearchParams(window.location.search);
-
-    if (params.get('login') === '1') {
-      loginModal.classList.add('open');
-      loginModal.setAttribute('aria-hidden', 'false');
-
-      const errorCode = params.get('error');
-
-      if (errorCode) {
-        showLoginError(LOGIN_ERRORS[errorCode] || 'Login mislykkedes. Prøv igen.');
-      }
-
-      const next = params.get('next');
-      const nextField = loginForm.querySelector('input[name="next"]');
-
-      if (next && /^[a-z0-9._-]+\.(php|html)$/i.test(next)) {
-        nextField.value = next;
-      }
-    }
+      .catch(function () {});
   </script>
 </body>
 </html>

@@ -19,7 +19,6 @@ at hente på en telefon:
 |---|---|---|
 | `kontingent.jpg` | 5,7 MB | ~300 KB |
 | `beach-bg.jpg` | 3,4 MB | ~300 KB |
-| `omraade.jpg` | 3,1 MB | ~300 KB |
 | `vedtaegter.jpg` | 2,4 MB | ~250 KB |
 | `bestyrelsen.jpg` | 1,7 MB | ~250 KB |
 | `urlLogo.png` | 1,2 MB | ~100 KB |
@@ -28,8 +27,12 @@ at hente på en telefon:
 Skaleres til 1920 px bred og gemmes som WebP med JPG som reserve.
 Forventet: over 90 % mindre uden synlig forskel.
 
+`omraade.jpg` (3,1 MB) er ikke længere i brug: den nye `omraade.html`
+bruger `beach-bg.jpg` som baggrund. Filen kan slettes — både i git og på
+serveren.
+
 ### 1.2 robots.txt og sitemap.xml mangler helt
-Ingen af delene findes. Et sitemap betyder ekstra meget her, fordi fire
+Ingen af delene findes. Et sitemap betyder ekstra meget her, fordi tre
 sider nu er skjult i menuen (se punkt 3) — Google kan ikke længere finde
 dem ved at følge links.
 
@@ -42,41 +45,45 @@ indhold og dele placeringen mellem dem.
 Deles siden på Facebook — som er den måde, en grundejerforening spreder
 sig på — vises den som et nøgent link uden billede og beskrivelse.
 
-### 1.5 Beskrivelser mangler på tre sider
-`omraade.html`, `kontingent.html`, `aktiviteter.html`.
+### 1.5 Beskrivelser mangler på to sider
+`kontingent.html`, `aktiviteter.html`.
 
 ### 1.6 Strukturerede data
 `Organization`/`LocalBusiness` i JSON-LD. Lille gevinst, hurtigt gjort.
 
 ---
 
-## 2. Tre sider er reelt tomme  ← vigtigst af alt, og kun du kan gøre det
+## 2. To sider er reelt tomme  ← vigtigst af alt, og kun du kan gøre det
 
 Målt synligt indhold:
 
 | Side | Ord |
 |---|---|
-| `omraade.html` | ~39 |
 | `kontingent.html` | ~32 |
 | `aktiviteter.html` | ~32 |
 | `betalingsservice.html` | ~345 |
 | `hjertestarter.html` | ~260 |
 | `index.html` | ~101 |
 
-De tre første står stadig som "Under opbygning". Ingen meta-tags kan
+De to første står stadig som "Under opbygning". Ingen meta-tags kan
 løfte en tom side — der skal tekst på. Det er skrivearbejde, ikke kodning.
 
 `vedtaegter.html` er klaret: vedtægterne ligger nu på `vedtaegter.php`
 bag login, med hele teksten og den underskrevne PDF vedhæftet. Den gamle
 offentlige fil står tilbage som henvisning til den nye side.
 
+`omraade.html` er klaret: siden er nu et kort over foreningens område med
+alle 20 veje tegnet ind, en vejliste med længder og nøgletal (42 ha,
+4,1 km vej). Den er tilbage i menuen på alle sider. Vejenes forløb er
+hentet fra OpenStreetMap; kortet tegnes med Leaflet fra cdnjs, og der er
+både almindeligt kort og luftfoto.
+
 ---
 
-## 3. De fire skjulte sider er nu forældreløse
+## 3. De tre skjulte sider er nu forældreløse
 
-`omraade`, `kontingent`, `aktiviteter` og `betalingsservice` er taget ud
-af menuen, men findes stadig og svarer med 200. Ingen sider linker til
-dem længere.
+`kontingent`, `aktiviteter` og `betalingsservice` er taget ud af menuen,
+men findes stadig og svarer med 200. Ingen sider linker til dem længere.
 
 (`vedtaegter.html` er afgjort: den har fået `noindex` og sender videre
 til `vedtaegter.php` i medlemsområdet.)
@@ -106,6 +113,12 @@ Beslut for hver enkelt:
       besøgende. Linket dannes i BS Customer Portal.
 - [ ] **Uffe Gangelhof mangler telefon og adresse** i
       `includes/bestyrelse.php`. De øvrige syv er på plads.
+- [ ] **Slåfejl i vedtægternes § 1: "Hyldeskovvænget".** Vejen hedder
+      Hylleskovvænget — sådan står den i OpenStreetMap, og sådan er to
+      bestyrelsesmedlemmers adresser skrevet i `includes/bestyrelse.php`.
+      Teksten på `vedtaegter.php` er med vilje IKKE rettet: en
+      vedtægtsændring hører til på en generalforsamling (§ 9). Indtil da
+      står der en fodnote under § 1. Tag den med som forslag næste gang.
 - [ ] **Slet på serveren:** `bestyrelsen.html` og `beboere.php`. FileZilla
       fjerner ikke filer, så de ligger der sandsynligvis endnu.
       `beboere.php` viser beboeres navne, adresser og telefonnumre.

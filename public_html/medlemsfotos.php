@@ -269,6 +269,7 @@ $photos = $stmt->fetchAll();
       <a href="index.html">Forside</a>
       <a href="bestyrelsen.php">Bestyrelsen</a>
       <a href="hjertestarter.html">Hjertestarter</a>
+      <a href="omraade.html">Området</a>
       <a href="vedtaegter.php">Vedtægter</a>
       <a href="medlemsfotos.php" class="active">Medlemsfotos</a>
       <a href="generalforsamling.php">Generalforsamling</a>
