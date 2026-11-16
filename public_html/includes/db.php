@@ -325,7 +325,7 @@ try {
             sent_by_name VARCHAR(255) NOT NULL DEFAULT '',
             recipient_count INT NOT NULL DEFAULT 0,
             parts SMALLINT NOT NULL DEFAULT 1,
-            status ENUM('sendt', 'fejl') NOT NULL DEFAULT 'sendt',
+            status ENUM('sender', 'sendt', 'fejl') NOT NULL DEFAULT 'sendt',
             error VARCHAR(255) NOT NULL DEFAULT '',
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
@@ -338,11 +338,15 @@ try {
         CREATE TABLE IF NOT EXISTS message_recipients (
             id INT NOT NULL AUTO_INCREMENT,
             message_id INT NOT NULL,
-            resident_id INT NULL DEFAULT NULL,
+            beboer_id INT NULL DEFAULT NULL,
             name VARCHAR(255) NOT NULL DEFAULT '',
-            msisdn VARCHAR(16) NOT NULL,
+            msisdn VARCHAR(16) NOT NULL DEFAULT '',
+            email VARCHAR(255) NOT NULL DEFAULT '',
+            sendt_at DATETIME NULL DEFAULT NULL,
+            fejl VARCHAR(255) NOT NULL DEFAULT '',
             PRIMARY KEY (id),
             KEY idx_msgrcpt_message (message_id),
+            KEY idx_msgrcpt_koe (message_id, sendt_at),
             CONSTRAINT fk_msgrcpt_message
                 FOREIGN KEY (message_id) REFERENCES messages (id)
                 ON DELETE CASCADE
@@ -369,6 +373,35 @@ try {
     if (!in_array('email', $rcptCols, true)) {
         $pdo->exec("ALTER TABLE message_recipients ADD COLUMN email VARCHAR(255) NOT NULL DEFAULT '' AFTER msisdn");
         $pdo->exec("ALTER TABLE message_recipients MODIFY msisdn VARCHAR(16) NOT NULL DEFAULT ''");
+    }
+
+    // En udsendelse til hele foreningen kan ikke nå at blive sendt i ét
+    // kald: hver mail får sin egen SMTP-forbindelse, og 200 af dem rammer
+    // serverens tidsgrænse. Derfor lægges modtagerne i kø, og siden sender
+    // et hold ad gangen. sendt_at viser, hvem der har fået beskeden, så en
+    // afbrudt udsendelse kan tages op igen uden at nogen får den to gange.
+    if (!in_array('sendt_at', $rcptCols, true)) {
+        $pdo->exec('ALTER TABLE message_recipients
+            ADD COLUMN sendt_at DATETIME NULL DEFAULT NULL AFTER email');
+        $pdo->exec("ALTER TABLE message_recipients
+            ADD COLUMN fejl VARCHAR(255) NOT NULL DEFAULT '' AFTER sendt_at");
+        $pdo->exec('ALTER TABLE message_recipients
+            ADD KEY idx_msgrcpt_koe (message_id, sendt_at)');
+    }
+
+    // Kolonnen hed resident_id, dengang modtagerne kom fra residents-tabellen.
+    // Nu kommer de fra beboerkartoteket.
+    if (in_array('resident_id', $rcptCols, true) && !in_array('beboer_id', $rcptCols, true)) {
+        $pdo->exec('ALTER TABLE message_recipients
+            CHANGE resident_id beboer_id INT NULL DEFAULT NULL');
+    }
+
+    // 'sender' er en udsendelse, der er lagt i kø, men ikke sendt færdig.
+    $status = $pdo->query("SHOW COLUMNS FROM messages LIKE 'status'")->fetch();
+
+    if ($status && strpos((string)$status['Type'], "'sender'") === false) {
+        $pdo->exec("ALTER TABLE messages
+            MODIFY status ENUM('sender', 'sendt', 'fejl') NOT NULL DEFAULT 'sendt'");
     }
     // Tabellen kan stamme fra en tidligere version uden disse kolonner.
     $existing = $pdo->query('SHOW COLUMNS FROM member_photos')->fetchAll(PDO::FETCH_COLUMN, 0);

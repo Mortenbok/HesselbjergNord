@@ -16,6 +16,7 @@
  */
 
 require_once __DIR__ . '/adresser.php';
+require_once __DIR__ . '/sms.php';   // beboer_modtagere() bruger sms_msisdn()
 
 /** Hvor længe et link fra bekræftelsesmailen virker. */
 const BEBOER_TOKEN_DAGE = 30;
@@ -246,4 +247,88 @@ function beboer_send_bekraeftelse(string $navn, string $mail, string $adresse, s
     $svar = mail_send([$mail], $emne, $tekst);
 
     return ($svar['ok'] ?? 0) > 0;
+}
+
+/**
+ * Modtagere til en udsendelse, hentet i beboerkartoteket.
+ *
+ * Det er kartoteket, der er foreningens register — den gamle
+ * residents-tabel bliver ikke længere fyldt. Både mail og mail2 tæller,
+ * og det samme gør telefon og telefon2: står der to voksne på adressen,
+ * skal de begge kunne nås.
+ *
+ * Nøglen er selve kontaktoplysningen, så den samme mailadresse kun får
+ * beskeden én gang, også selv om den står på flere rækker. Ejeren står
+ * først, så det er ejerens navn, der bruges i hilsenen.
+ *
+ * $kanal er 'mail' eller 'sms'. $kunBestyrelse begrænser til de rækker,
+ * der har bestyrelsesflaget.
+ */
+function beboer_modtagere(PDO $pdo, string $kanal, bool $kunBestyrelse = false): array
+{
+    $sql = 'SELECT id, kontaktperson, sommerhusadresse, mail, mail2, telefon, telefon2
+              FROM beboerkartotek';
+
+    if ($kunBestyrelse) {
+        $sql .= ' WHERE bestyrelse = 1';
+    }
+
+    $sql .= ' ORDER BY forhold, id';
+
+    $felter = $kanal === 'sms' ? ['telefon', 'telefon2'] : ['mail', 'mail2'];
+    $ud = [];
+
+    foreach ($pdo->query($sql)->fetchAll() as $r) {
+        foreach ($felter as $felt) {
+            $raa = trim((string)$r[$felt]);
+
+            if ($raa === '') {
+                continue;
+            }
+
+            if ($kanal === 'sms') {
+                $noegle = sms_msisdn($raa);
+
+                if ($noegle === null) {
+                    continue;
+                }
+
+                $mail = '';
+                $msisdn = $noegle;
+            } else {
+                $noegle = mb_strtolower($raa);
+
+                if (!filter_var($noegle, FILTER_VALIDATE_EMAIL)) {
+                    continue;
+                }
+
+                $mail = $noegle;
+                $msisdn = '';
+            }
+
+            // Først fundne vinder: rækkefølgen sætter ejeren forrest.
+            if (isset($ud[$noegle])) {
+                continue;
+            }
+
+            $ud[$noegle] = [
+                'beboer_id' => (int)$r['id'],
+                'navn' => trim((string)$r['kontaktperson']),
+                'adresse' => trim((string)$r['sommerhusadresse']),
+                'email' => $mail,
+                'msisdn' => $msisdn,
+            ];
+        }
+    }
+
+    return array_values($ud);
+}
+
+/** Hvor mange kan nås på hver kanal? Til tallene på siden. */
+function beboer_antal_modtagere(PDO $pdo, bool $kunBestyrelse = false): array
+{
+    return [
+        'mail' => count(beboer_modtagere($pdo, 'mail', $kunBestyrelse)),
+        'sms' => count(beboer_modtagere($pdo, 'sms', $kunBestyrelse)),
+    ];
 }

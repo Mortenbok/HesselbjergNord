@@ -6,16 +6,21 @@
  * kaldes tilbage (begge dele), så siden kræver, at afsenderen først ser
  * modtagerlisten og derefter bekræfter i et ekstra trin.
  *
- * Modtagerne er beboere, der har givet samtykke i "Ny beboer"-formularen:
- *   SMS   — dem, der har oplyst et brugbart dansk telefonnummer
- *   Mail  — dem, der har en gyldig mailadresse (mail er påkrævet i formularen,
- *           så det er i praksis alle)
+ * Modtagerne kommer fra BEBOERKARTOTEKET — foreningens eget register. Både
+ * mail og mail2 tæller, og det samme gør telefon og telefon2, så begge
+ * voksne på en adresse kan nås. Den samme adresse får kun beskeden én gang.
+ *
+ * En udsendelse til hele foreningen kan ikke nå at blive sendt i ét kald:
+ * hver mail får sin egen SMTP-forbindelse. Derfor lægges modtagerne i kø i
+ * message_recipients, og siden sender BESKED_AD_GANGEN ad gangen. sendt_at
+ * viser, hvem der har fået den, så en afbrudt udsendelse kan tages op igen.
  */
 
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/sms.php';
 require_once __DIR__ . '/includes/mail.php';
+require_once __DIR__ . '/includes/beboer.php';
 
 auth_require('index.html');
 
@@ -26,127 +31,251 @@ if ($denied) {
     http_response_code(403);
 }
 
-/**
- * Beboere, der kan modtage på den valgte kanal.
- *
- * Nøglen er telefonnummeret henholdsvis mailadressen, så to beboere med
- * samme kontaktoplysning kun får én besked.
- */
-function message_recipients(PDO $pdo, string $channel): array
+/** Modtagere pr. udsendelse. Resten venter til næste klik. */
+const BESKED_AD_GANGEN = 25;
+
+/** Hvor langt er en udsendelse nået? */
+function besked_koe(PDO $pdo, int $messageId): array
 {
-    $rows = $pdo->query(
-        "SELECT id, name, phone, email FROM residents WHERE consent = 1 ORDER BY name"
-    )->fetchAll();
+    $stmt = $pdo->prepare(
+        "SELECT COUNT(*) AS ialt,
+                SUM(sendt_at IS NOT NULL) AS sendt,
+                SUM(fejl <> '') AS fejlede
+           FROM message_recipients
+          WHERE message_id = :m"
+    );
+    $stmt->execute([':m' => $messageId]);
+    $r = $stmt->fetch() ?: [];
 
-    $out = [];
+    $ialt = (int)($r['ialt'] ?? 0);
+    $sendt = (int)($r['sendt'] ?? 0);
 
-    foreach ($rows as $row) {
-        if ($channel === 'sms') {
-            $msisdn = $row['phone'] !== '' ? sms_msisdn($row['phone']) : null;
-            if ($msisdn !== null) {
-                $out[$msisdn] = ['id' => (int)$row['id'], 'name' => $row['name'], 'msisdn' => $msisdn, 'email' => ''];
-            }
+    return [
+        'ialt' => $ialt,
+        'sendt' => $sendt,
+        'fejlede' => (int)($r['fejlede'] ?? 0),
+        'mangler' => max(0, $ialt - $sendt),
+    ];
+}
+
+/**
+ * Sender det næste hold af en udsendelse.
+ *
+ * Hver modtager mærkes, så snart beskeden er af sted. Bliver kaldet
+ * afbrudt — af en tidsgrænse eller en lukket fane — kan der trykkes igen,
+ * og de allerede sendte bliver ikke sendt om.
+ */
+function besked_send_hold(PDO $pdo, array $msg, int $antal): array
+{
+    $stmt = $pdo->prepare(
+        'SELECT * FROM message_recipients
+          WHERE message_id = :m AND sendt_at IS NULL
+          ORDER BY id LIMIT ' . (int)$antal
+    );
+    $stmt->execute([':m' => (int)$msg['id']]);
+    $hold = $stmt->fetchAll();
+
+    if ($hold === []) {
+        return ['ok' => 0, 'fejl' => 0, 'besked' => ''];
+    }
+
+    $noter = $pdo->prepare(
+        'UPDATE message_recipients SET sendt_at = NOW(), fejl = :f WHERE id = :id'
+    );
+
+    $ok = 0;
+    $fejl = 0;
+    $sidsteFejl = '';
+
+    if ($msg['channel'] === 'sms') {
+        // GatewayAPI tager hele holdet i ét kald og svarer samlet.
+        $svar = sms_send(array_column($hold, 'msisdn'), (string)$msg['body']);
+
+        foreach ($hold as $m) {
+            $noter->execute([
+                ':f' => $svar['ok'] ? '' : mb_substr((string)$svar['error'], 0, 255),
+                ':id' => (int)$m['id'],
+            ]);
+        }
+
+        if ($svar['ok']) {
+            $ok = count($hold);
         } else {
-            $mail = trim((string)$row['email']);
-            if (filter_var($mail, FILTER_VALIDATE_EMAIL)) {
-                $out[strtolower($mail)] = ['id' => (int)$row['id'], 'name' => $row['name'], 'msisdn' => '', 'email' => $mail];
+            $fejl = count($hold);
+            $sidsteFejl = (string)$svar['error'];
+        }
+    } else {
+        foreach ($hold as $m) {
+            $svar = mail_send([$m['email']], (string)$msg['subject'], (string)$msg['body']);
+            $gik = ($svar['ok'] ?? 0) > 0;
+
+            if ($gik) {
+                $ok++;
+            } else {
+                $fejl++;
+                $sidsteFejl = ($svar['error'] ?? '') !== '' ? $svar['error'] : 'Mailen blev afvist.';
             }
+
+            $noter->execute([
+                ':f' => $gik ? '' : mb_substr($sidsteFejl, 0, 255),
+                ':id' => (int)$m['id'],
+            ]);
         }
     }
 
-    return array_values($out);
+    // Tælleren på selve udsendelsen følger med, så historikken er rigtig,
+    // også hvis udsendelsen aldrig bliver gjort færdig.
+    $pdo->prepare('UPDATE messages SET ok_count = ok_count + :n WHERE id = :id')
+        ->execute([':n' => $ok, ':id' => (int)$msg['id']]);
+
+    $koe = besked_koe($pdo, (int)$msg['id']);
+
+    if ($koe['mangler'] === 0) {
+        $pdo->prepare('UPDATE messages SET status = :s, error = :e WHERE id = :id')->execute([
+            ':s' => $koe['fejlede'] >= $koe['ialt'] ? 'fejl' : 'sendt',
+            ':e' => mb_substr($sidsteFejl, 0, 255),
+            ':id' => (int)$msg['id'],
+        ]);
+    }
+
+    return ['ok' => $ok, 'fejl' => $fejl, 'besked' => $sidsteFejl];
+}
+
+/** Kort kvittering efter et hold. */
+function besked_kvittering(array $svar, array $koe): array
+{
+    $hale = $koe['mangler'] > 0
+        ? $koe['mangler'] . ' mangler endnu — tryk igen.'
+        : 'Udsendelsen er færdig.';
+
+    if ($svar['fejl'] > 0) {
+        return ['warn', 'Sendt til ' . $svar['ok'] . '. ' . $svar['fejl']
+            . ' kunne ikke nås. ' . $svar['besked'] . ' ' . $hale];
+    }
+
+    return ['ok', 'Sendt til ' . $svar['ok'] . '. ' . $hale];
 }
 
 $channel = ($_POST['channel'] ?? 'sms') === 'email' ? 'email' : 'sms';
+$gruppe = ($_POST['gruppe'] ?? 'alle') === 'bestyrelse' ? 'bestyrelse' : 'alle';
 $subject = trim((string)($_POST['subject'] ?? ''));
 $body = trim((string)($_POST['body'] ?? ''));
 $message = null;
 $confirming = false;
-$recipients = $denied ? [] : message_recipients($pdo, $channel);
+
+$kunBestyrelse = $gruppe === 'bestyrelse';
+
+// Modtagerne kommer fra beboerkartoteket. Den gamle residents-tabel bliver
+// ikke længere fyldt — ny-beboer.php skriver i kartoteket.
+$recipients = $denied ? [] : beboer_modtagere($pdo, $channel === 'sms' ? 'sms' : 'mail', $kunBestyrelse);
 
 // Begge tal skal med ud i siden, så teksten kan opdateres, når kanalen
 // skiftes — uden at spørge serveren igen.
-$countSms = $denied ? 0 : count(message_recipients($pdo, "sms"));
-$countMail = $denied ? 0 : count(message_recipients($pdo, "email"));
+$antalKanal = $denied ? ['mail' => 0, 'sms' => 0] : beboer_antal_modtagere($pdo, $kunBestyrelse);
+$countSms = $antalKanal['sms'];
+$countMail = $antalKanal['mail'];
+
+// Bestyrelsens tal med ud i siden, så teksten kan følge med, når man
+// skifter gruppe — uden at spørge serveren igen.
+$antalBest = $denied ? ['mail' => 0, 'sms' => 0] : beboer_antal_modtagere($pdo, true);
 $length = sms_length($body);
 
 if (!$denied && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $trin = (string)($_POST['step'] ?? '');
+
     if (!auth_csrf_valid($_POST['csrf_token'] ?? null)) {
         $message = ['bad', 'Handlingen var udløbet. Prøv igen.'];
+    } elseif ($trin === 'fortsaet') {
+        // Næste hold af en udsendelse, der allerede er lagt i kø.
+        $stmt = $pdo->prepare("SELECT * FROM messages WHERE id = :id AND status = 'sender' LIMIT 1");
+        $stmt->execute([':id' => (int)($_POST['message_id'] ?? 0)]);
+        $msg = $stmt->fetch();
+
+        if (!$msg) {
+            $message = ['bad', 'Udsendelsen blev ikke fundet, eller den er allerede færdig.'];
+        } else {
+            $svar = besked_send_hold($pdo, $msg, BESKED_AD_GANGEN);
+            $message = besked_kvittering($svar, besked_koe($pdo, (int)$msg['id']));
+        }
     } elseif ($body === '') {
         $message = ['bad', 'Skriv en besked, før du sender.'];
     } elseif ($channel === 'email' && $subject === '') {
         $message = ['bad', 'Skriv et emne, før du sender en mail.'];
     } elseif ($recipients === []) {
         $message = ['bad', $channel === 'sms'
-            ? 'Der er ingen modtagere med telefonnummer endnu.'
-            : 'Der er ingen modtagere med mailadresse endnu.'];
-    } elseif (($_POST['step'] ?? '') !== 'send') {
+            ? 'Der er ingen i beboerkartoteket med et brugbart telefonnummer.'
+            : 'Der er ingen i beboerkartoteket med en mailadresse.'];
+    } elseif ($trin !== 'send') {
         $confirming = true;
     } else {
-        if ($channel === 'sms') {
-            $result = sms_send(array_column($recipients, 'msisdn'), $body);
-            $okCount = $result['ok'] ? count($recipients) : 0;
-            $failed = $result['ok'] ? [] : array_column($recipients, 'msisdn');
-            $error = $result['error'];
-        } else {
-            $result = mail_send($recipients, $subject, $body);
-            $okCount = $result['ok'];
-            $failed = $result['failed'];
-            $error = $result['error'] !== '' ? $result['error']
-                : ($failed !== [] ? count($failed) . ' modtagere kunne ikke nås.' : '');
-        }
+        // Udsendelsen lægges i kø og sendes i hold. Køen oprettes i én
+        // transaktion, så der aldrig står en halv modtagerliste.
+        $messageId = 0;
 
-        $status = $okCount > 0 && $failed === [] ? 'sendt' : ($okCount > 0 ? 'delvis' : 'fejl');
+        $pdo->beginTransaction();
 
-        $stmt = $pdo->prepare(
-            'INSERT INTO messages (body, channel, subject, sender_name, sent_by, sent_by_name,
-                                   recipient_count, ok_count, parts, status, error)
-             VALUES (:body, :channel, :subject, :sender, :by, :byname, :count, :ok, :parts, :status, :error)'
-        );
-        $stmt->execute([
-            ':body' => $body,
-            ':channel' => $channel,
-            ':subject' => $channel === 'email' ? $subject : '',
-            ':sender' => $channel === 'sms' ? sms_config()['sms_sender'] : mail_from()[0],
-            ':by' => $user['id'],
-            ':byname' => $user['display_name'],
-            ':count' => count($recipients),
-            ':ok' => $okCount,
-            ':parts' => $channel === 'sms' ? $length['parts'] : 1,
-            ':status' => $status === 'delvis' ? 'sendt' : $status,
-            ':error' => mb_substr($error, 0, 255),
-        ]);
+        try {
+            $pdo->prepare(
+                "INSERT INTO messages (body, channel, subject, sender_name, sent_by, sent_by_name,
+                                       recipient_count, ok_count, parts, status, error)
+                 VALUES (:body, :channel, :subject, :sender, :by, :byname, :count, 0, :parts, 'sender', '')"
+            )->execute([
+                ':body' => $body,
+                ':channel' => $channel,
+                ':subject' => $channel === 'email' ? $subject : '',
+                ':sender' => $channel === 'sms' ? sms_config()['sms_sender'] : mail_from()[0],
+                ':by' => $user['id'],
+                ':byname' => $user['display_name'],
+                ':count' => count($recipients),
+                ':parts' => $channel === 'sms' ? $length['parts'] : 1,
+            ]);
 
-        $messageId = (int)$pdo->lastInsertId();
+            $messageId = (int)$pdo->lastInsertId();
 
-        if ($okCount > 0) {
             $rcpt = $pdo->prepare(
-                'INSERT INTO message_recipients (message_id, resident_id, name, msisdn, email)
-                 VALUES (:m, :r, :n, :p, :e)'
+                'INSERT INTO message_recipients (message_id, beboer_id, name, msisdn, email)
+                 VALUES (:m, :b, :n, :p, :e)'
             );
+
             foreach ($recipients as $r) {
-                $contact = $channel === 'sms' ? $r['msisdn'] : $r['email'];
-                if (in_array($contact, $failed, true)) {
-                    continue;
-                }
                 $rcpt->execute([
-                    ':m' => $messageId, ':r' => $r['id'], ':n' => $r['name'],
-                    ':p' => $r['msisdn'], ':e' => $r['email'],
+                    ':m' => $messageId,
+                    ':b' => $r['beboer_id'],
+                    ':n' => $r['navn'],
+                    ':p' => $r['msisdn'],
+                    ':e' => $r['email'],
                 ]);
             }
 
-            $message = $failed === []
-                ? ['ok', 'Beskeden er sendt til ' . $okCount . ' modtagere.']
-                : ['warn', 'Sendt til ' . $okCount . ' af ' . count($recipients) . ' modtagere. ' . $error];
+            $pdo->commit();
+        } catch (PDOException $ex) {
+            $pdo->rollBack();
+            error_log('Besked: ' . $ex->getMessage());
+            $messageId = 0;
+            $message = ['bad', 'Udsendelsen kunne ikke oprettes. Intet blev sendt.'];
+        }
+
+        if ($messageId > 0) {
+            $stmt = $pdo->prepare('SELECT * FROM messages WHERE id = :id LIMIT 1');
+            $stmt->execute([':id' => $messageId]);
+
+            $svar = besked_send_hold($pdo, $stmt->fetch(), BESKED_AD_GANGEN);
+            $message = besked_kvittering($svar, besked_koe($pdo, $messageId));
+
             $body = '';
             $subject = '';
             $length = sms_length('');
-        } else {
-            $message = ['bad', 'Beskeden blev ikke sendt. ' . $error];
         }
     }
 }
+
+// En udsendelse, der er lagt i kø, men ikke sendt færdig. Den står øverst,
+// til den er af sted — ellers bliver den glemt halvvejs.
+$igang = $denied ? null : $pdo->query(
+    "SELECT * FROM messages WHERE status = 'sender' ORDER BY id DESC LIMIT 1"
+)->fetch();
+
+$igangKoe = $igang ? besked_koe($pdo, (int)$igang['id']) : null;
 
 $history = $denied ? [] : $pdo->query(
     'SELECT * FROM messages ORDER BY created_at DESC LIMIT 20'
@@ -160,8 +289,6 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="robots" content="noindex, nofollow">
-<!-- Siden er endnu ikke i menuen. Fjern denne linje, når den tages i brug. -->
 <meta name="robots" content="noindex, nofollow">
 <title>Beskeder — Grundejerforeningen Hesselbjerg Nord</title>
 <link rel="icon" type="image/jpeg" href="favicon.jpg">
@@ -720,6 +847,32 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
         </div>
       <?php endif; ?>
 
+      <?php if ($igang !== null && $igangKoe !== null && $igangKoe['mangler'] > 0): ?>
+        <div class="panel warn">
+          <h2>Udsendelse i gang</h2>
+          <p>
+            <strong><?php echo $e($igang['channel'] === 'sms' ? 'SMS' : $igang['subject']); ?></strong>
+            er sendt til <strong><?php echo $igangKoe['sendt']; ?></strong> af
+            <strong><?php echo $igangKoe['ialt']; ?></strong> modtagere.
+            <?php echo $igangKoe['mangler']; ?> mangler endnu.
+          </p>
+          <p class="muted">
+            Der sendes <?php echo BESKED_AD_GANGEN; ?> ad gangen, så udsendelsen
+            ikke løber ind i serverens tidsgrænse. Tryk, til tallet er nul —
+            ingen får beskeden to gange.
+          </p>
+          <form method="post">
+            <input type="hidden" name="csrf_token" value="<?php echo $e($csrf); ?>">
+            <input type="hidden" name="message_id" value="<?php echo (int)$igang['id']; ?>">
+            <div class="actions">
+              <button type="submit" name="step" value="fortsaet" class="danger">
+                Send til de næste <?php echo min($igangKoe['mangler'], BESKED_AD_GANGEN); ?>
+              </button>
+            </div>
+          </form>
+        </div>
+      <?php endif; ?>
+
       <?php if ($message !== null): ?>
         <div class="panel <?php echo $e($message[0]); ?>" role="status"><?php echo $e($message[1]); ?></div>
       <?php endif; ?>
@@ -750,12 +903,35 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
             <input type="hidden" name="channel" value="<?php echo $e($channel); ?>">
           <?php endif; ?>
 
+          <fieldset class="channel">
+            <legend>Modtagere</legend>
+            <label>
+              <input type="radio" name="gruppe" value="alle"
+                     <?php echo $gruppe === 'alle' ? 'checked' : ''; ?>
+                     <?php echo $confirming ? 'disabled' : ''; ?>>
+              <span>Alle i beboerkartoteket</span>
+            </label>
+            <label>
+              <input type="radio" name="gruppe" value="bestyrelse"
+                     <?php echo $gruppe === 'bestyrelse' ? 'checked' : ''; ?>
+                     <?php echo $confirming ? 'disabled' : ''; ?>>
+              <span>Kun bestyrelsen</span>
+            </label>
+          </fieldset>
+
+          <?php if ($confirming): ?>
+            <input type="hidden" name="gruppe" value="<?php echo $e($gruppe); ?>">
+          <?php endif; ?>
+
           <p class="muted" id="rcptInfo"
              data-sms="<?php echo (int)$countSms; ?>"
-             data-mail="<?php echo (int)$countMail; ?>">
+             data-mail="<?php echo (int)$countMail; ?>"
+             data-sms-best="<?php echo (int)$antalBest['sms']; ?>"
+             data-mail-best="<?php echo (int)$antalBest['mail']; ?>">
             Sendes til <strong><?php echo count($recipients); ?></strong>
-            <?php echo count($recipients) === 1 ? 'beboer' : 'beboere'; ?>
-            <?php echo $channel === 'sms' ? 'med telefonnummer' : 'med mailadresse'; ?>.
+            <?php echo count($recipients) === 1 ? 'modtager' : 'modtagere'; ?>
+            <?php echo $channel === 'sms' ? 'med telefonnummer' : 'med mailadresse'; ?>
+            i beboerkartoteket.
           </p>
 
           <div id="subjectRow" class="<?php echo $channel === 'email' ? '' : 'hidden-row'; ?>">
@@ -799,7 +975,7 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
                 <summary>Vis modtagere</summary>
                 <ul class="rcpt">
                   <?php foreach ($recipients as $r): ?>
-                    <li><?php echo $e($r['name']); ?> &middot;
+                    <li><?php echo $e($r['navn']); ?> &middot;
                         <?php echo $e($channel === 'sms' ? $r['msisdn'] : $r['email']); ?></li>
                   <?php endforeach; ?>
                 </ul>
@@ -910,12 +1086,19 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
 
       var info = document.getElementById('rcptInfo');
 
+      function kunBestyrelse() {
+        var valgt = form.querySelector('input[name="gruppe"]:checked');
+        return valgt ? valgt.value === 'bestyrelse' : false;
+      }
+
       function syncRecipients(isMail) {
         if (!info) return;
-        var n = parseInt(info.getAttribute(isMail ? 'data-mail' : 'data-sms'), 10) || 0;
+        var navn = (isMail ? 'data-mail' : 'data-sms') + (kunBestyrelse() ? '-best' : '');
+        var n = parseInt(info.getAttribute(navn), 10) || 0;
         info.innerHTML = 'Sendes til <strong>' + n + '</strong> ' +
-          (n === 1 ? 'beboer' : 'beboere') +
-          (isMail ? ' med mailadresse.' : ' med telefonnummer.');
+          (n === 1 ? 'modtager' : 'modtagere') +
+          (isMail ? ' med mailadresse' : ' med telefonnummer') +
+          (kunBestyrelse() ? ' i bestyrelsen.' : ' i beboerkartoteket.');
       }
 
       function sync() {
@@ -930,7 +1113,7 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
         }
       }
 
-      form.querySelectorAll('input[name="channel"]').forEach(function (el) {
+      form.querySelectorAll('input[name="channel"], input[name="gruppe"]').forEach(function (el) {
         el.addEventListener('change', sync);
       });
 

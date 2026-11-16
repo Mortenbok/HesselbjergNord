@@ -184,10 +184,11 @@ Beslut for hver enkelt:
       Ejer-knappen virker på dem. Men `ny-beboer.php` afviser fortsat
       Ristingevej som "uden for foreningen", og det er med vilje: vejen
       kommer først ind i `HBN_VEJE`, når vedtægterne siger, den hører til.
-- [ ] **`residents`-tabellen er ikke længere i brug.** `ny-beboer.php`
-      skriver nu i `beboerkartotek`. De gamle rækker i `residents` kan
-      slettes, når bestyrelsen har set dem efter — og `beboere.php`
-      skal stadig fjernes fra serveren (se ovenfor).
+- [ ] **`residents`-tabellen kan slettes.** Ingen kode læser den mere:
+      `ny-beboer.php` skriver i `beboerkartotek`, og `besked.php` henter
+      nu også sine modtagere derfra. Se de gamle rækker efter, og drop
+      så tabellen. `beboere.php` skal stadig fjernes fra serveren (se
+      ovenfor).
 - [ ] **Årshjulet: bestyrelsesmøde i september "inden generalforsamlingen".**
       Generalforsamlingen er sidste lørdag i august, så et møde i
       september ligger EFTER den, ikke før. Enten er måneden forkert
