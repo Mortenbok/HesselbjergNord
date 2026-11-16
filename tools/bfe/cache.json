@@ -1,0 +1,1214 @@
+{
+    "ahornvanget1": {
+        "adresse": "Ahornvænget 1",
+        "bfe": "3073473",
+        "matrikel": "9i 460354",
+        "bekraeftet": true
+    },
+    "ahornvanget2": {
+        "adresse": "Ahornvænget 2",
+        "bfe": "3073474",
+        "matrikel": "9k 460354",
+        "bekraeftet": true
+    },
+    "ahornvanget3": {
+        "adresse": "Ahornvænget 3",
+        "bfe": "3073472",
+        "matrikel": "9h 460354",
+        "bekraeftet": true
+    },
+    "ahornvanget4": {
+        "adresse": "Ahornvænget 4",
+        "bfe": "3073475",
+        "matrikel": "9l 460354",
+        "bekraeftet": true
+    },
+    "ahornvanget5": {
+        "adresse": "Ahornvænget 5",
+        "bfe": "3073471",
+        "matrikel": "9g 460354",
+        "bekraeftet": true
+    },
+    "ahornvanget6": {
+        "adresse": "Ahornvænget 6",
+        "bfe": "3073476",
+        "matrikel": "9m 460354",
+        "bekraeftet": true
+    },
+    "ahornvanget7": {
+        "adresse": "Ahornvænget 7",
+        "bfe": "3073470",
+        "matrikel": "9f 460354",
+        "bekraeftet": true
+    },
+    "ahornvanget8": {
+        "adresse": "Ahornvænget 8",
+        "bfe": "3073477",
+        "matrikel": "9n 460354",
+        "bekraeftet": true
+    },
+    "askevanget1": {
+        "adresse": "Askevænget 1",
+        "bfe": "3073861",
+        "matrikel": "45ii 460354",
+        "bekraeftet": true
+    },
+    "askevanget2": {
+        "adresse": "Askevænget 2",
+        "bfe": "3073864",
+        "matrikel": "45im 460354",
+        "bekraeftet": true
+    },
+    "askevanget3": {
+        "adresse": "Askevænget 3",
+        "bfe": "3073862",
+        "matrikel": "45ik 460354",
+        "bekraeftet": true
+    },
+    "askevanget4": {
+        "adresse": "Askevænget 4",
+        "bfe": "3073863",
+        "matrikel": "45il 460354",
+        "bekraeftet": true
+    },
+    "birkevanget1": {
+        "adresse": "Birkevænget 1",
+        "bfe": "3073497",
+        "matrikel": "10p 460354",
+        "bekraeftet": true
+    },
+    "birkevanget2": {
+        "adresse": "Birkevænget 2",
+        "bfe": "3073506",
+        "matrikel": "10z 460354",
+        "bekraeftet": true
+    },
+    "birkevanget3": {
+        "adresse": "Birkevænget 3",
+        "bfe": "3073498",
+        "matrikel": "10q 460354",
+        "bekraeftet": true
+    },
+    "birkevanget4": {
+        "adresse": "Birkevænget 4",
+        "bfe": "3073505",
+        "matrikel": "10y 460354",
+        "bekraeftet": true
+    },
+    "birkevanget5": {
+        "adresse": "Birkevænget 5",
+        "bfe": "3073499",
+        "matrikel": "10r 460354",
+        "bekraeftet": true
+    },
+    "birkevanget6": {
+        "adresse": "Birkevænget 6",
+        "bfe": "3073504",
+        "matrikel": "10x 460354",
+        "bekraeftet": true
+    },
+    "birkevanget7": {
+        "adresse": "Birkevænget 7",
+        "bfe": "3073500",
+        "matrikel": "10s 460354",
+        "bekraeftet": true
+    },
+    "birkevanget8": {
+        "adresse": "Birkevænget 8",
+        "bfe": "3073503",
+        "matrikel": "10v 460354",
+        "bekraeftet": true
+    },
+    "birkevanget9": {
+        "adresse": "Birkevænget 9",
+        "bfe": "3073501",
+        "matrikel": "10t 460354",
+        "bekraeftet": true
+    },
+    "birkevanget10": {
+        "adresse": "Birkevænget 10",
+        "bfe": "3073502",
+        "matrikel": "10u 460354",
+        "bekraeftet": true
+    },
+    "blabarvanget1": {
+        "adresse": "Blåbærvænget 1",
+        "bfe": "9981102",
+        "matrikel": "45lt 460354",
+        "bekraeftet": true
+    },
+    "blabarvanget2": {
+        "adresse": "Blåbærvænget 2",
+        "bfe": "9981108",
+        "matrikel": "45læ 460354",
+        "bekraeftet": true
+    },
+    "blabarvanget3": {
+        "adresse": "Blåbærvænget 3",
+        "bfe": "9981107",
+        "matrikel": "45lz 460354",
+        "bekraeftet": true
+    },
+    "blabarvanget4": {
+        "adresse": "Blåbærvænget 4",
+        "bfe": "9981109",
+        "matrikel": "45lø 460354",
+        "bekraeftet": true
+    },
+    "blabarvanget5": {
+        "adresse": "Blåbærvænget 5",
+        "bfe": "9981106",
+        "matrikel": "45ly 460354",
+        "bekraeftet": true
+    },
+    "blabarvanget6": {
+        "adresse": "Blåbærvænget 6",
+        "bfe": "9981110",
+        "matrikel": "45ma 460354",
+        "bekraeftet": true
+    },
+    "blabarvanget7": {
+        "adresse": "Blåbærvænget 7",
+        "bfe": "9981103",
+        "matrikel": "45lu 460354",
+        "bekraeftet": true
+    },
+    "blabarvanget8": {
+        "adresse": "Blåbærvænget 8",
+        "bfe": "9981105",
+        "matrikel": "45lx 460354",
+        "bekraeftet": true
+    },
+    "blabarvanget10": {
+        "adresse": "Blåbærvænget 10",
+        "bfe": "9981104",
+        "matrikel": "45lv 460354",
+        "bekraeftet": true
+    },
+    "duevanget1": {
+        "adresse": "Duevænget 1",
+        "bfe": "3073449",
+        "matrikel": "8i 460354",
+        "bekraeftet": true
+    },
+    "duevanget2": {
+        "adresse": "Duevænget 2",
+        "bfe": "3073463",
+        "matrikel": "8y 460354",
+        "bekraeftet": true
+    },
+    "duevanget3": {
+        "adresse": "Duevænget 3",
+        "bfe": "3073450",
+        "matrikel": "8k 460354",
+        "bekraeftet": true
+    },
+    "duevanget4": {
+        "adresse": "Duevænget 4",
+        "bfe": "3073462",
+        "matrikel": "8x 460354",
+        "bekraeftet": true
+    },
+    "duevanget5": {
+        "adresse": "Duevænget 5",
+        "bfe": "3073451",
+        "matrikel": "8l 460354",
+        "bekraeftet": true
+    },
+    "duevanget6": {
+        "adresse": "Duevænget 6",
+        "bfe": "3073461",
+        "matrikel": "8v 460354",
+        "bekraeftet": true
+    },
+    "duevanget7": {
+        "adresse": "Duevænget 7",
+        "bfe": "3073452",
+        "matrikel": "8m 460354",
+        "bekraeftet": true
+    },
+    "duevanget8": {
+        "adresse": "Duevænget 8",
+        "bfe": "3073460",
+        "matrikel": "8u 460354",
+        "bekraeftet": true
+    },
+    "duevanget9": {
+        "adresse": "Duevænget 9",
+        "bfe": "3073453",
+        "matrikel": "8n 460354",
+        "bekraeftet": true
+    },
+    "duevanget10": {
+        "adresse": "Duevænget 10",
+        "bfe": "3073459",
+        "matrikel": "8t 460354",
+        "bekraeftet": true
+    },
+    "duevanget11": {
+        "adresse": "Duevænget 11",
+        "bfe": "3073454",
+        "matrikel": "8o 460354",
+        "bekraeftet": true
+    },
+    "duevanget12": {
+        "adresse": "Duevænget 12",
+        "bfe": "3073458",
+        "matrikel": "8s 460354",
+        "bekraeftet": true
+    },
+    "duevanget13": {
+        "adresse": "Duevænget 13",
+        "bfe": "3073455",
+        "matrikel": "8p 460354",
+        "bekraeftet": true
+    },
+    "duevanget14": {
+        "adresse": "Duevænget 14",
+        "bfe": "3073457",
+        "matrikel": "8r 460354",
+        "bekraeftet": true
+    },
+    "duevanget15": {
+        "adresse": "Duevænget 15",
+        "bfe": "3073456",
+        "matrikel": "8q 460354",
+        "bekraeftet": true
+    },
+    "elmevanget1": {
+        "adresse": "Elmevænget 1",
+        "bfe": "3073865",
+        "matrikel": "45in 460354",
+        "bekraeftet": true
+    },
+    "elmevanget2": {
+        "adresse": "Elmevænget 2",
+        "bfe": "3073871",
+        "matrikel": "45it 460354",
+        "bekraeftet": true
+    },
+    "elmevanget3": {
+        "adresse": "Elmevænget 3",
+        "bfe": "3073866",
+        "matrikel": "45io 460354",
+        "bekraeftet": true
+    },
+    "elmevanget4": {
+        "adresse": "Elmevænget 4",
+        "bfe": "3073870",
+        "matrikel": "45is 460354",
+        "bekraeftet": true
+    },
+    "elmevanget5": {
+        "adresse": "Elmevænget 5",
+        "bfe": "3073867",
+        "matrikel": "45ip 460354",
+        "bekraeftet": true
+    },
+    "elmevanget6": {
+        "adresse": "Elmevænget 6",
+        "bfe": "3073869",
+        "matrikel": "45ir 460354",
+        "bekraeftet": true
+    },
+    "elmevanget8": {
+        "adresse": "Elmevænget 8",
+        "bfe": "3073868",
+        "matrikel": "45iq 460354",
+        "bekraeftet": true
+    },
+    "enebarvanget1": {
+        "adresse": "Enebærvænget 1",
+        "bfe": "9981139",
+        "matrikel": "45nd 460354",
+        "bekraeftet": true
+    },
+    "enebarvanget2": {
+        "adresse": "Enebærvænget 2",
+        "bfe": "9981101",
+        "matrikel": "45ls 460354",
+        "bekraeftet": true
+    },
+    "enebarvanget3": {
+        "adresse": "Enebærvænget 3",
+        "bfe": "9981138",
+        "matrikel": "45nc 460354",
+        "bekraeftet": true
+    },
+    "enebarvanget4": {
+        "adresse": "Enebærvænget 4",
+        "bfe": "9981100",
+        "matrikel": "45lr 460354",
+        "bekraeftet": true
+    },
+    "enebarvanget5": {
+        "adresse": "Enebærvænget 5",
+        "bfe": "9981137",
+        "matrikel": "45nb 460354",
+        "bekraeftet": true
+    },
+    "enebarvanget6": {
+        "adresse": "Enebærvænget 6",
+        "bfe": "9981099",
+        "matrikel": "45lq 460354",
+        "bekraeftet": true
+    },
+    "enebarvanget7": {
+        "adresse": "Enebærvænget 7",
+        "bfe": "9981095",
+        "matrikel": "45lm 460354",
+        "bekraeftet": true
+    },
+    "enebarvanget8": {
+        "adresse": "Enebærvænget 8",
+        "bfe": "9981098",
+        "matrikel": "45lp 460354",
+        "bekraeftet": true
+    },
+    "enebarvanget9": {
+        "adresse": "Enebærvænget 9",
+        "bfe": "9981096",
+        "matrikel": "",
+        "bekraeftet": false
+    },
+    "enebarvanget10": {
+        "adresse": "Enebærvænget 10",
+        "bfe": "9981097",
+        "matrikel": "45lo 460354",
+        "bekraeftet": true
+    },
+    "fyrrevanget1": {
+        "adresse": "Fyrrevænget 1",
+        "bfe": "3073434",
+        "matrikel": "6m 460354",
+        "bekraeftet": true
+    },
+    "fyrrevanget2": {
+        "adresse": "Fyrrevænget 2",
+        "bfe": "3073433",
+        "matrikel": "6l 460354",
+        "bekraeftet": true
+    },
+    "fyrrevanget3": {
+        "adresse": "Fyrrevænget 3",
+        "bfe": "3073435",
+        "matrikel": "6n 460354",
+        "bekraeftet": true
+    },
+    "fyrrevanget4": {
+        "adresse": "Fyrrevænget 4",
+        "bfe": "3073432",
+        "matrikel": "6k 460354",
+        "bekraeftet": true
+    },
+    "fyrrevanget5": {
+        "adresse": "Fyrrevænget 5",
+        "bfe": "3073436",
+        "matrikel": "6o 460354",
+        "bekraeftet": true
+    },
+    "fyrrevanget6": {
+        "adresse": "Fyrrevænget 6",
+        "bfe": "3073431",
+        "matrikel": "6i 460354",
+        "bekraeftet": true
+    },
+    "fyrrevanget7": {
+        "adresse": "Fyrrevænget 7",
+        "bfe": "3073437",
+        "matrikel": "6p 460354",
+        "bekraeftet": true
+    },
+    "fyrrevanget8": {
+        "adresse": "Fyrrevænget 8",
+        "bfe": "3073430",
+        "matrikel": "6h 460354",
+        "bekraeftet": true
+    },
+    "fyrrevanget9": {
+        "adresse": "Fyrrevænget 9",
+        "bfe": "3073438",
+        "matrikel": "6q 460354",
+        "bekraeftet": true
+    },
+    "fyrrevanget10": {
+        "adresse": "Fyrrevænget 10",
+        "bfe": "3073429",
+        "matrikel": "6g 460354",
+        "bekraeftet": true
+    },
+    "fyrrevanget11": {
+        "adresse": "Fyrrevænget 11",
+        "bfe": "3073582",
+        "matrikel": "16z 460354",
+        "bekraeftet": true
+    },
+    "fyrrevanget13": {
+        "adresse": "Fyrrevænget 13",
+        "bfe": "3073570",
+        "matrikel": "16m 460354",
+        "bekraeftet": true
+    },
+    "fyrrevanget15": {
+        "adresse": "Fyrrevænget 15",
+        "bfe": "3073569",
+        "matrikel": "16l 460354",
+        "bekraeftet": true
+    },
+    "granvanget1": {
+        "adresse": "Granvænget 1",
+        "bfe": "3073519",
+        "matrikel": "13e 460354",
+        "bekraeftet": true
+    },
+    "granvanget2": {
+        "adresse": "Granvænget 2",
+        "bfe": "3073524",
+        "matrikel": "13k 460354",
+        "bekraeftet": true
+    },
+    "granvanget3": {
+        "adresse": "Granvænget 3",
+        "bfe": "3073520",
+        "matrikel": "13f 460354",
+        "bekraeftet": true
+    },
+    "granvanget4": {
+        "adresse": "Granvænget 4",
+        "bfe": "3073525",
+        "matrikel": "13l 460354",
+        "bekraeftet": true
+    },
+    "granvanget5": {
+        "adresse": "Granvænget 5",
+        "bfe": "3073521",
+        "matrikel": "13g 460354",
+        "bekraeftet": true
+    },
+    "granvanget6": {
+        "adresse": "Granvænget 6",
+        "bfe": "3073526",
+        "matrikel": "13m 460354",
+        "bekraeftet": true
+    },
+    "granvanget7": {
+        "adresse": "Granvænget 7",
+        "bfe": "3073522",
+        "matrikel": "13h 460354",
+        "bekraeftet": true
+    },
+    "granvanget8": {
+        "adresse": "Granvænget 8",
+        "bfe": "3073527",
+        "matrikel": "13n 460354",
+        "bekraeftet": true
+    },
+    "granvanget9": {
+        "adresse": "Granvænget 9",
+        "bfe": "3073523",
+        "matrikel": "13i 460354",
+        "bekraeftet": true
+    },
+    "granvanget10": {
+        "adresse": "Granvænget 10",
+        "bfe": "3073528",
+        "matrikel": "13o 460354",
+        "bekraeftet": true
+    },
+    "gulspurvevanget1": {
+        "adresse": "Gulspurvevænget 1",
+        "bfe": "3073555",
+        "matrikel": "15x 460354",
+        "bekraeftet": true
+    },
+    "gulspurvevanget2": {
+        "adresse": "Gulspurvevænget 2",
+        "bfe": "3073545",
+        "matrikel": "15m 460354",
+        "bekraeftet": true
+    },
+    "gulspurvevanget3": {
+        "adresse": "Gulspurvevænget 3",
+        "bfe": "3073554",
+        "matrikel": "15v 460354",
+        "bekraeftet": true
+    },
+    "gulspurvevanget4": {
+        "adresse": "Gulspurvevænget 4",
+        "bfe": "3073546",
+        "matrikel": "15n 460354",
+        "bekraeftet": true
+    },
+    "gulspurvevanget5": {
+        "adresse": "Gulspurvevænget 5",
+        "bfe": "3073553",
+        "matrikel": "15u 460354",
+        "bekraeftet": true
+    },
+    "gulspurvevanget6": {
+        "adresse": "Gulspurvevænget 6",
+        "bfe": "3073547",
+        "matrikel": "15o 460354",
+        "bekraeftet": true
+    },
+    "gulspurvevanget7": {
+        "adresse": "Gulspurvevænget 7",
+        "bfe": "3073552",
+        "matrikel": "15t 460354",
+        "bekraeftet": true
+    },
+    "gulspurvevanget8": {
+        "adresse": "Gulspurvevænget 8",
+        "bfe": "3073548",
+        "matrikel": "15p 460354",
+        "bekraeftet": true
+    },
+    "gulspurvevanget9": {
+        "adresse": "Gulspurvevænget 9",
+        "bfe": "3073551",
+        "matrikel": "15s 460354",
+        "bekraeftet": true
+    },
+    "gulspurvevanget10": {
+        "adresse": "Gulspurvevænget 10",
+        "bfe": "3073549",
+        "matrikel": "15q 460354",
+        "bekraeftet": true
+    },
+    "gulspurvevanget11": {
+        "adresse": "Gulspurvevænget 11",
+        "bfe": "3073550",
+        "matrikel": "15r 460354",
+        "bekraeftet": true
+    },
+    "hasselvanget1": {
+        "adresse": "Hasselvænget 1",
+        "bfe": "3073482",
+        "matrikel": "9s 460354",
+        "bekraeftet": true
+    },
+    "hasselvanget2": {
+        "adresse": "Hasselvænget 2",
+        "bfe": "3073394",
+        "matrikel": "4q 460354",
+        "bekraeftet": true
+    },
+    "hasselvanget3": {
+        "adresse": "Hasselvænget 3",
+        "bfe": "3073481",
+        "matrikel": "9r 460354",
+        "bekraeftet": true
+    },
+    "hasselvanget4": {
+        "adresse": "Hasselvænget 4",
+        "bfe": "3073393",
+        "matrikel": "4p 460354",
+        "bekraeftet": true
+    },
+    "hasselvanget5": {
+        "adresse": "Hasselvænget 5",
+        "bfe": "3073480",
+        "matrikel": "9q 460354",
+        "bekraeftet": true
+    },
+    "hasselvanget6": {
+        "adresse": "Hasselvænget 6",
+        "bfe": "3073392",
+        "matrikel": "4o 460354",
+        "bekraeftet": true
+    },
+    "hasselvanget7": {
+        "adresse": "Hasselvænget 7",
+        "bfe": "3073479",
+        "matrikel": "9p 460354",
+        "bekraeftet": true
+    },
+    "hasselvanget8": {
+        "adresse": "Hasselvænget 8",
+        "bfe": "3073391",
+        "matrikel": "4n 460354",
+        "bekraeftet": true
+    },
+    "hasselvanget9": {
+        "adresse": "Hasselvænget 9",
+        "bfe": "3073478",
+        "matrikel": "9o 460354",
+        "bekraeftet": true
+    },
+    "hasselvanget10": {
+        "adresse": "Hasselvænget 10",
+        "bfe": "3073390",
+        "matrikel": "4m 460354",
+        "bekraeftet": true
+    },
+    "hylleskovvanget1": {
+        "adresse": "Hylleskovvænget 1",
+        "bfe": "3073583",
+        "matrikel": "16æ 460354",
+        "bekraeftet": true
+    },
+    "hylleskovvanget2": {
+        "adresse": "Hylleskovvænget 2",
+        "bfe": "3073572",
+        "matrikel": "16o 460354",
+        "bekraeftet": true
+    },
+    "hylleskovvanget3": {
+        "adresse": "Hylleskovvænget 3",
+        "bfe": "3073584",
+        "matrikel": "16ø 460354",
+        "bekraeftet": true
+    },
+    "hylleskovvanget4": {
+        "adresse": "Hylleskovvænget 4",
+        "bfe": "3073576",
+        "matrikel": "16s 460354",
+        "bekraeftet": true
+    },
+    "hylleskovvanget5": {
+        "adresse": "Hylleskovvænget 5",
+        "bfe": "3073585",
+        "matrikel": "16aa 460354",
+        "bekraeftet": true
+    },
+    "hylleskovvanget6": {
+        "adresse": "Hylleskovvænget 6",
+        "bfe": "3073575",
+        "matrikel": "16r 460354",
+        "bekraeftet": true
+    },
+    "hylleskovvanget7": {
+        "adresse": "Hylleskovvænget 7",
+        "bfe": "3073586",
+        "matrikel": "",
+        "bekraeftet": false
+    },
+    "hylleskovvanget8": {
+        "adresse": "Hylleskovvænget 8",
+        "bfe": "3073571",
+        "matrikel": "16n 460354",
+        "bekraeftet": true
+    },
+    "hylleskovvanget9": {
+        "adresse": "Hylleskovvænget 9",
+        "bfe": "3073581",
+        "matrikel": "16y 460354",
+        "bekraeftet": true
+    },
+    "hylleskovvanget10": {
+        "adresse": "Hylleskovvænget 10",
+        "bfe": "3073574",
+        "matrikel": "16q 460354",
+        "bekraeftet": true
+    },
+    "hylleskovvanget11": {
+        "adresse": "Hylleskovvænget 11",
+        "bfe": "3073580",
+        "matrikel": "16x 460354",
+        "bekraeftet": true
+    },
+    "hylleskovvanget12": {
+        "adresse": "Hylleskovvænget 12",
+        "bfe": "3073568",
+        "matrikel": "16k 460354",
+        "bekraeftet": true
+    },
+    "hylleskovvanget13": {
+        "adresse": "Hylleskovvænget 13",
+        "bfe": "3073579",
+        "matrikel": "16v 460354",
+        "bekraeftet": true
+    },
+    "hylleskovvanget14": {
+        "adresse": "Hylleskovvænget 14",
+        "bfe": "3073573",
+        "matrikel": "16p 460354",
+        "bekraeftet": true
+    },
+    "hylleskovvanget15": {
+        "adresse": "Hylleskovvænget 15",
+        "bfe": "3073578",
+        "matrikel": "16u 460354",
+        "bekraeftet": true
+    },
+    "hylleskovvanget16": {
+        "adresse": "Hylleskovvænget 16",
+        "bfe": "3073567",
+        "matrikel": "16i 460354",
+        "bekraeftet": true
+    },
+    "hylleskovvanget17": {
+        "adresse": "Hylleskovvænget 17",
+        "bfe": "3073577",
+        "matrikel": "16t 460354",
+        "bekraeftet": true
+    },
+    "klitrosevej2": {
+        "adresse": "Klitrosevej 2",
+        "bfe": "3073373",
+        "matrikel": "2o 460354",
+        "bekraeftet": true
+    },
+    "klitrosevej4": {
+        "adresse": "Klitrosevej 4",
+        "bfe": "3073374",
+        "matrikel": "2p 460354",
+        "bekraeftet": true
+    },
+    "klitrosevej6": {
+        "adresse": "Klitrosevej 6",
+        "bfe": "3073371",
+        "matrikel": "2m 460354",
+        "bekraeftet": true
+    },
+    "klitrosevej8": {
+        "adresse": "Klitrosevej 8",
+        "bfe": "3073372",
+        "matrikel": "2n 460354",
+        "bekraeftet": true
+    },
+    "klitrosevej10": {
+        "adresse": "Klitrosevej 10",
+        "bfe": "3073375",
+        "matrikel": "2q 460354",
+        "bekraeftet": true
+    },
+    "klitrosevej14": {
+        "adresse": "Klitrosevej 14",
+        "bfe": "3073529",
+        "matrikel": "13p 460354",
+        "bekraeftet": true
+    },
+    "klitrosevej16": {
+        "adresse": "Klitrosevej 16",
+        "bfe": "3073530",
+        "matrikel": "13q 460354",
+        "bekraeftet": true
+    },
+    "klitrosevej18": {
+        "adresse": "Klitrosevej 18",
+        "bfe": "9856478",
+        "matrikel": "10ab 460354",
+        "bekraeftet": true
+    },
+    "lindevanget2": {
+        "adresse": "Lindevænget 2",
+        "bfe": "9981123",
+        "matrikel": "45mo 460354",
+        "bekraeftet": true
+    },
+    "lindevanget4": {
+        "adresse": "Lindevænget 4",
+        "bfe": "9981122",
+        "matrikel": "",
+        "bekraeftet": false
+    },
+    "lindevanget6": {
+        "adresse": "Lindevænget 6",
+        "bfe": "9981121",
+        "matrikel": "45mm 460354",
+        "bekraeftet": true
+    },
+    "lindevanget8": {
+        "adresse": "Lindevænget 8",
+        "bfe": "9981120",
+        "matrikel": "45ml 460354",
+        "bekraeftet": true
+    },
+    "lindevanget10": {
+        "adresse": "Lindevænget 10",
+        "bfe": "9981119",
+        "matrikel": "45mk 460354",
+        "bekraeftet": true
+    },
+    "lindevanget12": {
+        "adresse": "Lindevænget 12",
+        "bfe": "9981118",
+        "matrikel": "45mi 460354",
+        "bekraeftet": true
+    },
+    "lindevanget14": {
+        "adresse": "Lindevænget 14",
+        "bfe": "9981117",
+        "matrikel": "45mh 460354",
+        "bekraeftet": true
+    },
+    "lindevanget16": {
+        "adresse": "Lindevænget 16",
+        "bfe": "9981116",
+        "matrikel": "45mg 460354",
+        "bekraeftet": true
+    },
+    "lindevanget18": {
+        "adresse": "Lindevænget 18",
+        "bfe": "9981115",
+        "matrikel": "45mf 460354",
+        "bekraeftet": true
+    },
+    "lindevanget20": {
+        "adresse": "Lindevænget 20",
+        "bfe": "9981114",
+        "matrikel": "45me 460354",
+        "bekraeftet": true
+    },
+    "lindevanget22": {
+        "adresse": "Lindevænget 22",
+        "bfe": "9981113",
+        "matrikel": "45md 460354",
+        "bekraeftet": true
+    },
+    "lindevanget24": {
+        "adresse": "Lindevænget 24",
+        "bfe": "9981112",
+        "matrikel": "45mc 460354",
+        "bekraeftet": true
+    },
+    "lindevanget26": {
+        "adresse": "Lindevænget 26",
+        "bfe": "9981111",
+        "matrikel": "45mb 460354",
+        "bekraeftet": true
+    },
+    "musvitvanget1": {
+        "adresse": "Musvitvænget 1",
+        "bfe": "3073544",
+        "matrikel": "15l 460354",
+        "bekraeftet": true
+    },
+    "musvitvanget2": {
+        "adresse": "Musvitvænget 2",
+        "bfe": "3073556",
+        "matrikel": "15y 460354",
+        "bekraeftet": true
+    },
+    "musvitvanget3": {
+        "adresse": "Musvitvænget 3",
+        "bfe": "3073543",
+        "matrikel": "15k 460354",
+        "bekraeftet": true
+    },
+    "musvitvanget4": {
+        "adresse": "Musvitvænget 4",
+        "bfe": "3073557",
+        "matrikel": "15z 460354",
+        "bekraeftet": true
+    },
+    "musvitvanget5": {
+        "adresse": "Musvitvænget 5",
+        "bfe": "3073542",
+        "matrikel": "15i 460354",
+        "bekraeftet": true
+    },
+    "musvitvanget6": {
+        "adresse": "Musvitvænget 6",
+        "bfe": "3073558",
+        "matrikel": "15æ 460354",
+        "bekraeftet": true
+    },
+    "musvitvanget7": {
+        "adresse": "Musvitvænget 7",
+        "bfe": "3073541",
+        "matrikel": "15h 460354",
+        "bekraeftet": true
+    },
+    "musvitvanget8": {
+        "adresse": "Musvitvænget 8",
+        "bfe": "3073559",
+        "matrikel": "15ø 460354",
+        "bekraeftet": true
+    },
+    "rosenvanget1": {
+        "adresse": "Rosenvænget 1",
+        "bfe": "3073379",
+        "matrikel": "2u 460354",
+        "bekraeftet": true
+    },
+    "rosenvanget2": {
+        "adresse": "Rosenvænget 2",
+        "bfe": "3073370",
+        "matrikel": "2l 460354",
+        "bekraeftet": true
+    },
+    "rosenvanget3": {
+        "adresse": "Rosenvænget 3",
+        "bfe": "3073378",
+        "matrikel": "2t 460354",
+        "bekraeftet": true
+    },
+    "rosenvanget4": {
+        "adresse": "Rosenvænget 4",
+        "bfe": "3073376",
+        "matrikel": "2r 460354",
+        "bekraeftet": true
+    },
+    "rosenvanget6": {
+        "adresse": "Rosenvænget 6",
+        "bfe": "3073377",
+        "matrikel": "2s 460354",
+        "bekraeftet": true
+    },
+    "rosenvanget500a": {
+        "adresse": "Rosenvænget 500A",
+        "bfe": "3073380",
+        "matrikel": "",
+        "bekraeftet": false
+    },
+    "ronnevanget1": {
+        "adresse": "Rønnevænget 1",
+        "bfe": "3073395",
+        "matrikel": "4r 460354",
+        "bekraeftet": true
+    },
+    "ronnevanget2": {
+        "adresse": "Rønnevænget 2",
+        "bfe": "3073405",
+        "matrikel": "4aa 460354",
+        "bekraeftet": true
+    },
+    "ronnevanget3": {
+        "adresse": "Rønnevænget 3",
+        "bfe": "3073396",
+        "matrikel": "4s 460354",
+        "bekraeftet": true
+    },
+    "ronnevanget4": {
+        "adresse": "Rønnevænget 4",
+        "bfe": "3073404",
+        "matrikel": "4ø 460354",
+        "bekraeftet": true
+    },
+    "ronnevanget5": {
+        "adresse": "Rønnevænget 5",
+        "bfe": "3073397",
+        "matrikel": "4t 460354",
+        "bekraeftet": true
+    },
+    "ronnevanget6": {
+        "adresse": "Rønnevænget 6",
+        "bfe": "3073403",
+        "matrikel": "4æ 460354",
+        "bekraeftet": true
+    },
+    "ronnevanget7": {
+        "adresse": "Rønnevænget 7",
+        "bfe": "3073398",
+        "matrikel": "4u 460354",
+        "bekraeftet": true
+    },
+    "ronnevanget8": {
+        "adresse": "Rønnevænget 8",
+        "bfe": "3073402",
+        "matrikel": "4z 460354",
+        "bekraeftet": true
+    },
+    "ronnevanget9": {
+        "adresse": "Rønnevænget 9",
+        "bfe": "3073399",
+        "matrikel": "4v 460354",
+        "bekraeftet": true
+    },
+    "ronnevanget10": {
+        "adresse": "Rønnevænget 10",
+        "bfe": "3073401",
+        "matrikel": "4y 460354",
+        "bekraeftet": true
+    },
+    "ronnevanget12": {
+        "adresse": "Rønnevænget 12",
+        "bfe": "3073400",
+        "matrikel": "4x 460354",
+        "bekraeftet": true
+    },
+    "syrenvanget2": {
+        "adresse": "Syrenvænget 2",
+        "bfe": "9981136",
+        "matrikel": "45na 460354",
+        "bekraeftet": true
+    },
+    "syrenvanget4": {
+        "adresse": "Syrenvænget 4",
+        "bfe": "9981135",
+        "matrikel": "45mø 460354",
+        "bekraeftet": true
+    },
+    "syrenvanget6": {
+        "adresse": "Syrenvænget 6",
+        "bfe": "9981134",
+        "matrikel": "45mæ 460354",
+        "bekraeftet": true
+    },
+    "syrenvanget8": {
+        "adresse": "Syrenvænget 8",
+        "bfe": "9981133",
+        "matrikel": "45mz 460354",
+        "bekraeftet": true
+    },
+    "syrenvanget10": {
+        "adresse": "Syrenvænget 10",
+        "bfe": "9981132",
+        "matrikel": "45my 460354",
+        "bekraeftet": true
+    },
+    "syrenvanget12": {
+        "adresse": "Syrenvænget 12",
+        "bfe": "9981131",
+        "matrikel": "45mx 460354",
+        "bekraeftet": true
+    },
+    "syrenvanget14": {
+        "adresse": "Syrenvænget 14",
+        "bfe": "9981130",
+        "matrikel": "45mv 460354",
+        "bekraeftet": true
+    },
+    "syrenvanget16": {
+        "adresse": "Syrenvænget 16",
+        "bfe": "9981129",
+        "matrikel": "45mu 460354",
+        "bekraeftet": true
+    },
+    "syrenvanget18": {
+        "adresse": "Syrenvænget 18",
+        "bfe": "9981128",
+        "matrikel": "45mt 460354",
+        "bekraeftet": true
+    },
+    "syrenvanget20": {
+        "adresse": "Syrenvænget 20",
+        "bfe": "9981127",
+        "matrikel": "45ms 460354",
+        "bekraeftet": true
+    },
+    "syrenvanget22": {
+        "adresse": "Syrenvænget 22",
+        "bfe": "9981126",
+        "matrikel": "45mr 460354",
+        "bekraeftet": true
+    },
+    "syrenvanget24": {
+        "adresse": "Syrenvænget 24",
+        "bfe": "9981125",
+        "matrikel": "45mq 460354",
+        "bekraeftet": true
+    },
+    "syrenvanget26": {
+        "adresse": "Syrenvænget 26",
+        "bfe": "9981124",
+        "matrikel": "",
+        "bekraeftet": false
+    },
+    "tjornevanget1": {
+        "adresse": "Tjørnevænget 1",
+        "bfe": "3073406",
+        "matrikel": "4ab 460354",
+        "bekraeftet": true
+    },
+    "tjornevanget2": {
+        "adresse": "Tjørnevænget 2",
+        "bfe": "3073419",
+        "matrikel": "4ap 460354",
+        "bekraeftet": true
+    },
+    "tjornevanget3": {
+        "adresse": "Tjørnevænget 3",
+        "bfe": "3073407",
+        "matrikel": "4ac 460354",
+        "bekraeftet": true
+    },
+    "tjornevanget4": {
+        "adresse": "Tjørnevænget 4",
+        "bfe": "3073418",
+        "matrikel": "4ao 460354",
+        "bekraeftet": true
+    },
+    "tjornevanget5": {
+        "adresse": "Tjørnevænget 5",
+        "bfe": "3073408",
+        "matrikel": "4ad 460354",
+        "bekraeftet": true
+    },
+    "tjornevanget6": {
+        "adresse": "Tjørnevænget 6",
+        "bfe": "3073417",
+        "matrikel": "4an 460354",
+        "bekraeftet": true
+    },
+    "tjornevanget7": {
+        "adresse": "Tjørnevænget 7",
+        "bfe": "3073409",
+        "matrikel": "4ae 460354",
+        "bekraeftet": true
+    },
+    "tjornevanget8": {
+        "adresse": "Tjørnevænget 8",
+        "bfe": "3073416",
+        "matrikel": "4am 460354",
+        "bekraeftet": true
+    },
+    "tjornevanget9": {
+        "adresse": "Tjørnevænget 9",
+        "bfe": "3073410",
+        "matrikel": "4af 460354",
+        "bekraeftet": true
+    },
+    "tjornevanget10": {
+        "adresse": "Tjørnevænget 10",
+        "bfe": "3073415",
+        "matrikel": "4al 460354",
+        "bekraeftet": true
+    },
+    "tjornevanget11": {
+        "adresse": "Tjørnevænget 11",
+        "bfe": "3073411",
+        "matrikel": "4ag 460354",
+        "bekraeftet": true
+    },
+    "tjornevanget12": {
+        "adresse": "Tjørnevænget 12",
+        "bfe": "3073414",
+        "matrikel": "4ak 460354",
+        "bekraeftet": true
+    },
+    "tjornevanget13": {
+        "adresse": "Tjørnevænget 13",
+        "bfe": "3073412",
+        "matrikel": "4ah 460354",
+        "bekraeftet": true
+    },
+    "tjornevanget14": {
+        "adresse": "Tjørnevænget 14",
+        "bfe": "3073413",
+        "matrikel": "4ai 460354",
+        "bekraeftet": true
+    },
+    "ornevanget1": {
+        "adresse": "Ørnevænget 1",
+        "bfe": "3073464",
+        "matrikel": "8z 460354",
+        "bekraeftet": true
+    },
+    "ornevanget2": {
+        "adresse": "Ørnevænget 2",
+        "bfe": "3073448",
+        "matrikel": "",
+        "bekraeftet": false
+    },
+    "ornevanget3": {
+        "adresse": "Ørnevænget 3",
+        "bfe": "3073465",
+        "matrikel": "8æ 460354",
+        "bekraeftet": true
+    },
+    "ornevanget5": {
+        "adresse": "Ørnevænget 5",
+        "bfe": "3073466",
+        "matrikel": "8ø 460354",
+        "bekraeftet": true
+    },
+    "ornevanget7": {
+        "adresse": "Ørnevænget 7",
+        "bfe": "3073467",
+        "matrikel": "8aa 460354",
+        "bekraeftet": true
+    }
+}

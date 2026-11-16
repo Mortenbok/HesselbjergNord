@@ -135,18 +135,21 @@ Beslut for hver enkelt:
       `Adressekartotek 2026 - faerdig.csv` (213 rækker). Filen må ALDRIG
       lægges i git — depotet er offentligt, og filen rummer navne,
       hjemmeadresser, mails og telefonnumre på ~200 mennesker.
-- [ ] **BFE-numre mangler i kartoteket.** Knappen "Find ejer" på
-      `beboerkartotek.php` kopierer sommerhusadressen og åbner
-      boligejer.dk. Søg adressen frem, klik videre til OIS, og tag tallet
-      til sidst i adressen (`nyt.ois.dk/search/`**9856478**). Gem det i
-      feltet *BFE-nummer* på `beboer-ret.php` — eller send det til
-      webkoordinatoren, så ryger det ind i listen i
-      `includes/bfe.php`, hvor det også overlever, at tabellen bliver
-      tømt. Derefter er knappen et direkte link til
-      ejeroplysningerne. Det skal kun gøres én gang pr. adresse.
-      Indtil videre kender vi Ahornvænget 1 og Klitrosevej 18.
-      Et automatisk opslag fra adresse til ejer kræver en nøgle hos
-      Datafordeleren (gratis, men skal søges); den er ikke sat op.
+- [x] **BFE-numre.** Hentet 16. 11. 2026 hos Datafordeleren for 202 af
+      foreningens 203 adresser og lagt i `includes/bfe.php`. Ejer-knappen
+      i kartoteket er derfor et direkte link til OIS på alle rækker på
+      nær én.
+- [ ] **Fyrrevænget 1A har intet BFE-nummer.** BBR kender hverken en
+      grund eller en bygning på adressen, selv om DAR har adressen.
+      Slå den op i hånden på boligejer.dk, og skriv nummeret i feltet
+      *BFE-nummer* på `beboer-ret.php`. Står adressen slet ikke i
+      kartoteket, kan linjen i `includes/husstande.php` slettes i stedet
+      — listen kommer fra OpenStreetMap og er ikke et folkeregister.
+- [ ] **Seks BFE-numre er kun fundet ad én vej** (Enebærvænget 9,
+      Hylleskovvænget 7, Lindevænget 4, Rosenvænget 500A, Syrenvænget 26,
+      Ørnevænget 2). Det er ubebyggede grunde, så kun grundvejen gav svar
+      — krydstjekket gennem matriklen kunne ikke bekræfte dem. Tjek dem,
+      når I alligevel er på OIS.
 - [ ] **28 rækker i kartoteket har en note.** Se dem på
       `beboerkartotek.php` under "med note". De vigtigste:
       *Odese SV* og *Koldeing* er stavefejl; Birkevænget 5 og
