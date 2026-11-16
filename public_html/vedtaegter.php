@@ -72,7 +72,9 @@ $pdfStoerrelse = $pdfFindes
  * Teksten står præcis som i de vedtagne vedtægter. Bemærk, at "Hyldeskovvænget"
  * er en slåfejl i 2017-udgaven: vejen hedder Hylleskovvænget. Teksten rettes
  * IKKE her — en vedtægtsændring hører til på en generalforsamling (§ 9).
- * I stedet står der en fodnote under listen.
+ *
+ * Hjemmesiden gør i øvrigt ikke opmærksom på forskellen; begge stavemåder
+ * tages imod i includes/adresser.php, så ingen falder over den.
  */
 $veje = [
     'Ahornvænget', 'Askevænget', 'Birkevænget', 'Blåbærvænget', 'Duevænget',
@@ -383,10 +385,8 @@ $dagsorden = [
               <li><?php echo $e($vej); ?></li>
             <?php endforeach; ?>
           </ul>
-          <p class="fodnote">Teksten står, som den blev vedtaget. Vejen, der her
-            hedder <em>Hyldeskovvænget</em>, hedder i dag <em>Hylleskovvænget</em>
-            — en slåfejl i 2017-udgaven, som kun en generalforsamling kan rette
-            (§ 9). Se vejene på kortet under <a href="omraade.html">Området</a>.</p>
+          <p class="fodnote">Se vejene på kortet under
+            <a href="omraade.html">Området</a>.</p>
         </section>
 
         <section>
