@@ -143,6 +143,11 @@ $medNoter = (int)$pdo->query("SELECT COUNT(*) FROM beboerkartotek WHERE noter IS
   }
   .maerke.best { background: rgba(80,160,230,0.3); border-color: rgba(150,200,255,0.6); }
   .maerke.vent { background: rgba(220,170,60,0.3); border-color: rgba(255,210,120,0.6); }
+  /* Noget, der slet ikke kan bruges — fx en mail uden topdomæne. */
+  .maerke.stop {
+    background: rgba(200,60,60,0.32); border-color: rgba(255,150,150,0.65);
+    margin-top: 3px;
+  }
   .note { font-size: 0.8rem; color: rgba(255,210,150,0.85); }
   td a { color: #cfe9ff; text-decoration: none; }
   td a:hover { text-decoration: underline; }
@@ -310,6 +315,9 @@ $medNoter = (int)$pdo->query("SELECT COUNT(*) FROM beboerkartotek WHERE noter IS
                     <?php if ($r['mail2'] !== ''): ?>
                       <div class="note"><?php echo $e($r['mail2']); ?></div>
                     <?php endif; ?>
+                    <?php foreach (beboer_problemer($r) as $hvad): ?>
+                      <div><span class="maerke stop"><?php echo $e($hvad); ?></span></div>
+                    <?php endforeach; ?>
                   </td>
                   <td>
                     <?php echo $e($r['telefon']); ?>

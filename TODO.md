@@ -178,6 +178,11 @@ Beslut for hver enkelt:
       Ørnevænget 2). Det er ubebyggede grunde, så kun grundvejen gav svar
       — krydstjekket gennem matriklen kunne ikke bekræfte dem. Tjek dem,
       når I alligevel er på OIS.
+- [ ] **Ret `feriefond@rema1000` til `feriefond@rema1000.dk`** på
+      Duevænget 10. Adressen mangler et topdomæne og bliver afvist, så
+      husstanden får hverken beskeder eller adgangskode på mail. Rettes på
+      `beboerkartotek.php` → Ret. Kartoteket mærker nu selv den slags med
+      "Mail kan ikke bruges", så kig listen igennem for flere.
 - [ ] **28 rækker i kartoteket har en note.** Se dem på
       `beboerkartotek.php` under "med note". De vigtigste:
       *Odese SV* og *Koldeing* er stavefejl; Birkevænget 5 og

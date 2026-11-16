@@ -250,6 +250,57 @@ function beboer_send_bekraeftelse(string $navn, string $mail, string $adresse, s
 }
 
 /**
+ * Renser en mailadresse og siger fra, hvis den ikke kan bruges.
+ *
+ * Returnerer adressen med små bogstaver, eller tom streng hvis den ikke
+ * er en gyldig adresse.
+ *
+ * Regneark efterlader tegn, man ikke kan se: Google Sheets og Word sætter
+ * gerne et HÅRDT mellemrum (U+00A0) ind, og kopierer man fra en mail,
+ * følger der nogle gange et nul-bredde-tegn med. De ligner ingenting på
+ * skærmen, men gør adressen ugyldig — og så blev beboeren hidtil sprunget
+ * stille over, uden at nogen kunne se hvorfor.
+ */
+function beboer_mail(string $raa): string
+{
+    // Alle slags mellemrum — også de usynlige — bliver til ingenting.
+    $ren = preg_replace('/[\p{Z}\x{200B}-\x{200D}\x{FEFF}\s]+/u', '', $raa) ?? '';
+    $ren = mb_strtolower($ren);
+
+    return filter_var($ren, FILTER_VALIDATE_EMAIL) ? $ren : '';
+}
+
+/**
+ * Kan rækken nås på den kanal?
+ *
+ * Returnerer en liste med det, der er galt — tom liste betyder, at alt er
+ * i orden. Bruges af beboerkartotek.php til at mærke de rækker, der ikke
+ * kan modtage noget.
+ */
+function beboer_problemer(array $raekke): array
+{
+    $ud = [];
+
+    foreach (['mail' => 'Mail', 'mail2' => 'Mail 2'] as $felt => $navn) {
+        $raa = trim((string)($raekke[$felt] ?? ''));
+
+        if ($raa !== '' && beboer_mail($raa) === '') {
+            $ud[] = $navn . ' kan ikke bruges';
+        }
+    }
+
+    foreach (['telefon' => 'Telefon', 'telefon2' => 'Telefon 2'] as $felt => $navn) {
+        $raa = trim((string)($raekke[$felt] ?? ''));
+
+        if ($raa !== '' && sms_msisdn($raa) === null) {
+            $ud[] = $navn . ' kan ikke bruges til SMS';
+        }
+    }
+
+    return $ud;
+}
+
+/**
  * Modtagere til en udsendelse, hentet i beboerkartoteket.
  *
  * Det er kartoteket, der er foreningens register — den gamle
@@ -296,9 +347,9 @@ function beboer_modtagere(PDO $pdo, string $kanal, bool $kunBestyrelse = false):
                 $mail = '';
                 $msisdn = $noegle;
             } else {
-                $noegle = mb_strtolower($raa);
+                $noegle = beboer_mail($raa);
 
-                if (!filter_var($noegle, FILTER_VALIDATE_EMAIL)) {
+                if ($noegle === '') {
                     continue;
                 }
 
