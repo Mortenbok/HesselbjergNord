@@ -6,6 +6,7 @@
 <meta name="description" content="Hjertestarter i Hesselbjerg Nord — placering, adgang og hvad du gør ved hjertestop.">
 <title>Hjertestarter — Grundejerforeningen Hesselbjerg Nord</title>
 <link rel="icon" type="image/jpeg" href="favicon.jpg">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -216,22 +217,36 @@
     line-height: 1.5;
   }
 
-  /* Kort. line-height: 0 fjerner den stribe, en inline iframe ellers
-     efterlader under sig. */
+  /* Kort — OpenStreetMap tegnet med Leaflet. */
   .map {
     margin-top: 22px;
     border-radius: 12px;
     overflow: hidden;
     border: 1px solid rgba(255,255,255,0.22);
-    background: rgba(0,0,0,0.25);
-    line-height: 0;
+    background: #14202a;
+    height: 340px;
+    position: relative;
+    z-index: 1;
   }
 
-  .map iframe {
-    width: 100%;
-    height: 340px;
-    border: 0;
-    display: block;
+  .leaflet-container { font: inherit; }
+  .leaflet-popup-content { font-size: 0.95rem; line-height: 1.4; }
+
+  /* Den røde markør. Ringen udenom gør den lettere at få øje på, uden at
+     selve prikken skal fylde mere, end hvor hjertestarteren står. */
+  .aed-markoer {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #e02020;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 3px rgba(224, 32, 32, 0.35), 0 2px 6px rgba(0,0,0,0.5);
+  }
+
+  .map-note {
+    margin-top: 10px;
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.6);
   }
 
   .map-actions {
@@ -446,7 +461,7 @@
 
     .facts dd { margin-bottom: 10px; }
 
-    .map iframe { height: 260px; }
+    .map { height: 260px; }
   }
 </style>
 <link rel="stylesheet" href="mobile-nav.css">
@@ -574,14 +589,12 @@
         <dd>Hjertestarternetværket, id 1000045246</dd>
       </dl>
 
-      <div class="map">
-        <iframe
-          title="Kort over hjertestarterens placering på Fyrrevænget 7, 5932 Humble"
-          src="https://maps.google.com/maps?q=Fyrrev%C3%A6nget+7%2C+5932+Humble&amp;z=16&amp;hl=da&amp;output=embed"
-          loading="lazy"
-          referrerpolicy="no-referrer-when-downgrade"
-          allowfullscreen></iframe>
-      </div>
+      <div class="map" id="kort"
+           role="img"
+           aria-label="Kort over hjertestarterens placering ude ved vejen på Fyrrevænget 7, 5932 Humble"></div>
+      <p class="map-note">Den røde prik er hjertestarteren ude ved vejen — ikke
+        husets adressepunkt, som ligger inde på grunden. Skift til luftfoto
+        øverst til højre, hvis du vil se stativet i forhold til indkørslen.</p>
 
       <div class="map-actions">
         <a class="map-btn"
@@ -620,6 +633,61 @@
   </div>
 
   <footer>&copy; 2026 Grundejerforeningen Hesselbjerg Nord</footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+  <script>
+  (function () {
+    'use strict';
+
+    // ===================================================================
+    // HJERTESTARTERENS PLACERING
+    //
+    // Punktet er ude ved vejkanten på Fyrrevænget ud for nr. 7 — altså dér,
+    // hvor stativet står, ikke husets adressepunkt. Adressepunktet ligger
+    // 25 m inde på grunden, og det var dét, det gamle Google-kort satte
+    // nålen i.
+    //
+    // Flyttes hjertestarteren, rettes koordinaterne her — og adressen de
+    // andre steder på siden, der er nævnt i kommentaren ved PLACERING.
+    // ===================================================================
+    var AED = [54.815474, 10.661360];
+
+    if (!document.getElementById('kort') || typeof L === 'undefined') {
+      return;
+    }
+
+    var kort = L.map('kort', { scrollWheelZoom: false }).setView(AED, 18);
+
+    var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-bidragydere'
+    });
+
+    var luftfoto = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      { maxZoom: 19, attribution: 'Luftfoto: Esri, Maxar, Earthstar Geographics' }
+    );
+
+    osm.addTo(kort);
+    L.control.layers({ 'Kort': osm, 'Luftfoto': luftfoto }, null, { position: 'topright' }).addTo(kort);
+
+    L.marker(AED, {
+      icon: L.divIcon({
+        className: '',
+        html: '<div class="aed-markoer"></div>',
+        iconSize: [22, 22],
+        iconAnchor: [11, 11]
+      }),
+      keyboard: false,
+      alt: 'Hjertestarter'
+    }).addTo(kort)
+      .bindPopup('<strong>Hjertestarter</strong><br>Fyrrevænget 7, 5932 Humble<br>På stativ ude ved vejen · døgnåben');
+
+    // Rullehjulet skal ikke stjæle siden, når man scroller forbi kortet.
+    kort.on('click', function () { kort.scrollWheelZoom.enable(); });
+    kort.on('mouseout', function () { kort.scrollWheelZoom.disable(); });
+  })();
+  </script>
 
   <script>
     const loginModal = document.getElementById('loginModal');
