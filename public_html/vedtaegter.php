@@ -94,18 +94,6 @@ $dagsorden = [
     'Eventuelt',
 ];
 
-/** Underskriverne på den vedtagne udgave fra 2017. */
-$underskrivere = [
-    ['Torben Tranberg Jensen', 'dirigent'],
-    ['Poul Erik Larsen', 'formand'],
-    ['Allan Lund Petersen', 'næstformand'],
-    ['Solveig Pedersen', 'kasserer'],
-    ['Flemming Thrane', 'sekretær'],
-    ['Lars Peder Barnebjerg', 'bestyrelsesmedlem'],
-    ['Jytte Bøje Hansen', 'bestyrelsesmedlem'],
-    ['Brian Ville Osiki', 'bestyrelsesmedlem'],
-    ['Hans Christensen', 'bestyrelsesmedlem'],
-];
 ?>
 <!DOCTYPE html>
 <html lang="da">
@@ -315,18 +303,6 @@ $underskrivere = [
     margin-right: 8px;
   }
 
-  /* Underskrifterne nederst på dokumentet. */
-  .underskrifter {
-    list-style: none;
-    margin: 14px 0 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-    gap: 14px;
-  }
-  .underskrifter li { font-weight: 300; }
-  .underskrifter strong { display: block; font-weight: 600; }
-  .underskrifter span { font-size: 0.85rem; color: rgba(255,255,255,0.62); }
-
   footer {
     position: relative;
     z-index: 1;
@@ -490,15 +466,8 @@ $underskrivere = [
         </section>
 
         <section>
-          <p class="doc-meta">Underskrevet den 19. februar 2017 af:</p>
-          <ul class="underskrifter">
-            <?php foreach ($underskrivere as $underskriver): ?>
-              <li>
-                <strong><?php echo $e($underskriver[0]); ?></strong>
-                <span><?php echo $e($underskriver[1]); ?></span>
-              </li>
-            <?php endforeach; ?>
-          </ul>
+          <h2>§ 10</h2>
+          <p>Foreningens regnskabsår er kalenderåret.</p>
         </section>
       </div>
     </div>
