@@ -352,6 +352,7 @@ $underskrivere = [
       <a href="bestyrelsen.php">Bestyrelsen</a>
       <a href="hjertestarter.html">Hjertestarter</a>
       <a href="omraade.html">Området</a>
+      <a href="aarshjul.php">Årshjul</a>
       <a href="vedtaegter.php" class="active">Vedtægter</a>
       <a href="medlemsfotos.php">Medlemsfotos</a>
       <a href="generalforsamling.php">Generalforsamling</a>

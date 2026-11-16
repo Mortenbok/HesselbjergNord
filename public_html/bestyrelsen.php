@@ -394,6 +394,7 @@ $loggedIn = $user !== null;
       <a href="bestyrelsen.php" class="active">Bestyrelsen</a>
       <a href="hjertestarter.html">Hjertestarter</a>
       <a href="omraade.html">Området</a>
+      <a href="aarshjul.php">Årshjul</a>
       <?php if (!$loggedIn): ?>
         <a href="ny-beboer.php">Ny beboer</a>
       <?php endif; ?>

@@ -32,7 +32,7 @@ bruger `beach-bg.jpg` som baggrund. Filen kan slettes — både i git og på
 serveren.
 
 ### 1.2 robots.txt og sitemap.xml mangler helt
-Ingen af delene findes. Et sitemap betyder ekstra meget her, fordi tre
+Ingen af delene findes. Et sitemap betyder ekstra meget her, fordi to
 sider nu er skjult i menuen (se punkt 3) — Google kan ikke længere finde
 dem ved at følge links.
 
@@ -45,27 +45,26 @@ indhold og dele placeringen mellem dem.
 Deles siden på Facebook — som er den måde, en grundejerforening spreder
 sig på — vises den som et nøgent link uden billede og beskrivelse.
 
-### 1.5 Beskrivelser mangler på to sider
-`kontingent.html`, `aktiviteter.html`.
+### 1.5 Beskrivelse mangler på én side
+`kontingent.html`.
 
 ### 1.6 Strukturerede data
 `Organization`/`LocalBusiness` i JSON-LD. Lille gevinst, hurtigt gjort.
 
 ---
 
-## 2. To sider er reelt tomme  ← vigtigst af alt, og kun du kan gøre det
+## 2. Én side er reelt tom  ← vigtigst af alt, og kun du kan gøre det
 
 Målt synligt indhold:
 
 | Side | Ord |
 |---|---|
 | `kontingent.html` | ~32 |
-| `aktiviteter.html` | ~32 |
 | `betalingsservice.html` | ~345 |
 | `hjertestarter.html` | ~260 |
 | `index.html` | ~101 |
 
-De to første står stadig som "Under opbygning". Ingen meta-tags kan
+`kontingent.html` står stadig som "Under opbygning". Ingen meta-tags kan
 løfte en tom side — der skal tekst på. Det er skrivearbejde, ikke kodning.
 
 `vedtaegter.html` er klaret: vedtægterne ligger nu på `vedtaegter.php`
@@ -78,12 +77,17 @@ alle 20 veje tegnet ind, en vejliste med længder og nøgletal (42 ha,
 hentet fra OpenStreetMap; kortet tegnes med Leaflet fra cdnjs, og der er
 både almindeligt kort og luftfoto.
 
+`aktiviteter.html` er klaret: aktiviteterne ligger nu i årshjulet på
+`aarshjul.php`, som er offentligt og står i menuen. Den gamle fil er
+`noindex` og sender videre. Indholdet ligger i databasen, så bestyrelsen
+retter det i browseren — ikke i HTML.
+
 ---
 
-## 3. De tre skjulte sider er nu forældreløse
+## 3. De to skjulte sider er nu forældreløse
 
-`kontingent`, `aktiviteter` og `betalingsservice` er taget ud af menuen,
-men findes stadig og svarer med 200. Ingen sider linker til dem længere.
+`kontingent` og `betalingsservice` er taget ud af menuen, men findes
+stadig og svarer med 200. Ingen sider linker til dem længere.
 
 (`vedtaegter.html` er afgjort: den har fået `noindex` og sender videre
 til `vedtaegter.php` i medlemsområdet.)
@@ -113,6 +117,12 @@ Beslut for hver enkelt:
       besøgende. Linket dannes i BS Customer Portal.
 - [ ] **Uffe Gangelhof mangler telefon og adresse** i
       `includes/bestyrelse.php`. De øvrige syv er på plads.
+- [ ] **Årshjulet: bestyrelsesmøde i september "inden generalforsamlingen".**
+      Generalforsamlingen er sidste lørdag i august, så et møde i
+      september ligger EFTER den, ikke før. Enten er måneden forkert
+      (august?), eller også skal teksten laves om. Posten står på
+      `aarshjul.php` præcis som oplyst — ret den under "Ret i årshjulet",
+      når I ved, hvad der er rigtigt.
 - [ ] **Slåfejl i vedtægternes § 1: "Hyldeskovvænget".** Vejen hedder
       Hylleskovvænget — sådan står den i OpenStreetMap, og sådan er to
       bestyrelsesmedlemmers adresser skrevet i `includes/bestyrelse.php`.

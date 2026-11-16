@@ -98,6 +98,62 @@ try {
     }
 
     $pdo->exec("
+        CREATE TABLE IF NOT EXISTS aarshjul (
+            id INT NOT NULL AUTO_INCREMENT,
+            kategori ENUM('bestyrelsen', 'generalforsamling', 'socialt') NOT NULL,
+            titel VARCHAR(200) NOT NULL,
+            tidspunkt VARCHAR(120) NOT NULL DEFAULT '',
+            maaned TINYINT NULL DEFAULT NULL,
+            beregning VARCHAR(40) NOT NULL DEFAULT '',
+            beskrivelse TEXT NOT NULL,
+            sortering SMALLINT NOT NULL DEFAULT 0,
+            updated_at DATETIME NULL DEFAULT NULL,
+            updated_by VARCHAR(255) NOT NULL DEFAULT '',
+            PRIMARY KEY (id),
+            KEY idx_aarshjul_sort (sortering)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+
+    // Årshjulet fyldes ud én gang med det, bestyrelsen oplyste. Derefter
+    // rettes det kun fra aarshjul.php — her rives intet over.
+    if ((int)$pdo->query('SELECT COUNT(*) FROM aarshjul')->fetchColumn() === 0) {
+        $start = [
+            ['bestyrelsen', 'Bestyrelsesmøde', 'Medio oktober', 10, '', '', 10],
+            ['bestyrelsen', 'Bestyrelsesmøde', 'Marts/april', 3, '', '', 20],
+            ['bestyrelsen', 'Bestyrelsesmøde', 'September — inden generalforsamlingen', 9, '', '', 30],
+            ['bestyrelsen', 'Møder efter behov', 'Efter behov', null, '',
+                'Holdes enten fysisk eller på Teams.', 40],
+
+            ['generalforsamling', 'Generalforsamling', 'Sidste lørdag i august', 8,
+                'sidste_loerdag_august',
+                "Indkaldes mindst 14 dage før via mail og på Facebook.\n"
+                . 'Bestyrelsen plejer at indkalde tre uger før.', 50],
+            ['generalforsamling', 'Frist for forslag', '15. juni', 6, '',
+                'Forslag, der ønskes behandlet på generalforsamlingen, skal være '
+                . 'formanden i hænde senest 15. juni. Det står i § 6 i vedtægterne.', 60],
+            ['generalforsamling', 'Påmindelse om forslagsfristen', 'April/maj', 4, '',
+                'Bestyrelsen plejer at minde om fristen, når referatet sendes ud.', 70],
+
+            ['socialt', 'Arbejdsdag', 'Lørdagen inden palmesøndag', null,
+                'loerdag_foer_palmesoendag',
+                'Holdes efter behov. Datoen følger påsken og flytter sig derfor '
+                . 'fra år til år.', 80],
+            ['socialt', 'Grillaften', 'Uge 29 eller 30', 7, '',
+                'Indkaldes nogle få dage før, alt efter vejrudsigten.', 90],
+        ];
+
+        $saet = $pdo->prepare(
+            'INSERT INTO aarshjul
+                (kategori, titel, tidspunkt, maaned, beregning, beskrivelse, sortering)
+             VALUES (?, ?, ?, ?, ?, ?, ?)'
+        );
+
+        foreach ($start as $post) {
+            $saet->execute($post);
+        }
+    }
+
+    $pdo->exec("
         CREATE TABLE IF NOT EXISTS residents (
             id INT NOT NULL AUTO_INCREMENT,
             name VARCHAR(255) NOT NULL,

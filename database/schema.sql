@@ -84,6 +84,32 @@ CREATE TABLE IF NOT EXISTS documents (
 -- VALUES ('bestyrelsen', 'Bestyrelsen', '$2y$10$INDSÆT_HASH_HER', 'bestyrelse');
 
 -- ---------------------------------------------------------------------------
+-- aarshjul — indholdet på aarshjul.php (Årshjul / Aktiviteter)
+-- ---------------------------------------------------------------------------
+-- Siden er offentlig, men bestyrelsen retter den i browseren. Derfor ligger
+-- teksterne her og ikke i HTML. includes/db.php fylder tabellen ud med
+-- bestyrelsens oplysninger, første gang den er tom.
+--
+-- beregning: tom = datoen skrives i hånden i tidspunkt.
+--   sidste_loerdag_august      generalforsamlingen
+--   loerdag_foer_palmesoendag  arbejdsdagen (følger påsken)
+-- Begge regnes ud for det år, siden vises i, og skal aldrig rettes.
+CREATE TABLE IF NOT EXISTS aarshjul (
+  id INT NOT NULL AUTO_INCREMENT,
+  kategori ENUM('bestyrelsen', 'generalforsamling', 'socialt') NOT NULL,
+  titel VARCHAR(200) NOT NULL,
+  tidspunkt VARCHAR(120) NOT NULL DEFAULT '',
+  maaned TINYINT NULL DEFAULT NULL,
+  beregning VARCHAR(40) NOT NULL DEFAULT '',
+  beskrivelse TEXT NOT NULL,
+  sortering SMALLINT NOT NULL DEFAULT 0,
+  updated_at DATETIME NULL DEFAULT NULL,
+  updated_by VARCHAR(255) NOT NULL DEFAULT '',
+  PRIMARY KEY (id),
+  KEY idx_aarshjul_sort (sortering)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------------
 -- residents — tilmeldinger fra "Ny beboer"-formularen
 -- ---------------------------------------------------------------------------
 -- Formularen er offentlig, så alle kan sende oplysninger ind. Selve listen
