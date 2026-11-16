@@ -194,9 +194,17 @@ $kanal = $channel === 'sms' ? 'sms' : 'mail';
 // Modtagerne kommer fra beboerkartoteket. Den gamle residents-tabel bliver
 // ikke længere fyldt — ny-beboer.php skriver i kartoteket.
 //
-// Hele listen hentes altid: den skal vises med afkrydsningsfelter, når der
-// skal vælges enkelte ud.
-$alleModtagere = $denied ? [] : beboer_modtagere($pdo, $kanal, $kunBestyrelse);
+// BEGGE kanaler hentes. Vælgeren til enkeltpersoner skal kunne skifte
+// mellem mail og SMS uden at hente siden igen, og listerne er ikke ens:
+// en beboer kan have mail uden telefonnummer. Hentede vi kun den valgte
+// kanal, ville et klik på "Mail" vise SMS-listen videre — og så manglede
+// der folk, uden at nogen kunne se hvorfor.
+$listeKanal = [
+    'mail' => $denied ? [] : beboer_modtagere($pdo, 'mail'),
+    'sms' => $denied ? [] : beboer_modtagere($pdo, 'sms'),
+];
+
+$alleModtagere = $listeKanal[$kanal];
 
 if ($gruppe === 'valgte') {
     $oensket = array_flip($valgte);
@@ -205,15 +213,18 @@ if ($gruppe === 'valgte') {
         $alleModtagere,
         static fn(array $r): bool => isset($oensket[$r['email'] !== '' ? $r['email'] : $r['msisdn']])
     ));
+} elseif ($kunBestyrelse) {
+    // Listerne ovenfor er hele kartoteket, fordi vælgeren skal kunne vise
+    // dem. Bestyrelsen hentes for sig.
+    $recipients = $denied ? [] : beboer_modtagere($pdo, $kanal, true);
 } else {
     $recipients = $alleModtagere;
 }
 
 // Begge tal skal med ud i siden, så teksten kan opdateres, når kanalen
 // skiftes — uden at spørge serveren igen.
-$antalKanal = $denied ? ['mail' => 0, 'sms' => 0] : beboer_antal_modtagere($pdo, $kunBestyrelse);
-$countSms = $antalKanal['sms'];
-$countMail = $antalKanal['mail'];
+$countSms = count($listeKanal['sms']);
+$countMail = count($listeKanal['mail']);
 
 // Bestyrelsens tal med ud i siden, så teksten kan følge med, når man
 // skifter gruppe — uden at spørge serveren igen.
@@ -1158,20 +1169,24 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
                 <button type="button" id="vaelgIngen" class="lille">Ryd</button>
               </div>
 
-              <ul class="vaelger-liste">
-                <?php foreach ($alleModtagere as $r): ?>
-                  <?php $kontakt = $r['email'] !== '' ? $r['email'] : $r['msisdn']; ?>
-                  <li data-soeg="<?php echo $e(mb_strtolower($r['navn'] . ' ' . $r['adresse'] . ' ' . $kontakt)); ?>">
-                    <label>
-                      <input type="checkbox" name="valgte[]"
-                             value="<?php echo $e($kontakt); ?>"
-                             <?php echo in_array($kontakt, $valgte, true) ? 'checked' : ''; ?>>
-                      <span class="vaelger-navn"><?php echo $e($r['navn'] !== '' ? $r['navn'] : $kontakt); ?></span>
-                      <span class="vaelger-under"><?php echo $e($r['adresse']); ?> &middot; <?php echo $e($kontakt); ?></span>
-                    </label>
-                  </li>
-                <?php endforeach; ?>
-              </ul>
+              <?php foreach ($listeKanal as $denneKanal => $liste): ?>
+                <ul class="vaelger-liste" data-kanal="<?php echo $e($denneKanal); ?>"
+                    <?php echo $denneKanal === $kanal ? '' : 'hidden'; ?>>
+                  <?php foreach ($liste as $r): ?>
+                    <?php $kontakt = $r['email'] !== '' ? $r['email'] : $r['msisdn']; ?>
+                    <li data-soeg="<?php echo $e(mb_strtolower($r['navn'] . ' ' . $r['adresse'] . ' ' . $kontakt)); ?>">
+                      <label>
+                        <input type="checkbox" name="valgte[]"
+                               value="<?php echo $e($kontakt); ?>"
+                               <?php echo $denneKanal === $kanal ? '' : 'disabled'; ?>
+                               <?php echo in_array($kontakt, $valgte, true) ? 'checked' : ''; ?>>
+                        <span class="vaelger-navn"><?php echo $e($r['navn'] !== '' ? $r['navn'] : $kontakt); ?></span>
+                        <span class="vaelger-under"><?php echo $e($r['adresse']); ?> &middot; <?php echo $e($kontakt); ?></span>
+                      </label>
+                    </li>
+                  <?php endforeach; ?>
+                </ul>
+              <?php endforeach; ?>
 
               <p class="muted smaat">
                 Listen følger kanalen: ved mail står de, der har en mailadresse,
@@ -1363,19 +1378,29 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
       var vaelger = document.getElementById('vaelger');
       var soeg = document.getElementById('vaelgerSoeg');
 
+      /* Der ligger én liste pr. kanal i siden. Kun den valgte er synlig,
+         og felterne i den skjulte er disabled, så de ikke sendes med. */
+      function synligListe() {
+        if (!vaelger) return null;
+        return vaelger.querySelector('.vaelger-liste[data-kanal="' +
+          (channel() === 'email' ? 'mail' : 'sms') + '"]');
+      }
+
       function afkrydsede() {
-        if (!vaelger) return [];
+        var liste = synligListe();
+        if (!liste) return [];
         return Array.prototype.filter.call(
-          vaelger.querySelectorAll('input[name="valgte[]"]'),
+          liste.querySelectorAll('input[name="valgte[]"]'),
           function (el) { return el.checked; }
         );
       }
 
       /* Kun de rækker, søgefeltet ikke har gemt væk. */
       function synligeRaekker() {
-        if (!vaelger) return [];
+        var liste = synligListe();
+        if (!liste) return [];
         return Array.prototype.filter.call(
-          vaelger.querySelectorAll('.vaelger-liste li'),
+          liste.querySelectorAll('li'),
           function (li) { return !li.hidden; }
         );
       }
@@ -1384,8 +1409,24 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
         if (!vaelger || !soeg) return;
         var q = soeg.value.trim().toLowerCase();
 
+        // Begge lister filtreres, så søgningen holder ved kanalskift.
         vaelger.querySelectorAll('.vaelger-liste li').forEach(function (li) {
           li.hidden = q !== '' && (li.getAttribute('data-soeg') || '').indexOf(q) === -1;
+        });
+      }
+
+      /* Viser listen for den valgte kanal og slår den anden fra, så dens
+         felter hverken tælles med eller sendes. */
+      function visKanal() {
+        if (!vaelger) return;
+        var oensket = channel() === 'email' ? 'mail' : 'sms';
+
+        vaelger.querySelectorAll('.vaelger-liste').forEach(function (ul) {
+          var passer = ul.getAttribute('data-kanal') === oensket;
+          ul.hidden = !passer;
+          ul.querySelectorAll('input[name="valgte[]"]').forEach(function (f) {
+            f.disabled = !passer;
+          });
         });
       }
 
@@ -1411,6 +1452,7 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
 
       function sync() {
         var isMail = channel() === 'email';
+        visKanal();
         syncRecipients(isMail);
         if (vaelger) vaelger.classList.toggle('hidden-row', gruppe() !== 'valgte');
         if (subjectRow) subjectRow.classList.toggle("hidden-row", !isMail);
@@ -1448,9 +1490,12 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
 
         if (ingen) {
           ingen.addEventListener('click', function () {
-            vaelger.querySelectorAll('input[name="valgte[]"]').forEach(function (f) {
-              f.checked = false;
-            });
+            var liste = synligListe();
+            if (liste) {
+              liste.querySelectorAll('input[name="valgte[]"]').forEach(function (f) {
+                f.checked = false;
+              });
+            }
             sync();
           });
         }
