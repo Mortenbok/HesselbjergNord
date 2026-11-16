@@ -109,9 +109,13 @@ Beslut for hver enkelt:
       git eller i FTP-overførslen, så den skal lægges på serveren i
       hånden. Prøv den af med `php tools/sms/proev-sms.php` — uden et
       nummer sender den intet. Mail virker allerede.
-      Bemærk: et Client Id og et Secret Id virker IKKE — hverken mod
-      `apiv2.suresms.com/json/token`, `oauth2/api/Account/Gettoken`
-      eller `Script/SendSMS.aspx`. Det skal være en API-nøgle.
+      Bemærk: et Client Id og et Secret Id virker IKKE — det skal
+      være en API-nøgle. (Client Id'et ER bare teksten "APIKey".)
+- [ ] **Få "Hesselbjerg" godkendt som Sender-ID hos SureSMS.** Indtil
+      da står `sms_sender` tom, og beskederne kommer fra kontoens eget
+      telefonnummer. Sættes der et navn, der ikke er godkendt, siger
+      SureSMS ja ved afsendelsen og smider beskeden væk bagefter med
+      "Unauthorized SenderID" — det ses KUN i udbakken.
 - [ ] **Syv bestyrelseslogins mangler.** Der er kun én bruger
       (`MortenBoKristensen`). De oprettes på `opret-medlemmer.php` —
       husk at sætte Rolle til **Bestyrelse**. Siden er ikke linket fra

@@ -40,7 +40,9 @@ function sms_config(): array
         $config = is_readable($file) ? (array)require $file : [];
         $config += [
             'suresms_apikey' => '',
-            'sms_sender' => 'Hesselbjerg',
+            // Tom: beskeden kommer fra kontoens eget nummer. Et navn
+            // skal være godkendt under Sender-ID hos SureSMS først.
+            'sms_sender' => '',
             // Kun nødvendig på maskiner uden en certifikatliste i PHP — fx
             // en arbejdscomputer. Står den tom, bruges systemets egen, og
             // det er det rigtige på serveren.
@@ -246,13 +248,23 @@ function sms_send(array $msisdns, string $text): array
         $landekode = substr($nummer, 0, 2);
         $lokalt = substr($nummer, 2);
 
-        $svar = sms_http(SMS_SEND_URL, [
+        $krop = [
             'countrycode' => $landekode,
             'toPhonenumber' => $lokalt,
-            'isSentFrom' => $config['sms_sender'],
             'messageText' => $text,
             'messageID' => 'hbn-' . date('Ymd-His') . '-' . bin2hex(random_bytes(3)),
-        ], $token['token']);
+        ];
+
+        // Et afsendernavn skal være godkendt under Sender-ID på kontoen.
+        // Er det ikke, tager SureSMS imod beskeden og smider den væk
+        // bagefter med "Unauthorized SenderID" — den fejl ses kun i
+        // udbakken. Står sms_sender tom, bruges kontoens eget nummer, og
+        // så kommer beskeden frem.
+        if ($config['sms_sender'] !== '') {
+            $krop['isSentFrom'] = $config['sms_sender'];
+        }
+
+        $svar = sms_http(SMS_SEND_URL, $krop, $token['token']);
 
         $gik = $svar['ok'] && !empty($svar['data']['success']);
 
@@ -309,4 +321,57 @@ function sms_konto(): array
     }
 
     return ['ok' => true, 'data' => $data['result'] ?? $data, 'fejl' => ''];
+}
+
+/**
+ * Hvad skete der med de beskeder, der er sendt i dag?
+ *
+ * SureSMS tager imod en besked og svarer ja med det samme — også når den
+ * bagefter bliver smidt væk, fx fordi afsendernavnet ikke er godkendt.
+ * Den besked står KUN i udbakken. Derfor kan man ikke stole på svaret fra
+ * selve afsendelsen alene.
+ *
+ * Returnerer ['ok' => bool, 'beskeder' => [...], 'fejl' => string].
+ */
+function sms_udbakke(string $fraDato = '', string $tilDato = ''): array
+{
+    $token = sms_token();
+
+    if ($token['fejl'] !== '') {
+        return ['ok' => false, 'beskeder' => [], 'fejl' => $token['fejl']];
+    }
+
+    $config = sms_config();
+
+    // Datoerne skal være Y-m-d. Dagen i dag kan ligge uden for serverens
+    // døgn, så der tages en dag i hver ende.
+    $url = 'https://api.suresms.com/oauth2/api/Message/Outbox?' . http_build_query([
+        'FromDate' => $fraDato !== '' ? $fraDato : date('Y-m-d', strtotime('-1 day')),
+        'ToDate' => $tilDato !== '' ? $tilDato : date('Y-m-d', strtotime('+1 day')),
+    ]);
+
+    $ch = curl_init($url);
+
+    $opt = [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => SMS_TIMEOUT,
+        CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $token['token']],
+    ];
+
+    if ($config['sms_ca_bundle'] !== '' && is_readable($config['sms_ca_bundle'])) {
+        $opt[CURLOPT_CAINFO] = $config['sms_ca_bundle'];
+    }
+
+    curl_setopt_array($ch, $opt);
+    $svar = curl_exec($ch);
+    $status = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    $data = json_decode((string)$svar, true);
+
+    if ($status !== 200 || !is_array($data)) {
+        return ['ok' => false, 'beskeder' => [], 'fejl' => 'Udbakken svarede HTTP ' . $status . '.'];
+    }
+
+    return ['ok' => true, 'beskeder' => (array)($data['result'] ?? []), 'fejl' => ''];
 }

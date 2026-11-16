@@ -56,20 +56,23 @@ if ($token['fejl'] !== '') {
 
 echo '   OK — token på ', strlen($token['token']), " tegn\n";
 
-echo "\n2. Slår kontoen op\n";
+// Kontoopslaget er en ekstra oplysning, ikke en prøve. En API-nøgle må
+// ikke nødvendigvis læse kontoen — den svarer 401 — og det forhindrer
+// ikke, at der kan sendes. Tokenet ovenfor er beviset.
+echo "\n2. Slår kontoen op (kun til oplysning)\n";
 $konto = sms_konto();
 
 if (!$konto['ok']) {
-    echo '   FEJLEDE: ', $konto['fejl'], "\n";
-    exit(1);
-}
-
-foreach (['userName' => 'Bruger', 'authenticationType' => 'Login via'] as $felt => $navn) {
-    if (!empty($konto['data'][$felt])) {
-        linje($navn, (string)$konto['data'][$felt]);
+    echo '   springes over: ', $konto['fejl'], "\n";
+    echo "   Det er i orden — nøglen må bare ikke læse kontooplysninger.\n";
+} else {
+    foreach (['userName' => 'Bruger', 'authenticationType' => 'Login via'] as $felt => $navn) {
+        if (!empty($konto['data'][$felt])) {
+            linje($navn, (string)$konto['data'][$felt]);
+        }
     }
+    echo "   OK\n";
 }
-echo "   OK\n";
 
 /* --- Nummeret, der prøves med --- */
 if (!isset($argv[1])) {
@@ -101,7 +104,48 @@ if ($svar['ok'] < 1) {
     exit(1);
 }
 
-echo "   OK — sendt.\n";
-echo "\nKig på telefonen. Kommer den ikke frem, så tjek afsendernavnet:\n";
-echo "højst 11 tegn, ingen mellemrum eller specialtegn. De godkendte navne\n";
-echo "står under Sender-ID på din SureSMS-konto.\n";
+echo "   taget imod\n";
+
+/*
+ * SureSMS siger ja med det samme og smider så måske beskeden væk bagefter
+ * — fx hvis afsendernavnet ikke er godkendt. Den afvisning står KUN i
+ * udbakken, så "taget imod" er ikke det samme som "kommet frem".
+ */
+echo "\n4. Tjekker, hvad der faktisk skete\n";
+sleep(3);
+
+$u = sms_udbakke();
+
+if (!$u['ok']) {
+    echo '   kunne ikke læse udbakken: ', $u['fejl'], "\n";
+    echo "   Kig på telefonen i stedet.\n";
+    exit(0);
+}
+
+$mine = array_filter($u['beskeder'], static fn($m) => str_ends_with((string)($m['toPhonenumber'] ?? ''), substr($nummer, 2)));
+usort($mine, static fn($a, $b) => strcmp((string)($b['submittedDateTime'] ?? ''), (string)($a['submittedDateTime'] ?? '')));
+$sidste = $mine[0] ?? null;
+
+if ($sidste === null) {
+    echo "   beskeden er ikke dukket op i udbakken endnu — prøv igen om lidt.\n";
+    exit(0);
+}
+
+$status = (string)($sidste['statusDescription'] ?? 'ukendt');
+linje('Status', $status);
+linje('Afsender', (string)($sidste['isSentFrom'] ?? '(kontoens nummer)'));
+linje('Pris', (string)($sidste['priceInDKK'] ?? '?') . ' DKK');
+
+if (stripos($status, 'fail') !== false || stripos($status, 'unauthor') !== false) {
+    echo "\n   BESKEDEN KOM IKKE FREM.\n";
+
+    if (stripos($status, 'senderid') !== false) {
+        echo "   Afsendernavnet er ikke godkendt på kontoen. Sæt sms_sender til\n";
+        echo "   en tom streng i config.local.php — så bruges kontoens eget\n";
+        echo "   nummer — eller få navnet godkendt under Sender-ID hos SureSMS.\n";
+    }
+
+    exit(1);
+}
+
+echo "\n   Beskeden er kommet frem.\n";

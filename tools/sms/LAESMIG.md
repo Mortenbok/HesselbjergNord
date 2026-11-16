@@ -16,12 +16,17 @@ login hos [SureSMS](https://suresms.com).
 
    ```php
    'suresms_apikey' => 'DIN NØGLE',
-   'sms_sender' => 'Hesselbjerg',
+   'sms_sender' => '',          // tom, til navnet er godkendt
    ```
 
-   Afsendernavnet er det, modtageren ser. Højst **11 tegn**, bogstaver og
-   tal, ingen mellemrum — og det skal være godkendt under **Sender-ID** på
-   kontoen, ellers afviser SureSMS beskeden.
+   **Lad `sms_sender` stå tom**, indtil navnet er godkendt under
+   **Sender-ID** hos SureSMS. Tom betyder, at beskeden kommer fra
+   kontoens eget telefonnummer, og så kommer den frem.
+
+   Sættes der et navn, der ikke er godkendt, siger SureSMS **ja** ved
+   afsendelsen og smider beskeden væk bagefter med *Unauthorized
+   SenderID*. Den afvisning står KUN i udbakken — derfor tjekker
+   `proev-sms.php` udbakken, før den siger, at det gik godt.
 
 3. Filen ligger hverken i git eller i FTP-overførslen — den skal lægges på
    serveren i hånden med FileZilla. Det er med vilje: den indeholder
