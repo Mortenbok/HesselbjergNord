@@ -55,6 +55,12 @@ nav.open .nav-toggle span:nth-child(3) { transform: translateY(-7px) rotate(-45d
     width: 100%;
     flex: 1 0 100%;
     flex-direction: column;
+    /* Siderne sætter flex-wrap: wrap på listen. I en lodret menu betyder
+       det, at links, der ikke er plads til inden for max-height, ombryder
+       til en NY KOLONNE ved siden af panelet i stedet for at rulle. Med
+       elleve punkter — bestyrelsen logget ind på en lav skærm — faldt
+       Beskeder, Adgangskort og Beboerkartotek uden for menuen. */
+    flex-wrap: nowrap;
     align-items: stretch;
     gap: 2px;
     margin-top: 6px;
@@ -114,4 +120,42 @@ nav.open .nav-toggle span:nth-child(3) { transform: translateY(-7px) rotate(-45d
 
 @media (prefers-reduced-motion: reduce) {
   .nav-toggle span { transition: none; }
+}
+
+/* ---------------------------------------------------------------------------
+ * Store skærme: linkene skal stå midt på siden.
+ *
+ * Navigationen er en flexboks, hvor .nav-links har flex: 1 og centrerer sit
+ * indhold. Men den vokser kun i DEN PLADS, der er tilbage, når login-boksen
+ * har fået sin — så linkenes midte lå altid en halv login-boks for langt til
+ * venstre. Jo længere brugernavn, jo skævere: med "MortenNonBestyrelse" var
+ * det 169 px.
+ *
+ * Her lægges en tom klods til venstre, lige så bred som login-boksen til
+ * højre. Så er der lige meget på begge sider, og linkene står i midten.
+ *
+ * --nav-klods sættes af mobile-nav.js. Ren CSS kan ikke klare det: bredden
+ * afhænger af brugernavnets længde, og klodsen skal kun bruges, når der er
+ * plads til den. Scriptet prøver den af og ruller den tilbage, hvis linkene
+ * bliver presset ned i en ekstra række.
+ *
+ * Uden JavaScript er --nav-klods ikke sat, klodsen bliver 0 bred, og bjælken
+ * står som før. Skæv, men ikke i stykker.
+ * ------------------------------------------------------------------------- */
+@media (min-width: 761px) {
+  nav::before {
+    content: "";
+    /* Krymper ikke: klodsens hele pointe er at holde sin plads. .nav-links
+       har flex-basis 0 og tager kun det, der er tilovers, så der opstår
+       ingen kamp om pladsen. */
+    flex: 0 0 var(--nav-klods, 0px);
+  }
+
+  /* Margenen skal væk: klodsen måles uden den, og ellers ville højre side
+     være 10 px bredere end venstre. Afstanden til kanten kommer nu fra
+     navigationens egen polstring, præcis som i venstre side. */
+  .nav-account {
+    flex: 0 0 auto;
+    margin-right: 0;
+  }
 }
