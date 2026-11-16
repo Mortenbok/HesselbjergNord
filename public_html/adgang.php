@@ -268,9 +268,6 @@ $csrf = auth_csrf_token();
         <button type="submit">Opret min adgang</button>
       </form>
 
-      <p class="hjaelp">Bor I to på adressen, kan I begge scanne kortet og få
-        hver jeres login. Har du glemt din adgangskode, scanner du bare kortet
-        igen og vælger en ny.</p>
     <?php endif; ?>
   </div>
 </body>
