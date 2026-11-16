@@ -143,6 +143,19 @@ Beslut for hver enkelt:
       hverken grund eller bygning på adressen. Nummeret står i
       `BFE_HAANDHOLDT` i `tools/bfe/hent-bfe.php` og kontrolleres mod
       matriklen ved hver kørsel.
+- [ ] **Et login kan ikke lukkes fra hjemmesiden.** At spærre en kode eller
+      give en ny på `adgangskort.php` stopper kun selve koden. De logins,
+      der allerede er oprettet på adressen, bliver ved med at virke, så en
+      tidligere ejer kan stadig logge ind og se beboerkartoteket. Siden
+      siger det nu ligeud, men der mangler en knap, der sætter
+      `users.is_active = 0` for adressen. Indtil da skal det gøres i
+      databasen.
+- [ ] **Ristingevej 121 og 123 kan ikke få en kode.** `adgangskort.php`
+      tilbyder kun vejene fra `HBN_VEJE`, når man opretter et kort, og
+      `adgang_mail_pr_husstand()` springer adresser uden for de 20 veje
+      over. De to husstande kan derfor hverken få et postkort eller en
+      mail. Hænger sammen med spørgsmålet om, hvorvidt vejen hører til
+      foreningen — se punktet længere nede.
 - [ ] **Seks BFE-numre er kun fundet ad én vej** (Enebærvænget 9,
       Hylleskovvænget 7, Lindevænget 4, Rosenvænget 500A, Syrenvænget 26,
       Ørnevænget 2). Det er ubebyggede grunde, så kun grundvejen gav svar

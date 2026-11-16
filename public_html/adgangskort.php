@@ -1,9 +1,17 @@
 <?php
 /**
- * Adgangskort — bestyrelsens overblik over postkortene.
+ * Adgangskort — bestyrelsens overblik over husstandenes koder.
  *
- * Her ses, hvilke husstande der har oprettet sig, og her spærres et kort,
- * når et hus skifter ejer. Siden kræver login som bestyrelsesmedlem.
+ * Koden sendes på mail til dem, der står med en mailadresse i
+ * beboerkartoteket, og printes som postkort til resten. Her ses, hvilke
+ * husstande der har oprettet sig, og her spærres en kode, når et hus
+ * skifter ejer.
+ *
+ * BEMÆRK: at spærre en kode eller give en ny lukker ikke de logins, der
+ * allerede er oprettet på adressen — det kan hjemmesiden ikke endnu.
+ * Se punktet i TODO.md.
+ *
+ * Siden kræver login som bestyrelsesmedlem.
  */
 
 require_once __DIR__ . '/includes/auth.php';
@@ -51,7 +59,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($handling === 'spaer' && $id > 0) {
             $pdo->prepare('UPDATE adgangskort SET spaerret = 1 WHERE id = :id')->execute([':id' => $id]);
-            $besked = 'Kortet er spærret. Koden virker ikke længere.';
+            $besked = 'Koden er spærret og virker ikke længere. '
+                . 'Logins, der allerede er oprettet på adressen, virker stadig.';
         } elseif ($handling === 'aabn' && $id > 0) {
             $pdo->prepare('UPDATE adgangskort SET spaerret = 0 WHERE id = :id')->execute([':id' => $id]);
             $besked = 'Kortet er åbnet igen.';
@@ -65,7 +74,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $pdo->prepare('UPDATE adgangskort SET kode = :k, spaerret = 0, antal_brug = 0, sidst_brugt = NULL WHERE id = :id')
                 ->execute([':k' => $ny, ':id' => $id]);
-            $besked = 'Kortet har fået ny kode: ' . adgang_kode_paent($ny) . '. Husk at printe det igen.';
+            $besked = 'Husstanden har fået ny kode: ' . adgang_kode_paent($ny)
+                . '. Husk at sende eller printe den igen. Logins, der allerede '
+                . 'er oprettet på adressen, virker stadig.';
         } elseif ($handling === 'tilfoej') {
             $vej = adresse_find_vej((string)($_POST['vej'] ?? ''));
             $nr = adresse_husnummer((string)($_POST['nummer'] ?? ''));
@@ -284,6 +295,15 @@ $csrf = auth_csrf_token();
   }
   .udsend a { color: #cfe9ff; }
   .mangler-mail { color: rgba(255, 210, 150, 0.9); }
+  /* Noget, bestyrelsen skal lægge mærke til, uden at det ligner en fejl. */
+  .pas-paa {
+    margin-top: 14px;
+    padding: 12px 15px;
+    border-left: 3px solid rgba(255, 190, 110, 0.8);
+    border-radius: 0 10px 10px 0;
+    background: rgba(255, 190, 110, 0.10);
+    font-size: 0.93rem;
+  }
   .smaat { font-size: 0.86rem; color: rgba(255,255,255,0.6); line-height: 1.5; }
   button.send-knap {
     background: rgba(70, 150, 225, 0.55); border-color: rgba(150, 200, 255, 0.7);
@@ -345,11 +365,18 @@ $csrf = auth_csrf_token();
   <div class="container">
     <div class="panel">
       <h1>Adgangskort</h1>
-      <p class="lead">Hver husstand har ét postkort med en QR-kode. Kortet hører
-        til adressen og brænder ikke ved brug: begge ejere kan oprette hver
-        deres login, og et glemt kodeord klares ved at scanne kortet igen.
-        Skifter et hus ejer, så giv kortet en ny kode — så virker det gamle
-        postkort ikke længere.</p>
+      <p class="lead">Hver husstand har én kode. De fleste får den på mail;
+        husstande uden mailadresse i beboerkartoteket får den på et postkort
+        i postkassen. Koden hører til adressen og brænder ikke ved brug —
+        både ejer og medejer kan oprette hver deres login, og har man glemt
+        sin adgangskode, bruger man bare linket eller koden igen og vælger en
+        ny.</p>
+
+      <p class="lead pas-paa"><b>Ny kode og Spær stopper kun koden, ikke de
+        logins, der allerede er oprettet.</b> Skifter et hus ejer, kan den
+        tidligere ejer altså stadig logge ind med sin mail og adgangskode.
+        Hjemmesiden kan ikke lukke et login endnu — skriv til
+        webkoordinatoren, indtil den kan.</p>
 
       <div class="tal">
         <div><b><?php echo $antal; ?></b><span>husstande</span></div>
@@ -370,7 +397,7 @@ $csrf = auth_csrf_token();
       <div class="udsend">
         <h2>Send koden på mail</h2>
         <p>Mailadresserne kommer fra <a href="beboerkartotek.php">beboerkartoteket</a>.
-          Både ejer og medejere på adressen får mailen — kortet hører til
+          Både ejer og medejere på adressen får mailen — koden hører til
           husstanden, ikke til én person. Hver modtager får sin egen mail, så
           ingen kan se hinandens adresser.</p>
 
@@ -496,7 +523,7 @@ $csrf = auth_csrf_token();
                       <?php endif; ?>
                     </form>
                     <form method="post" class="inline"
-                          onsubmit="return confirm('Giv <?php echo $e($k['adresse']); ?> en ny kode? Det gamle postkort holder op med at virke.');">
+                          onsubmit="return confirm('Giv <?php echo $e($k['adresse']); ?> en ny kode? Den gamle kode holder op med at virke. Allerede oprettede logins virker stadig.');">
                       <input type="hidden" name="csrf_token" value="<?php echo $e($csrf); ?>">
                       <input type="hidden" name="id" value="<?php echo (int)$k['id']; ?>">
                       <button type="submit" name="handling" value="nykode">Ny kode</button>
