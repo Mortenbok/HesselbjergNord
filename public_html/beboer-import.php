@@ -88,7 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $ind = $pdo->prepare(
                         'INSERT INTO beboerkartotek
                             (type, sommerhusadresse, vej, nr, nr2, bestyrelse, rolle,
-                             kontaktperson, navn_i_arket, hjemmeadresse, postnr, by, land,
+                             kontaktperson, navn_i_arket, hjemmeadresse, postnr, `by`, land,
                              mail, mail2, telefon, telefon2, noter, kilde, status)
                          VALUES
                             (:type, :adresse, :vej, :nr, :nr2, :best, :rolle,

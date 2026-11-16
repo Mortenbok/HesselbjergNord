@@ -100,7 +100,7 @@ function beboer_gem_oplysninger(PDO $pdo, int $id, array $data): void
 {
     $stmt = $pdo->prepare(
         'UPDATE beboerkartotek
-            SET hjemmeadresse = :hjem, postnr = :postnr, by = :by, land = :land,
+            SET hjemmeadresse = :hjem, postnr = :postnr, `by` = :by, land = :land,
                 mail2 = :mail2, telefon2 = :telefon2,
                 status = :status, bekraeftet_at = NOW(), token = NULL, token_udloeb = NULL
           WHERE id = :id'

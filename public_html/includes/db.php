@@ -229,7 +229,7 @@ try {
             navn_i_arket VARCHAR(255) NOT NULL DEFAULT '',
             hjemmeadresse VARCHAR(255) NOT NULL DEFAULT '',
             postnr VARCHAR(12) NOT NULL DEFAULT '',
-            by VARCHAR(100) NOT NULL DEFAULT '',
+            `by` VARCHAR(100) NOT NULL DEFAULT '',
             land VARCHAR(80) NOT NULL DEFAULT '',
             mail VARCHAR(255) NOT NULL DEFAULT '',
             mail2 VARCHAR(255) NOT NULL DEFAULT '',

@@ -29,7 +29,7 @@ $felter = [];
 
 if ($soeg !== '') {
     $hvor[] = '(kontaktperson LIKE :s OR sommerhusadresse LIKE :s OR mail LIKE :s
-                OR hjemmeadresse LIKE :s OR by LIKE :s OR telefon LIKE :s)';
+                OR hjemmeadresse LIKE :s OR `by` LIKE :s OR telefon LIKE :s)';
     $felter[':s'] = '%' . $soeg . '%';
 }
 
