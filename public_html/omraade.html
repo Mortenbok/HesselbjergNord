@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="Kort over Grundejerforeningen Hesselbjerg Nords område på Sydlangeland — de 20 veje, foreningen dækker.">
+<meta name="description" content="Kort over Grundejerforeningen Hesselbjerg Nords område på Sydlangeland — de 20 veje, foreningen dækker — og foreningens ordensregler.">
 <title>Området — Grundejerforeningen Hesselbjerg Nord</title>
 <link rel="icon" type="image/jpeg" href="favicon.jpg">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -92,9 +92,16 @@
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     backdrop-filter: blur(4px);
   }
-  h1 {
+  /* Ordensreglerne står i deres eget panel under kortet. */
+  .panel + .panel { margin-top: 20px; }
+  /* .panel-titel er en h2, der ser ud som en h1. Siden har allerede sin
+     h1 i "Området", og der må kun være én. */
+  h1, .panel-titel {
     font-size: clamp(2rem, 4vw, 2.8rem);
+    font-weight: 600;
     margin-bottom: 10px;
+    letter-spacing: normal;
+    text-transform: none;
   }
   .lead {
     font-weight: 300;
@@ -137,7 +144,8 @@
   }
 
   /* Vejlisten under kortet. */
-  .veje-titel {
+  .veje-titel,
+  .regler-titel {
     margin-top: 30px;
     padding-top: 22px;
     border-top: 1px solid rgba(255,255,255,0.16);
@@ -147,6 +155,37 @@
     color: rgba(150, 210, 255, 0.95);
     margin-bottom: 14px;
   }
+  /* Den første overskrift står lige under indledningen og skal ikke have
+     en streg over sig — den ville dele teksten fra sin egen overskrift. */
+  .lead + .regler-titel {
+    margin-top: 22px;
+    padding-top: 0;
+    border-top: none;
+  }
+  .regler {
+    list-style: none;
+    display: grid;
+    gap: 11px;
+    max-width: 70ch;
+  }
+  .regler li {
+    position: relative;
+    padding-left: 22px;
+    font-weight: 300;
+    line-height: 1.6;
+    color: rgba(255,255,255,0.9);
+  }
+  .regler li::before {
+    content: "";
+    position: absolute;
+    left: 3px;
+    top: 0.6em;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: rgba(150, 210, 255, 0.75);
+  }
+  .regler a { color: rgba(170, 215, 255, 0.9); }
   .veje {
     list-style: none;
     display: grid;
@@ -250,6 +289,48 @@
         Vejenes placering er hentet fra OpenStreetMap og er vejledende —
         den er ikke en matrikulær afgrænsning af foreningens område.
       </p>
+    </div>
+
+    <div class="panel" id="ordensregler">
+      <h2 class="panel-titel">Ordensregler</h2>
+      <p class="lead">Vi er mange om et lille stykke natur. Det her er ikke
+        regler for reglernes skyld — det er den korte udgave af, hvordan vi
+        passer på området og på hinanden. Giv den gerne videre til gæster og
+        lejere.</p>
+
+      <h2 class="regler-titel">Piledybsvejen og stierne til stranden</h2>
+      <ul class="regler">
+        <li>Kør højst 30 km/t. Der går og cykler folk på vejen, og farten
+          hvirvler støv op, som generer dem, der bor ud til den. Der er sat
+          skilte op som en påmindelse.</li>
+        <li>Parkér ikke langs vejen. En ambulance eller en brandbil skal kunne
+          komme igennem.</li>
+        <li>Hold stierne fri. Cykler, trækvogne og lignende må ikke stå på
+          stierne til stranden — en kørestol eller en rollator skal kunne
+          komme forbi.</li>
+      </ul>
+
+      <h2 class="regler-titel">Affald</h2>
+      <ul class="regler">
+        <li>Sortér affaldet efter reglerne, og aflevér det i containerne ved
+          begyndelsen af Piledybsvejen. Langeland Forsyning (LEF) har en
+          <a href="https://lef.dk/affald/affald_husholdninger/sorteringsvejledning"
+             target="_blank" rel="noopener">sorteringsvejledning</a> på dansk,
+          engelsk og tysk — god at hænge op, hvis huset lejes ud.</li>
+        <li>Stil ikke affald ved siden af containerne.</li>
+        <li>Containerne tømmes fast. Er de fyldte, kan LEF kontaktes for en
+          ekstra tømning.</li>
+        <li>Smid ikke affald på vejen, i klitterne eller på stranden.</li>
+      </ul>
+
+      <h2 class="regler-titel">Brandfare</h2>
+      <ul class="regler">
+        <li>Undgå åben ild. Hele området — og især skoven — er brandfarligt.</li>
+        <li>Smid ikke cigaret- og cigarskod, pibeudkrads eller aske fra pejs og
+          brændeovn udendørs.</li>
+        <li>Hold øje med grillen, både når den tændes, og mens den brænder.</li>
+        <li>Vær forsigtig med fyrværkeri.</li>
+      </ul>
     </div>
   </div>
 
