@@ -946,6 +946,15 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
             Lav en API-nøgle på
             <code>app.suresms.com/UserApi/Index</code>, og skriv den som
             <code>suresms_apikey</code> i <code>includes/config.local.php</code>.
+          </p>
+          <p>
+            <strong>Filen skal lægges på serveren i hånden</strong> — med
+            FileZilla eller webhotellets filhåndtering. Den følger
+            bevidst ikke med et push, fordi den indeholder adgangskoder,
+            og depotet er offentligt. Et nyt push retter derfor ikke
+            denne besked.
+          </p>
+          <p>
             Indtil da kan SMS skrives, men ikke sendes — mail virker
             uafhængigt af det.
           </p>
