@@ -918,7 +918,12 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
   }
 
   .log-subject { margin: 6px 0 2px; }
-  .tag.kanal { background: rgba(255,255,255,0.14); color: rgba(255,255,255,0.85); margin-right: 6px; }
+  /* Kanalen kendes på farven, så man kan skimme listen: mail er lilla,
+     SMS er lyseblå. Baggrundene er gennemsigtige som de øvrige mærker,
+     så de falder ind på det mørke panel. */
+  .tag.kanal { margin-right: 6px; }
+  .tag.kanal.mail { background: rgba(150, 105, 215, 0.42); color: #eadcff; }
+  .tag.kanal.sms { background: rgba(95, 175, 235, 0.38); color: #daf0ff; }
 </style>
 <link rel="stylesheet" href="mobile-nav.css">
 <script src="mobile-nav.js" defer></script>
@@ -1284,7 +1289,9 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
                 <div class="log-top">
                   <span class="log-when"><?php echo $e($h['created_at']); ?></span>
                   <span>
-                    <span class="tag kanal"><?php echo $h['channel'] === 'email' ? 'Mail' : 'SMS'; ?></span>
+                    <span class="tag kanal <?php echo $h['channel'] === 'email' ? 'mail' : 'sms'; ?>"><?php
+                      echo $h['channel'] === 'email' ? 'Mail' : 'SMS';
+                    ?></span>
                     <span class="tag <?php echo $e($h['status']); ?>">
                       <?php echo $h['status'] === 'sendt' ? 'Sendt' : 'Fejlet'; ?>
                     </span>
