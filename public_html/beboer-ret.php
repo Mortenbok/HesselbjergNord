@@ -11,6 +11,7 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/beboer.php';
+require_once __DIR__ . '/includes/bfe.php';
 
 auth_require('index.html');
 
@@ -58,7 +59,10 @@ if (!$nyRaekke) {
     }
 
     $v['noter'] = (string)($raekke['noter'] ?? '');
-    $v['bfe'] = (string)($raekke['bfe'] ?? '');
+    // Står nummeret ikke i databasen, foreslår vi det, vi kender i
+    // forvejen fra includes/bfe.php. Så er det gemt, næste gang rækken
+    // bliver rettet.
+    $v['bfe'] = bfe_for_raekke($raekke);
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

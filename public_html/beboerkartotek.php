@@ -9,6 +9,7 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/beboer.php';
+require_once __DIR__ . '/includes/bfe.php';
 
 auth_require('index.html');
 
@@ -322,10 +323,11 @@ $medNoter = (int)$pdo->query("SELECT COUNT(*) FROM beboerkartotek WHERE noter IS
                     <?php endif; ?>
                   </td>
                   <td>
-                    <?php if (trim((string)($r['bfe'] ?? '')) !== ''): ?>
+                    <?php $bfe = bfe_for_raekke($r); ?>
+                    <?php if ($bfe !== ''): ?>
                       <a class="ejer" target="_blank" rel="noopener"
-                         title="BFE <?php echo $e($r['bfe']); ?> — åbner OIS i en ny fane"
-                         href="https://nyt.ois.dk/search/<?php echo $e($r['bfe']); ?>">Ejer</a>
+                         title="BFE <?php echo $e($bfe); ?> — åbner OIS i en ny fane"
+                         href="<?php echo $e(bfe_link($bfe)); ?>">Ejer</a>
                     <?php else: ?>
                       <button type="button" class="ejer" data-ejer-adresse="<?php
                           echo $e(trim($r['sommerhusadresse']) . ', ' . HBN_POSTNR . ' ' . HBN_BY);

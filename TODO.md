@@ -139,9 +139,12 @@ Beslut for hver enkelt:
       `beboerkartotek.php` kopierer sommerhusadressen og åbner
       boligejer.dk. Søg adressen frem, klik videre til OIS, og tag tallet
       til sidst i adressen (`nyt.ois.dk/search/`**9856478**). Gem det i
-      feltet *BFE-nummer* på `beboer-ret.php`. Derefter er knappen et
-      direkte link til ejeroplysningerne. Det skal kun gøres én gang pr.
-      adresse — numrene overlever en genimport af regnearket.
+      feltet *BFE-nummer* på `beboer-ret.php` — eller send det til
+      webkoordinatoren, så ryger det ind i listen i
+      `includes/bfe.php`, hvor det også overlever, at tabellen bliver
+      tømt. Derefter er knappen et direkte link til
+      ejeroplysningerne. Det skal kun gøres én gang pr. adresse.
+      Indtil videre kender vi Ahornvænget 1 og Klitrosevej 18.
       Et automatisk opslag fra adresse til ejer kræver en nøgle hos
       Datafordeleren (gratis, men skal søges); den er ikke sat op.
 - [ ] **28 rækker i kartoteket har en note.** Se dem på
