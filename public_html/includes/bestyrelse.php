@@ -25,9 +25,9 @@ const BOARD_MEMBERS = [
         'role' => 'Formand',
         'initials' => 'UG',
         'photo' => '',
-        'phone' => '',
+        'phone' => '+4527233556',
         'mail' => 'formand@hesselbjergnord.dk',
-        'address' => '',
+        'address' => 'Ørnevænget 3',
     ],
     [
         'name' => 'Morten Dupont',
