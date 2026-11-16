@@ -103,8 +103,12 @@ Beslut for hver enkelt:
 
 ## 4. Løse ender
 
-- [ ] **GatewayAPI-nøgle** ind i `includes/config.local.php`, så SMS kan
-      sendes. Mail virker allerede.
+- [ ] **SureSMS-login** ind i `includes/config.local.php`, så SMS kan
+      sendes: `suresms_client_id` og `suresms_secret_id`. Filen ligger
+      hverken i git eller i FTP-overførslen, så den skal lægges på
+      serveren i hånden. Prøv opsætningen af med
+      `php tools/sms/proev-sms.php` — den spørger om prisen uden at
+      sende noget. Mail virker allerede.
 - [ ] **Syv bestyrelseslogins mangler.** Der er kun én bruger
       (`MortenBoKristensen`). De oprettes på `opret-medlemmer.php` —
       husk at sætte Rolle til **Bestyrelse**. Siden er ikke linket fra
@@ -143,6 +147,12 @@ Beslut for hver enkelt:
       hverken grund eller bygning på adressen. Nummeret står i
       `BFE_HAANDHOLDT` i `tools/bfe/hent-bfe.php` og kontrolleres mod
       matriklen ved hver kørsel.
+- [ ] **Udenlandske mobilnumre får ingen SMS.** `sms_msisdn()` tager kun
+      imod danske numre (45 + otte cifre) og springer stille resten over.
+      Kartoteket har en `land`-kolonne, så der kan sidde medlemmer med et
+      tysk eller svensk nummer. SureSMS kan sende til udlandet — det er
+      vores egen kontrol, der står i vejen. Tjek, om der overhovedet er
+      nogen, før der bruges tid på det.
 - [ ] **Et login kan ikke lukkes fra hjemmesiden.** At spærre en kode eller
       give en ny på `adgangskort.php` stopper kun selve koden. De logins,
       der allerede er oprettet på adressen, bliver ved med at virke, så en

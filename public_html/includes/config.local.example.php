@@ -8,8 +8,17 @@
  */
 
 return [
-    'gatewayapi_token' => '',
+    // SureSMS: Client Id og Secret Id fra suresms.com.
+    // sms_sender er det navn, modtageren ser som afsender
+    // (højst 11 tegn, bogstaver og tal).
+    'suresms_client_id' => '',
+    'suresms_secret_id' => '',
     'sms_sender' => 'Hesselbjerg',
+
+    // Kun nødvendig på en maskine bag en TLS-inspicerende proxy,
+    // hvor PHP ikke kender proxyens rodcertifikat. Lad den stå tom
+    // på serveren.
+    'sms_ca_bundle' => '',
 
     'mail_from' => 'bestyrelsen@hesselbjergnord.dk',
     'mail_from_name' => 'Grundejerforeningen Hesselbjerg Nord',

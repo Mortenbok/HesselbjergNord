@@ -88,7 +88,8 @@ function besked_send_hold(PDO $pdo, array $msg, int $antal): array
     $sidsteFejl = '';
 
     if ($msg['channel'] === 'sms') {
-        // GatewayAPI tager hele holdet i ét kald og svarer samlet.
+        // SureSMS tager hele holdet i ét kald — numrene adskilles med
+        // semikolon — og svarer ja eller nej for dem alle under ét.
         $svar = sms_send(array_column($hold, 'msisdn'), (string)$msg['body']);
 
         foreach ($hold as $m) {
@@ -829,8 +830,10 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
         <div class="panel warn">
           <strong>SMS er ikke sat op endnu.</strong>
           <p>
-            Læg en GatewayAPI-nøgle i <code>includes/config.local.php</code>.
-            Indtil da kan SMS skrives, men ikke sendes. Mail virker uafhængigt af det.
+            Læg <code>suresms_client_id</code> og <code>suresms_secret_id</code>
+            i <code>includes/config.local.php</code>. Begge dele står på din
+            konto hos SureSMS. Indtil da kan SMS skrives, men ikke sendes —
+            mail virker uafhængigt af det.
           </p>
         </div>
       <?php endif; ?>
