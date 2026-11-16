@@ -800,6 +800,40 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
   #msgSubject[readonly] { opacity: 0.75; }
   .hidden-row { display: none; }
 
+  /* Opsætningspanelet: sammenklappet, så det ikke fylder til daglig. */
+  details.opsaet { padding: 0; }
+  details.opsaet summary {
+    padding: 14px 18px;
+    cursor: pointer;
+    font-weight: 600;
+    list-style-position: inside;
+  }
+  details.opsaet[open] summary { border-bottom: 1px solid rgba(255,255,255,0.14); }
+  details.opsaet dl {
+    display: grid;
+    grid-template-columns: minmax(130px, auto) 1fr;
+    gap: 7px 16px;
+    margin: 0;
+    padding: 14px 18px;
+    font-size: 0.92rem;
+  }
+  details.opsaet dt { color: rgba(255,255,255,0.62); }
+  details.opsaet dd { margin: 0; }
+  details.opsaet code {
+    background: rgba(255,255,255,0.1);
+    padding: 1px 6px;
+    border-radius: 5px;
+    font-size: 0.88em;
+    word-break: break-all;
+  }
+  details.opsaet .smaat {
+    margin: 0;
+    padding: 0 18px 15px;
+    font-size: 0.84rem;
+    color: rgba(255,255,255,0.58);
+    line-height: 1.5;
+  }
+
   /* Vælgeren til enkelte modtagere. */
   .vaelger {
     margin-bottom: 16px;
@@ -938,6 +972,62 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
         <p>Kun bestyrelsen kan sende beskeder til beboerne.</p>
       </div>
     <?php else: ?>
+
+      <?php
+        /*
+         * Hvad læser serveren egentlig?
+         *
+         * Indstillingerne ligger i includes/config.local.php, som hverken
+         * følger med et push eller med FTP-overførslen — den lægges på
+         * serveren i hånden. Derfor kan den sagtens være en anden end den,
+         * man selv har åben. Her står, hvad serveren faktisk ser, så man
+         * ikke skal gætte.
+         *
+         * Værdierne vises ALDRIG: kun om de er sat, og hvor lange de er.
+         */
+        $konfigFil = __DIR__ . '/includes/config.local.php';
+        $smsKonf = sms_config();
+      ?>
+      <details class="panel opsaet">
+        <summary>Opsætning — hvad serveren læser</summary>
+        <dl>
+          <dt>Afsendernavn (SMS)</dt>
+          <dd>
+            <?php if ($smsKonf['sms_sender'] !== ''): ?>
+              <code><?php echo $e($smsKonf['sms_sender']); ?></code>
+            <?php else: ?>
+              <em>ikke sat</em> — modtagerne ser kontoens telefonnummer.
+              Ret <code>'sms_sender' =&gt; 'Hesselbjerg',</code> i filen herunder.
+            <?php endif; ?>
+          </dd>
+
+          <dt>API-nøgle (SureSMS)</dt>
+          <dd>
+            <?php echo $smsKonf['suresms_apikey'] !== ''
+                ? 'sat, ' . strlen($smsKonf['suresms_apikey']) . ' tegn'
+                : '<em>mangler</em>'; ?>
+          </dd>
+
+          <dt>Mail (SMTP)</dt>
+          <dd><?php echo mail_uses_smtp() ? 'sat op' : '<em>ikke sat op</em>'; ?></dd>
+
+          <dt>Indstillingsfil</dt>
+          <dd>
+            <code><?php echo $e($konfigFil); ?></code><br>
+            <?php if (is_readable($konfigFil)): ?>
+              fundet, sidst ændret
+              <?php echo date('d-m-Y H:i', (int)filemtime($konfigFil)); ?>
+            <?php else: ?>
+              <em>ikke fundet</em> — så bruges kodens standardværdier.
+            <?php endif; ?>
+          </dd>
+        </dl>
+        <p class="smaat">
+          Filen følger bevidst ikke med et push, fordi den indeholder
+          adgangskoder og depotet er offentligt. Er tidspunktet ovenfor
+          ældre, end du regnede med, er din rettelse ikke nået frem.
+        </p>
+      </details>
 
       <?php if ($channel === 'sms' && !sms_enabled()): ?>
         <div class="panel warn">
