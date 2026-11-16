@@ -304,19 +304,32 @@ $html = <<<HTML
       }).addTo(kort);
     });
 
-    // Hver vej tegnes som en bred, mørk streg med en lysere ovenpå, så den
-    // kan ses både på kort og på luftfoto.
+    // Vejene tegnes helt dækkende i deres eget lag, og gennemsigtigheden
+    // lægges på HELE laget bagefter. Sætter man den på hver enkelt streg,
+    // bliver krydsene mørkere end resten, fordi to halvgennemsigtige streger
+    // lægger sig oven på hinanden — så ligner nettet lapper i stedet for én
+    // sammenhængende streg.
+    kort.createPane('veje');
+    kort.getPane('veje').style.zIndex = 450;
+    kort.getPane('veje').style.opacity = 0.72;
+
+    var VEJ_FARVE = '#ffd24a';
+    var AKTIV_FARVE = '#ff7a59';
     var lag = {};
 
     Object.keys(DATA.roads).forEach(function (navn) {
       var gruppe = L.layerGroup().addTo(kort);
 
       DATA.roads[navn].forEach(function (segment) {
-        var punkter = segment.map(function (p) { return [p[1], p[0]]; });
+        var streg = L.polyline(segment.map(function (p) { return [p[1], p[0]]; }), {
+          pane: 'veje',
+          color: VEJ_FARVE,
+          weight: 6,
+          opacity: 1,
+          lineCap: 'round',
+          lineJoin: 'round'
+        }).addTo(gruppe);
 
-        L.polyline(punkter, { color: '#05121b', weight: 9, opacity: 0.55 }).addTo(gruppe);
-
-        var streg = L.polyline(punkter, { color: '#ffd24a', weight: 4, opacity: 0.95 }).addTo(gruppe);
         streg.bindPopup('<strong>' + navn + '</strong>');
         streg.on('click', function () { fremhaev(navn); });
       });
@@ -327,16 +340,18 @@ $html = <<<HTML
     var aktiv = null;
 
     function fremhaev(navn) {
+      // Hver gruppe indeholder nu kun vejstreger, så der skal ikke skelnes
+      // mellem stregtykkelser for at finde den rigtige at rette.
       if (aktiv && lag[aktiv]) {
         lag[aktiv].eachLayer(function (l) {
-          if (l.options.weight === 6) l.setStyle({ color: '#ffd24a', weight: 4 });
+          l.setStyle({ color: VEJ_FARVE, weight: 6 });
         });
       }
 
       aktiv = navn;
 
       lag[navn].eachLayer(function (l) {
-        if (l.options.weight === 4) l.setStyle({ color: '#ff7a59', weight: 6 });
+        l.setStyle({ color: AKTIV_FARVE, weight: 8 });
       });
 
       kort.fitBounds(lag[navn].getLayers()[0].getBounds(), { maxZoom: 18, padding: [60, 60] });
