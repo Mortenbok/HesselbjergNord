@@ -22,6 +22,7 @@ $kort = adgang_find_kort($pdo, $kode);
 $fejl = '';
 $done = false;
 $fornyet = false;
+$rolle = 'medlem';
 $form = ['navn' => '', 'mail' => ''];
 
 // Et spærret kort behandles som et ukendt kort udadtil, men med sin egen
@@ -48,6 +49,7 @@ if ($kort !== null && !$spaerret && $_SERVER['REQUEST_METHOD'] === 'POST') {
             adgang_log_ind($pdo, $svar['id']);
             $done = true;
             $fornyet = !empty($svar['fornyet']);
+            $rolle = (string)($svar['rolle'] ?? 'medlem');
         }
     }
 }
@@ -204,7 +206,14 @@ $csrf = auth_csrf_token();
       </div>
       <p class="intro">Du logger fremover ind med din mailadresse
         <strong><?php echo $e($form['mail']); ?></strong> og den adgangskode, du
-        lige har valgt. Gem postkortet — med det kan du altid komme ind igen.</p>
+        lige har valgt.</p>
+
+      <?php if ($rolle === 'bestyrelse'): ?>
+        <p class="intro">Du står i beboerkartoteket som bestyrelsesmedlem, så du
+          har også adgang til bestyrelsens sider — beskeder, adgangskort og
+          beboerkartoteket.</p>
+      <?php endif; ?>
+
       <a class="knap-link" href="medlemsfotos.php">Gå til medlemsområdet</a>
 
     <?php elseif ($kort === null): ?>

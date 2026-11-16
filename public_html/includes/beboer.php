@@ -59,6 +59,52 @@ function beboer_kolonner(): array
     return array_map('beboer_kolonne', array_keys(BEBOER_FELTER));
 }
 
+/**
+ * Hvilken rolle hører mailadressen til ifølge beboerkartoteket?
+ *
+ * Returnerer 'bestyrelse', 'medlem' — eller null, hvis mailen slet ikke står
+ * i kartoteket. Null betyder "ingen mening", ikke "menigt medlem": så skal
+ * en eksisterende rolle have lov at blive stående.
+ *
+ * Både mail og mail2 tæller, og står den samme adresse på flere rækker —
+ * en som ejer, en som medejer — vinder den med bestyrelsesflaget.
+ */
+function beboer_rolle_for_mail(PDO $pdo, string $mail): ?string
+{
+    $mail = mb_strtolower(trim($mail));
+
+    if ($mail === '') {
+        return null;
+    }
+
+    $stmt = $pdo->prepare(
+        'SELECT bestyrelse FROM beboerkartotek
+          WHERE mail = :m OR mail2 = :m
+          ORDER BY bestyrelse DESC
+          LIMIT 1'
+    );
+    $stmt->execute([':m' => $mail]);
+    $raekke = $stmt->fetch();
+
+    if (!$raekke) {
+        return null;
+    }
+
+    return (int)$raekke['bestyrelse'] === 1 ? 'bestyrelse' : 'medlem';
+}
+
+/** Hvor mange aktive bestyrelseslogins findes der? */
+function beboer_antal_bestyrelse(PDO $pdo, int $undtagenId = 0): int
+{
+    $stmt = $pdo->prepare(
+        "SELECT COUNT(*) FROM users
+          WHERE role = 'bestyrelse' AND is_active = 1 AND id <> :id"
+    );
+    $stmt->execute([':id' => $undtagenId]);
+
+    return (int)$stmt->fetchColumn();
+}
+
 /** Kun bestyrelsen må se og rette i kartoteket. */
 function beboer_can_manage(?array $user): bool
 {

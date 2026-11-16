@@ -16,6 +16,7 @@
  */
 
 require_once __DIR__ . '/adresser.php';
+require_once __DIR__ . '/beboer.php';
 
 /** Tegn, koden sættes sammen af. I, O, 0 og 1 er udeladt — de forveksles. */
 const ADGANG_TEGN = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -100,7 +101,14 @@ function adgang_opret_bruger(PDO $pdo, array $kort, string $navn, string $mail, 
         return ['ok' => false, 'fejl' => 'Adgangskoden skal være mindst 8 tegn.', 'id' => 0];
     }
 
-    $stmt = $pdo->prepare('SELECT id, address FROM users WHERE username = :u LIMIT 1');
+    // Rollen kommer fra beboerkartoteket: står mailen på en række med
+    // bestyrelsesflaget, bliver kontoen et bestyrelseslogin. Sådan slipper
+    // bestyrelsen for at have to logins — ét fra kortet og ét oprettet i
+    // hånden — og en ny bestyrelse får adgangen ved blot at sætte flueben i
+    // kartoteket.
+    $rolle = beboer_rolle_for_mail($pdo, $mail);
+
+    $stmt = $pdo->prepare('SELECT id, address, role FROM users WHERE username = :u LIMIT 1');
     $stmt->execute([':u' => $mail]);
     $findes = $stmt->fetch();
 
@@ -118,15 +126,41 @@ function adgang_opret_bruger(PDO $pdo, array $kort, string $navn, string $mail, 
             ];
         }
 
-        $pdo->prepare('UPDATE users SET password_hash = :h, display_name = :n, is_active = 1 WHERE id = :id')
-            ->execute([
-                ':h' => password_hash($kode, PASSWORD_DEFAULT),
-                ':n' => $navn,
-                ':id' => $findes['id'],
-            ]);
+        // Rollen følger kartoteket, også begge veje: er fluebenet taget væk
+        // efter en generalforsamling, bliver kontoen menigt medlem igen.
+        //
+        // Men aldrig det sidste bestyrelseslogin. Røg det, kunne ingen komme
+        // ind på beboerkartotek.php og sætte fluebenet tilbage, og så ville
+        // der ikke være nogen vej ind igen uden adgang til databasen.
+        $nyRolle = $findes['role'];
 
-        return ['ok' => true, 'fejl' => '', 'id' => (int)$findes['id'], 'fornyet' => true];
+        if ($rolle !== null && $rolle !== $findes['role']) {
+            $sidsteAdmin = $rolle === 'medlem'
+                && $findes['role'] === 'bestyrelse'
+                && beboer_antal_bestyrelse($pdo, (int)$findes['id']) === 0;
+
+            if (!$sidsteAdmin) {
+                $nyRolle = $rolle;
+            }
+        }
+
+        $pdo->prepare(
+            'UPDATE users SET password_hash = :h, display_name = :n, role = :r, is_active = 1
+              WHERE id = :id'
+        )->execute([
+            ':h' => password_hash($kode, PASSWORD_DEFAULT),
+            ':n' => $navn,
+            ':r' => $nyRolle,
+            ':id' => $findes['id'],
+        ]);
+
+        return [
+            'ok' => true, 'fejl' => '', 'id' => (int)$findes['id'],
+            'fornyet' => true, 'rolle' => $nyRolle,
+        ];
     }
+
+    $nyRolle = $rolle ?? 'medlem';
 
     $pdo->prepare(
         'INSERT INTO users (username, display_name, password_hash, role, address)
@@ -135,11 +169,14 @@ function adgang_opret_bruger(PDO $pdo, array $kort, string $navn, string $mail, 
         ':u' => $mail,
         ':n' => $navn,
         ':h' => password_hash($kode, PASSWORD_DEFAULT),
-        ':r' => 'medlem',
+        ':r' => $nyRolle,
         ':a' => $kort['adresse'],
     ]);
 
-    return ['ok' => true, 'fejl' => '', 'id' => (int)$pdo->lastInsertId(), 'fornyet' => false];
+    return [
+        'ok' => true, 'fejl' => '', 'id' => (int)$pdo->lastInsertId(),
+        'fornyet' => false, 'rolle' => $nyRolle,
+    ];
 }
 
 /** Noterer, at kortet er brugt. */
