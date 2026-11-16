@@ -60,7 +60,7 @@ try {
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS documents (
             id INT NOT NULL AUTO_INCREMENT,
-            category ENUM('generalforsamling', 'regnskab') NOT NULL,
+            category ENUM('dagsorden', 'referat', 'regnskab') NOT NULL,
             doc_year SMALLINT NOT NULL,
             title VARCHAR(255) NOT NULL,
             file_name VARCHAR(255) NOT NULL,
@@ -77,6 +77,25 @@ try {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
 
+
+    // Arkivet havde før to mapper (generalforsamling, regnskab) på hver sin
+    // side. Nu er der tre mapper på én side: dagsorden, referat, regnskab.
+    //
+    // ENUM'en udvides FØRST med både de gamle og de nye værdier. Skiftede den
+    // direkte til de nye, ville eksisterende rækker med 'generalforsamling'
+    // blive ugyldige midt i omlægningen. Derefter flyttes de rækker over i
+    // 'referat', og til sidst strammes ENUM'en til de tre mapper.
+    $docCategory = $pdo->query("SHOW COLUMNS FROM documents LIKE 'category'")->fetch();
+
+    if ($docCategory && strpos($docCategory['Type'], "'generalforsamling'") !== false) {
+        $pdo->exec("ALTER TABLE documents MODIFY category
+            ENUM('generalforsamling', 'regnskab', 'dagsorden', 'referat') NOT NULL");
+
+        $pdo->exec("UPDATE documents SET category = 'referat' WHERE category = 'generalforsamling'");
+
+        $pdo->exec("ALTER TABLE documents MODIFY category
+            ENUM('dagsorden', 'referat', 'regnskab') NOT NULL");
+    }
 
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS residents (

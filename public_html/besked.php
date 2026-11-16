@@ -648,7 +648,6 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
       <a href="vedtaegter.php" data-members-only hidden>Vedtægter</a>
       <a href="medlemsfotos.php" data-members-only hidden>Medlemsfotos</a>
       <a href="generalforsamling.php" data-members-only hidden>Generalforsamling</a>
-      <a href="regnskab.php" data-members-only hidden>Regnskab</a>
       <a href="besked.php" class="active" data-board-only hidden>Beskeder</a>
     </div>
     <div class="nav-account">

@@ -401,7 +401,6 @@ $loggedIn = $user !== null;
         <a href="vedtaegter.php">Vedtægter</a>
         <a href="medlemsfotos.php">Medlemsfotos</a>
         <a href="generalforsamling.php">Generalforsamling</a>
-        <a href="regnskab.php">Regnskab</a>
         <?php if (($user['role'] ?? '') === 'bestyrelse'): ?>
           <a href="besked.php">Beskeder</a>
         <?php endif; ?>

@@ -122,6 +122,12 @@ Beslut for hver enkelt:
 - [ ] **Slet på serveren:** `bestyrelsen.html` og `beboere.php`. FileZilla
       fjerner ikke filer, så de ligger der sandsynligvis endnu.
       `beboere.php` viser beboeres navne, adresser og telefonnumre.
+- [ ] **Tjek arkivet efter omlægningen til mapper.** `documents.category`
+      gik fra `('generalforsamling','regnskab')` til
+      `('dagsorden','referat','regnskab')`. `includes/db.php` flytter
+      automatisk gamle `generalforsamling`-rækker over i `referat` første
+      gang en side vises. Lå der dagsordener i arkivet i forvejen, står de
+      nu under Referat og skal flyttes i hånden — eller lægges op igen.
 - [ ] **Tjek at `includes/db.php` giver 403** i browseren. Gør den ikke
       det, er `.htaccess` ikke kommet med op, og databasens adgangskode
       kan hentes.
@@ -140,9 +146,10 @@ Beslut for hver enkelt:
 - **"Download alle billeder som zip"** på medlemsfotos, hvis galleriet
   vokser.
 - **Menuen bag login fylder meget** — Vedtægter, Medlemsfotos,
-  Generalforsamling, Regnskab og Beskeder kunne samles under ét punkt.
-  Med Vedtægter som nyt punkt bryder menuen nu over to linjer på en
-  bred skærm, når man er logget ind som bestyrelse.
+  Generalforsamling og Beskeder kunne samles under ét punkt. Menuen
+  bryder stadig over to linjer på en bred skærm, når man er logget ind
+  som bestyrelse. (Regnskab er taget ud og ligger nu som mappe under
+  Generalforsamling, så der er ét punkt færre end før.)
 - **Fælles stylesheet.** CSS'en står i dag som `<style>` i hver enkelt
   fil — omkring 2.900 linjer, hvor menuen alene findes i ti kopier.
   Et fælles `style.css` ville gøre alle senere rettelser til ét sted.

@@ -52,7 +52,6 @@ $allowedNext = [
     'medlemsfotos.php',
     'vedtaegter.php',
     'generalforsamling.php',
-    'regnskab.php',
     'bestyrelsen.php',
     'index.html',
 ];

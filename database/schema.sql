@@ -46,11 +46,13 @@ CREATE TABLE IF NOT EXISTS member_photos (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------------
--- documents — dokumentarkivet bag login (generalforsamling.php, regnskab.php)
+-- documents — dokumentarkivet bag login (generalforsamling.php)
+-- Mapperne er dagsorden, referat og regnskab. Regnskab havde før sin egen
+-- side; includes/db.php flytter gamle generalforsamling-rækker til referat.
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS documents (
   id INT NOT NULL AUTO_INCREMENT,
-  category ENUM('generalforsamling', 'regnskab') NOT NULL,
+  category ENUM('dagsorden', 'referat', 'regnskab') NOT NULL,
   doc_year SMALLINT NOT NULL,
   title VARCHAR(255) NOT NULL,
   file_name VARCHAR(255) NOT NULL,

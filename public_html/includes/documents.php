@@ -1,16 +1,42 @@
 <?php
 /**
- * Dokumentarkivet bag login — deles af generalforsamling.php og regnskab.php.
+ * Dokumentarkivet bag login — hele indholdet på generalforsamling.php.
  *
- * De to sider er ens bortset fra kategori, overskrift og indledning, så både
- * upload, visning og selve sidens HTML ligger her ét sted.
+ * Arkivet har tre mapper: Dagsorden, Referat og Regnskab. De lå før på to
+ * sider (generalforsamling.php og regnskab.php); nu er der én side med tre
+ * mapper, og regnskab.php sender blot videre hertil.
  *
  * Filerne gemmes i uploads/dokumenter/ under et tilfældigt navn og serveres
  * kun gennem dokument.php, som kræver login — præcis som medlemsbillederne.
  */
 
-/** Kategorier, arkivet kender. Nøglen er den værdi, der ligger i databasen. */
-const DOCUMENT_CATEGORIES = ['generalforsamling', 'regnskab'];
+/**
+ * Mapperne i arkivet. Nøglen er den værdi, der ligger i databasens
+ * category-kolonne; rækkefølgen her er den, mapperne vises i.
+ *
+ * Tilføjes en mappe, skal ENUM'en på documents.category udvides samme sted,
+ * som den vedligeholdes: includes/db.php og database/schema.sql.
+ */
+const DOCUMENT_FOLDERS = [
+    'dagsorden' => [
+        'navn' => 'Dagsorden',
+        'intro' => 'Indkaldelser og dagsordener til generalforsamlingerne.',
+        'pladsholder' => 'Dagsorden til ordinær generalforsamling',
+        'tom' => 'Der ligger endnu ingen dagsordener i mappen.',
+    ],
+    'referat' => [
+        'navn' => 'Referat',
+        'intro' => 'Referater fra de afholdte generalforsamlinger.',
+        'pladsholder' => 'Referat af ordinær generalforsamling',
+        'tom' => 'Der ligger endnu ingen referater i mappen.',
+    ],
+    'regnskab' => [
+        'navn' => 'Regnskab',
+        'intro' => 'Årsregnskaber og budgetter, som fremlægges på generalforsamlingen.',
+        'pladsholder' => 'Årsregnskab',
+        'tom' => 'Der ligger endnu ingen regnskaber i mappen.',
+    ],
+];
 
 /** Største tilladte filstørrelse (PHP's egen upload_max_filesize kan være lavere). */
 const DOCUMENT_MAX_BYTES = 20 * 1024 * 1024;
@@ -46,6 +72,12 @@ function documents_can_manage(?array $user): bool
     return is_array($user) && ($user['role'] ?? '') === 'bestyrelse';
 }
 
+/** Er værdien en mappe, arkivet kender? */
+function documents_valid_folder(?string $folder): bool
+{
+    return is_string($folder) && isset(DOCUMENT_FOLDERS[$folder]);
+}
+
 /** Læselig filstørrelse, fx "1,4 MB". */
 function documents_format_size(int $bytes): string
 {
@@ -60,7 +92,7 @@ function documents_format_size(int $bytes): string
     return $bytes . ' B';
 }
 
-/** Kort tekst til <html lang="da"> ud fra filendelsen. */
+/** Kort tekst til ikonet ud fra filendelsen. */
 function documents_kind(string $originalName): string
 {
     $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
@@ -71,12 +103,13 @@ function documents_kind(string $originalName): string
 /**
  * Håndterer POST fra arkivsiden — upload eller sletning.
  *
- * Returnerer ['error' => string, 'success' => string]; begge kan være tomme,
- * hvis der ikke var noget at gøre.
+ * Returnerer ['error' => string, 'success' => string, 'folder' => string].
+ * 'folder' fortæller, hvilken mappe siden skal åbne bagefter, så man bliver
+ * stående i den mappe, man arbejdede i.
  */
-function documents_handle_post(PDO $pdo, array $user, string $category): array
+function documents_handle_post(PDO $pdo, array $user): array
 {
-    $result = ['error' => '', 'success' => ''];
+    $result = ['error' => '', 'success' => '', 'folder' => ''];
 
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         return $result;
@@ -92,24 +125,33 @@ function documents_handle_post(PDO $pdo, array $user, string $category): array
         return $result;
     }
 
-    if (($_POST['action'] ?? '') === 'delete') {
-        return documents_delete($pdo, $category, (int)($_POST['id'] ?? 0));
+    $folder = (string)($_POST['folder'] ?? '');
+
+    if (!documents_valid_folder($folder)) {
+        $result['error'] = 'Ukendt mappe.';
+        return $result;
     }
 
-    return documents_upload($pdo, $user, $category);
+    $result['folder'] = $folder;
+
+    $outcome = ($_POST['action'] ?? '') === 'delete'
+        ? documents_delete($pdo, $folder, (int)($_POST['id'] ?? 0))
+        : documents_upload($pdo, $user, $folder);
+
+    return $outcome + ['folder' => $folder];
 }
 
 /** Fjerner ét dokument — både databaserækken og selve filen. */
-function documents_delete(PDO $pdo, string $category, int $id): array
+function documents_delete(PDO $pdo, string $folder, int $id): array
 {
     if ($id <= 0) {
         return ['error' => 'Dokumentet blev ikke fundet.', 'success' => ''];
     }
 
-    // Kategorien er en del af opslaget, så en side ikke kan slette den andens
-    // dokumenter, selv om id'et bliver ændret i formularen.
-    $stmt = $pdo->prepare('SELECT file_name FROM documents WHERE id = :id AND category = :category LIMIT 1');
-    $stmt->execute([':id' => $id, ':category' => $category]);
+    // Mappen er en del af opslaget, så en manipuleret formular ikke kan slette
+    // et dokument fra en anden mappe end den, knappen stod i.
+    $stmt = $pdo->prepare('SELECT file_name FROM documents WHERE id = :id AND category = :folder LIMIT 1');
+    $stmt->execute([':id' => $id, ':folder' => $folder]);
     $document = $stmt->fetch();
 
     if (!$document) {
@@ -128,7 +170,7 @@ function documents_delete(PDO $pdo, string $category, int $id): array
 }
 
 /** Modtager en uploadet fil og gemmer den i arkivet. */
-function documents_upload(PDO $pdo, array $user, string $category): array
+function documents_upload(PDO $pdo, array $user, string $folder): array
 {
     if (!isset($_FILES['document'])) {
         return ['error' => 'Vælg en fil, før du uploader.', 'success' => ''];
@@ -214,11 +256,11 @@ function documents_upload(PDO $pdo, array $user, string $category): array
             (category, doc_year, title, file_name, original_name, mime_type, file_size,
              uploaded_by, uploader_name, created_at)
          VALUES
-            (:category, :doc_year, :title, :file_name, :original_name, :mime_type, :file_size,
+            (:folder, :doc_year, :title, :file_name, :original_name, :mime_type, :file_size,
              :uploaded_by, :uploader_name, NOW())'
     );
     $stmt->execute([
-        ':category' => $category,
+        ':folder' => $folder,
         ':doc_year' => $year,
         ':title' => $title,
         ':file_name' => $safeName,
@@ -229,27 +271,40 @@ function documents_upload(PDO $pdo, array $user, string $category): array
         ':uploader_name' => $user['display_name'] !== '' ? $user['display_name'] : 'Bestyrelsen',
     ]);
 
-    return ['error' => '', 'success' => 'Dokumentet er lagt i arkivet.'];
+    return ['error' => '', 'success' => 'Dokumentet er lagt i mappen ' . DOCUMENT_FOLDERS[$folder]['navn'] . '.'];
 }
 
-/** Alle dokumenter i én kategori, nyeste år først. */
-function documents_list(PDO $pdo, string $category): array
+/**
+ * Hele arkivet: mappe => år => dokumenter.
+ *
+ * Alle mapper kommer med, også de tomme, så siden kan vise dem.
+ */
+function documents_list(PDO $pdo): array
 {
-    $stmt = $pdo->prepare(
-        'SELECT id, doc_year, title, original_name, mime_type, file_size, uploader_name, created_at
-           FROM documents
-          WHERE category = :category
-          ORDER BY doc_year DESC, created_at DESC, id DESC'
-    );
-    $stmt->execute([':category' => $category]);
+    $arkiv = [];
 
-    $byYear = [];
-
-    foreach ($stmt->fetchAll() as $row) {
-        $byYear[(int)$row['doc_year']][] = $row;
+    foreach (array_keys(DOCUMENT_FOLDERS) as $folder) {
+        $arkiv[$folder] = [];
     }
 
-    return $byYear;
+    $rows = $pdo->query(
+        'SELECT id, category, doc_year, title, original_name, mime_type, file_size,
+                uploader_name, created_at
+           FROM documents
+          ORDER BY doc_year DESC, created_at DESC, id DESC'
+    )->fetchAll();
+
+    foreach ($rows as $row) {
+        // En række med en ukendt mappe (fx fra en ældre udgave) springes over,
+        // så siden ikke går i stykker af den.
+        if (!documents_valid_folder($row['category'])) {
+            continue;
+        }
+
+        $arkiv[$row['category']][(int)$row['doc_year']][] = $row;
+    }
+
+    return $arkiv;
 }
 
 /** Kort for htmlspecialchars med sidens faste indstillinger. */
@@ -261,16 +316,28 @@ function documents_e(?string $value): string
 /**
  * Skriver hele arkivsiden ud.
  *
- * $page forventer: 'title', 'heading', 'intro' og 'nav' (filnavnet på den side,
- * der skal markeres som aktiv i menuen).
+ * $arkiv kommer fra documents_list(). Databasen hentes altså ikke herinde —
+ * så kan siden gengives uden en databaseforbindelse, fx under afprøvning.
  */
-function documents_render_page(PDO $pdo, string $category, array $page, array $user, array $message): void
+function documents_render_page(array $arkiv, array $user, array $message): void
 {
-    $documents = documents_list($pdo, $category);
     $canManage = documents_can_manage($user);
     $csrf = auth_csrf_token();
     $currentYear = (int)date('Y');
     $e = 'documents_e';
+
+    // Efter en upload eller sletning åbnes den mappe, der blev arbejdet i.
+    // Ellers åbnes den mappe, adressen beder om (?mappe=referat), og ellers
+    // den første.
+    $aaben = $message['folder'] ?? '';
+
+    if (!documents_valid_folder($aaben)) {
+        $aaben = (string)($_GET['mappe'] ?? '');
+    }
+
+    if (!documents_valid_folder($aaben)) {
+        $aaben = array_key_first(DOCUMENT_FOLDERS);
+    }
     ?>
 <!DOCTYPE html>
 <html lang="da">
@@ -278,7 +345,7 @@ function documents_render_page(PDO $pdo, string $category, array $page, array $u
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
-<title><?php echo $e($page['title']); ?> — Grundejerforeningen Hesselbjerg Nord</title>
+<title>Generalforsamling — Grundejerforeningen Hesselbjerg Nord</title>
 <link rel="icon" type="image/jpeg" href="favicon.jpg">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -373,14 +440,66 @@ function documents_render_page(PDO $pdo, string $category, array $page, array $u
     line-height: 1.55;
   }
 
+  /* Mapperne. Uden JavaScript står alle tre under hinanden — se scriptet
+     nederst, der laver dem om til faner. */
+  .mapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 26px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.16);
+  }
+  .mappe-knap {
+    font: inherit;
+    color: #fff;
+    cursor: pointer;
+    padding: 10px 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background 0.2s ease, border-color 0.2s ease;
+  }
+  .mappe-knap:hover {
+    background: rgba(150, 210, 255, 0.18);
+    border-color: rgba(150, 210, 255, 0.5);
+  }
+  .mappe-knap[aria-selected="true"] {
+    background: rgba(150, 210, 255, 0.26);
+    border-color: rgba(150, 210, 255, 0.7);
+    font-weight: 600;
+  }
+  .mappe-knap .antal {
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.65);
+    background: rgba(0,0,0,0.3);
+    border-radius: 20px;
+    padding: 2px 9px;
+  }
+
+  .mappe { margin-top: 26px; }
+  .mappe > h2 {
+    font-size: 1.4rem;
+    margin-bottom: 6px;
+  }
+  .mappe > .mappe-intro {
+    font-weight: 300;
+    color: rgba(255,255,255,0.75);
+    max-width: 62ch;
+    line-height: 1.5;
+  }
+
   /* Uploadfelterne — kun synlige for bestyrelsen. */
   .upload {
-    margin-top: 26px;
-    padding-top: 22px;
+    margin-top: 22px;
+    padding-top: 20px;
     border-top: 1px solid rgba(255,255,255,0.16);
   }
-  .upload h2 {
-    font-size: 1.1rem;
+  .upload h3 {
+    font-size: 1rem;
     letter-spacing: 1px;
     text-transform: uppercase;
     color: rgba(150, 210, 255, 0.95);
@@ -397,9 +516,7 @@ function documents_render_page(PDO $pdo, string $category, array $page, array $u
     font-size: 0.82rem;
     color: rgba(255,255,255,0.65);
   }
-  input, button, select {
-    font: inherit;
-  }
+  input, button, select { font: inherit; }
   input[type="text"], input[type="number"], input[type="file"] {
     padding: 10px 12px;
     border-radius: 10px;
@@ -424,17 +541,17 @@ function documents_render_page(PDO $pdo, string $category, array $page, array $u
     color: rgba(255,255,255,0.6);
   }
   .message {
-    margin-top: 14px;
+    margin-top: 20px;
     font-weight: 600;
   }
   .message.error { color: #ffd3d3; }
   .message.success { color: #d7ffd7; }
 
-  /* Selve arkivet, grupperet efter år. */
-  .archive { margin-top: 34px; }
+  /* Dokumenterne, grupperet efter år. */
+  .archive { margin-top: 26px; }
   .year {
-    font-size: 1.3rem;
-    margin: 26px 0 12px;
+    font-size: 1.15rem;
+    margin: 24px 0 12px;
     padding-bottom: 6px;
     border-bottom: 1px solid rgba(255,255,255,0.16);
   }
@@ -469,10 +586,7 @@ function documents_render_page(PDO $pdo, string $category, array $page, array $u
     font-weight: 600;
     margin-bottom: 3px;
   }
-  .doc-title a {
-    color: #fff;
-    text-decoration: none;
-  }
+  .doc-title a { color: #fff; text-decoration: none; }
   .doc-title a:hover { text-decoration: underline; }
   .doc-meta {
     font-size: 0.85rem;
@@ -498,7 +612,7 @@ function documents_render_page(PDO $pdo, string $category, array $page, array $u
     color: #ffd3d3;
   }
   .empty {
-    margin-top: 30px;
+    margin-top: 24px;
     color: rgba(255,255,255,0.8);
   }
   footer {
@@ -516,6 +630,7 @@ function documents_render_page(PDO $pdo, string $category, array $page, array $u
     .doc-actions { width: 100%; justify-content: flex-end; }
     input[type="text"] { min-width: 0; width: 100%; }
     .field { width: 100%; }
+    .mappe-knap { flex: 1 1 auto; justify-content: center; }
   }
 </style>
 <link rel="stylesheet" href="mobile-nav.css">
@@ -529,9 +644,8 @@ function documents_render_page(PDO $pdo, string $category, array $page, array $u
       <a href="hjertestarter.html">Hjertestarter</a>
       <a href="omraade.html">Området</a>
       <a href="vedtaegter.php">Vedtægter</a>
-      <a href="medlemsfotos.php"<?php echo $page['nav'] === 'medlemsfotos.php' ? ' class="active"' : ''; ?>>Medlemsfotos</a>
-      <a href="generalforsamling.php"<?php echo $page['nav'] === 'generalforsamling.php' ? ' class="active"' : ''; ?>>Generalforsamling</a>
-      <a href="regnskab.php"<?php echo $page['nav'] === 'regnskab.php' ? ' class="active"' : ''; ?>>Regnskab</a>
+      <a href="medlemsfotos.php">Medlemsfotos</a>
+      <a href="generalforsamling.php" class="active">Generalforsamling</a>
       <?php if (($user['role'] ?? '') === 'bestyrelse'): ?>
         <a href="besked.php">Beskeder</a>
       <?php endif; ?>
@@ -544,38 +658,10 @@ function documents_render_page(PDO $pdo, string $category, array $page, array $u
 
   <div class="container">
     <div class="panel">
-      <h1><?php echo $e($page['heading']); ?></h1>
-      <p class="lead"><?php echo $e($page['intro']); ?></p>
-
-      <?php if ($canManage): ?>
-        <div class="upload">
-          <h2>Læg et dokument i arkivet</h2>
-          <form method="post" enctype="multipart/form-data">
-            <input type="hidden" name="csrf_token" value="<?php echo $e($csrf); ?>">
-            <input type="hidden" name="action" value="upload">
-            <div class="form-grid">
-              <div class="field">
-                <label for="title">Titel</label>
-                <input id="title" type="text" name="title" maxlength="200"
-                       placeholder="<?php echo $e($page['titlePlaceholder']); ?>">
-              </div>
-              <div class="field">
-                <label for="docYear">År</label>
-                <input id="docYear" type="number" name="doc_year"
-                       min="1970" max="<?php echo $currentYear + 1; ?>"
-                       value="<?php echo $currentYear; ?>">
-              </div>
-              <div class="field">
-                <label for="document">Fil</label>
-                <input id="document" type="file" name="document"
-                       accept=".pdf,.docx,.xlsx,.jpg,.jpeg,.png,.webp" required>
-              </div>
-              <button type="submit">Upload</button>
-            </div>
-          </form>
-          <p class="hint">PDF, Word, Excel eller billede — højst <?php echo (int)(DOCUMENT_MAX_BYTES / (1024 * 1024)); ?> MB. Uden titel bruges filnavnet.</p>
-        </div>
-      <?php endif; ?>
+      <h1>Generalforsamling</h1>
+      <p class="lead">Foreningens dagsordener, referater og regnskaber ligger her
+        i hver sin mappe. Arkivet er kun tilgængeligt for medlemmer, der er
+        logget ind.</p>
 
       <?php if ($message['error'] !== ''): ?>
         <div class="message error"><?php echo $e($message['error']); ?></div>
@@ -583,50 +669,146 @@ function documents_render_page(PDO $pdo, string $category, array $page, array $u
         <div class="message success"><?php echo $e($message['success']); ?></div>
       <?php endif; ?>
 
-      <?php if (!$documents): ?>
-        <p class="empty"><?php echo $e($page['empty']); ?></p>
-      <?php else: ?>
-        <div class="archive">
-          <?php foreach ($documents as $year => $rows): ?>
-            <h2 class="year"><?php echo (int)$year; ?></h2>
-            <?php foreach ($rows as $doc): ?>
-              <div class="doc">
-                <div class="doc-kind"><?php echo $e(documents_kind($doc['original_name'])); ?></div>
-                <div class="doc-body">
-                  <p class="doc-title">
-                    <a href="dokument.php?id=<?php echo (int)$doc['id']; ?>">
-                      <?php echo $e($doc['title']); ?>
-                    </a>
-                  </p>
-                  <p class="doc-meta">
-                    <?php echo $e(documents_format_size((int)$doc['file_size'])); ?>
-                    &middot; lagt op <?php echo $e(date('d-m-Y', strtotime($doc['created_at']))); ?>
-                    <?php if ($doc['uploader_name'] !== ''): ?>
-                      af <?php echo $e($doc['uploader_name']); ?>
-                    <?php endif; ?>
-                  </p>
+      <div class="mapper" role="tablist" aria-label="Mapper i arkivet">
+        <?php foreach (DOCUMENT_FOLDERS as $noegle => $mappe): ?>
+          <?php
+            $antal = 0;
+            foreach ($arkiv[$noegle] as $raekker) {
+                $antal += count($raekker);
+            }
+          ?>
+          <button type="button"
+                  class="mappe-knap"
+                  role="tab"
+                  id="fane-<?php echo $e($noegle); ?>"
+                  data-mappe="<?php echo $e($noegle); ?>"
+                  aria-controls="mappe-<?php echo $e($noegle); ?>"
+                  aria-selected="<?php echo $noegle === $aaben ? 'true' : 'false'; ?>">
+            <?php echo $e($mappe['navn']); ?>
+            <span class="antal"><?php echo $antal; ?></span>
+          </button>
+        <?php endforeach; ?>
+      </div>
+
+      <?php foreach (DOCUMENT_FOLDERS as $noegle => $mappe): ?>
+        <section class="mappe"
+                 id="mappe-<?php echo $e($noegle); ?>"
+                 role="tabpanel"
+                 aria-labelledby="fane-<?php echo $e($noegle); ?>"
+                 data-mappe="<?php echo $e($noegle); ?>">
+          <h2><?php echo $e($mappe['navn']); ?></h2>
+          <p class="mappe-intro"><?php echo $e($mappe['intro']); ?></p>
+
+          <?php if ($canManage): ?>
+            <div class="upload">
+              <h3>Læg et dokument i <?php echo $e($mappe['navn']); ?></h3>
+              <form method="post" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="<?php echo $e($csrf); ?>">
+                <input type="hidden" name="action" value="upload">
+                <input type="hidden" name="folder" value="<?php echo $e($noegle); ?>">
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="title-<?php echo $e($noegle); ?>">Titel</label>
+                    <input id="title-<?php echo $e($noegle); ?>" type="text" name="title"
+                           maxlength="200" placeholder="<?php echo $e($mappe['pladsholder']); ?>">
+                  </div>
+                  <div class="field">
+                    <label for="aar-<?php echo $e($noegle); ?>">År</label>
+                    <input id="aar-<?php echo $e($noegle); ?>" type="number" name="doc_year"
+                           min="1970" max="<?php echo $currentYear + 1; ?>"
+                           value="<?php echo $currentYear; ?>">
+                  </div>
+                  <div class="field">
+                    <label for="fil-<?php echo $e($noegle); ?>">Fil</label>
+                    <input id="fil-<?php echo $e($noegle); ?>" type="file" name="document"
+                           accept=".pdf,.docx,.xlsx,.jpg,.jpeg,.png,.webp" required>
+                  </div>
+                  <button type="submit">Upload</button>
                 </div>
-                <div class="doc-actions">
-                  <a href="dokument.php?id=<?php echo (int)$doc['id']; ?>&amp;download=1">Hent</a>
-                  <?php if ($canManage): ?>
-                    <form method="post"
-                          onsubmit="return confirm('Fjern dokumentet fra arkivet?');">
-                      <input type="hidden" name="csrf_token" value="<?php echo $e($csrf); ?>">
-                      <input type="hidden" name="action" value="delete">
-                      <input type="hidden" name="id" value="<?php echo (int)$doc['id']; ?>">
-                      <button type="submit">Fjern</button>
-                    </form>
-                  <?php endif; ?>
-                </div>
-              </div>
-            <?php endforeach; ?>
-          <?php endforeach; ?>
-        </div>
-      <?php endif; ?>
+              </form>
+              <p class="hint">PDF, Word, Excel eller billede — højst <?php echo (int)(DOCUMENT_MAX_BYTES / (1024 * 1024)); ?> MB. Uden titel bruges filnavnet.</p>
+            </div>
+          <?php endif; ?>
+
+          <?php if (!$arkiv[$noegle]): ?>
+            <p class="empty"><?php echo $e($mappe['tom']); ?></p>
+          <?php else: ?>
+            <div class="archive">
+              <?php foreach ($arkiv[$noegle] as $aar => $raekker): ?>
+                <h3 class="year"><?php echo (int)$aar; ?></h3>
+                <?php foreach ($raekker as $doc): ?>
+                  <div class="doc">
+                    <div class="doc-kind"><?php echo $e(documents_kind($doc['original_name'])); ?></div>
+                    <div class="doc-body">
+                      <p class="doc-title">
+                        <a href="dokument.php?id=<?php echo (int)$doc['id']; ?>">
+                          <?php echo $e($doc['title']); ?>
+                        </a>
+                      </p>
+                      <p class="doc-meta">
+                        <?php echo $e(documents_format_size((int)$doc['file_size'])); ?>
+                        &middot; lagt op <?php echo $e(date('d-m-Y', strtotime($doc['created_at']))); ?>
+                        <?php if ($doc['uploader_name'] !== ''): ?>
+                          af <?php echo $e($doc['uploader_name']); ?>
+                        <?php endif; ?>
+                      </p>
+                    </div>
+                    <div class="doc-actions">
+                      <a href="dokument.php?id=<?php echo (int)$doc['id']; ?>&amp;download=1">Hent</a>
+                      <?php if ($canManage): ?>
+                        <form method="post"
+                              onsubmit="return confirm('Fjern dokumentet fra arkivet?');">
+                          <input type="hidden" name="csrf_token" value="<?php echo $e($csrf); ?>">
+                          <input type="hidden" name="action" value="delete">
+                          <input type="hidden" name="folder" value="<?php echo $e($noegle); ?>">
+                          <input type="hidden" name="id" value="<?php echo (int)$doc['id']; ?>">
+                          <button type="submit">Fjern</button>
+                        </form>
+                      <?php endif; ?>
+                    </div>
+                  </div>
+                <?php endforeach; ?>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+        </section>
+      <?php endforeach; ?>
     </div>
   </div>
 
   <footer>&copy; <?php echo date('Y'); ?> Grundejerforeningen Hesselbjerg Nord</footer>
+
+  <script>
+  (function () {
+    'use strict';
+
+    // Uden JavaScript står alle tre mapper under hinanden, og siden virker
+    // fint — derfor skjules de først her.
+    var knapper = document.querySelectorAll('.mappe-knap');
+    var mapper = document.querySelectorAll('.mappe');
+
+    if (!knapper.length) return;
+
+    function vis(navn) {
+      mapper.forEach(function (m) { m.hidden = m.dataset.mappe !== navn; });
+      knapper.forEach(function (k) {
+        k.setAttribute('aria-selected', k.dataset.mappe === navn ? 'true' : 'false');
+      });
+
+      // Adressen følger med, så et genindlæst vindue åbner samme mappe.
+      if (window.history.replaceState) {
+        window.history.replaceState(null, '', '?mappe=' + encodeURIComponent(navn));
+      }
+    }
+
+    knapper.forEach(function (k) {
+      k.addEventListener('click', function () { vis(k.dataset.mappe); });
+    });
+
+    var valgt = document.querySelector('.mappe-knap[aria-selected="true"]');
+    vis(valgt ? valgt.dataset.mappe : knapper[0].dataset.mappe);
+  })();
+  </script>
 </body>
 </html>
     <?php

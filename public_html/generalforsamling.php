@@ -1,7 +1,9 @@
 <?php
 /**
- * Generalforsamling — referater, indkaldelser og dagsordener bag login.
- * Al logik og HTML ligger i includes/documents.php, som deles med regnskab.php.
+ * Generalforsamling — arkivet bag login med mapperne Dagsorden, Referat og
+ * Regnskab. Al logik og HTML ligger i includes/documents.php.
+ *
+ * Regnskab havde før sin egen side; regnskab.php sender nu videre hertil.
  */
 
 require __DIR__ . '/includes/auth.php';
@@ -11,14 +13,6 @@ require __DIR__ . '/includes/documents.php';
 auth_require('index.html');
 
 $user = auth_user();
-$message = documents_handle_post($pdo, $user, 'generalforsamling');
+$message = documents_handle_post($pdo, $user);
 
-documents_render_page($pdo, 'generalforsamling', [
-    'title' => 'Generalforsamling',
-    'heading' => 'Generalforsamling',
-    'intro' => 'Indkaldelser, dagsordener og referater fra foreningens generalforsamlinger. '
-        . 'Arkivet er kun tilgængeligt for medlemmer, der er logget ind.',
-    'nav' => 'generalforsamling.php',
-    'titlePlaceholder' => 'Referat af ordinær generalforsamling',
-    'empty' => 'Der ligger endnu ingen dokumenter fra generalforsamlingerne i arkivet.',
-], $user, $message);
+documents_render_page(documents_list($pdo), $user, $message);

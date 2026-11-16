@@ -1,25 +1,12 @@
 <?php
 /**
- * Regnskab — årsregnskaber og budgetter bag login.
- * Al logik og HTML ligger i includes/documents.php, som deles med
- * generalforsamling.php.
+ * Regnskab havde før sin egen side. Regnskaberne ligger nu i mappen Regnskab
+ * på generalforsamling.php, og denne fil sender blot videre dertil.
+ *
+ * Filen må IKKE slettes fra git: udgivelsen fjerner aldrig filer på serveren,
+ * så den gamle, fungerende side ville blive stående, hvis denne forsvandt.
+ * Gamle links og bogmærker peger også stadig hertil.
  */
 
-require __DIR__ . '/includes/auth.php';
-require __DIR__ . '/includes/db.php';
-require __DIR__ . '/includes/documents.php';
-
-auth_require('index.html');
-
-$user = auth_user();
-$message = documents_handle_post($pdo, $user, 'regnskab');
-
-documents_render_page($pdo, 'regnskab', [
-    'title' => 'Regnskab',
-    'heading' => 'Regnskab',
-    'intro' => 'Foreningens årsregnskaber og budgetter. Regnskabet fremlægges på '
-        . 'generalforsamlingen og lægges her, så medlemmerne kan se det bagefter.',
-    'nav' => 'regnskab.php',
-    'titlePlaceholder' => 'Årsregnskab',
-    'empty' => 'Der ligger endnu ingen regnskaber i arkivet.',
-], $user, $message);
+header('Location: generalforsamling.php?mappe=regnskab', true, 301);
+exit;
