@@ -233,8 +233,9 @@ $csrf = auth_csrf_token();
 
     <?php else: ?>
       <h1>Få adgang</h1>
-      <p class="intro">Postkortet hører til adressen herunder. Udfyld felterne,
-        så har du adgang til referater, regnskaber, vedtægter og medlemsbilleder.</p>
+      <p class="intro">Velkommen til Hesselbjerg Nords Medlemsportal. Adgangen
+        hører til adressen herunder. Udfyld felterne, så kan du se dagsordener,
+        referater, regnskaber, vedtægter og medlemsbilleder.</p>
 
       <span class="adresse">
         <small>Adresse</small>
