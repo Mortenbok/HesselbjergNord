@@ -28,9 +28,19 @@ $hvor = [];
 $felter = [];
 
 if ($soeg !== '') {
-    $hvor[] = '(kontaktperson LIKE :s OR sommerhusadresse LIKE :s OR mail LIKE :s
-                OR hjemmeadresse LIKE :s OR `by` LIKE :s OR telefon LIKE :s)';
-    $felter[':s'] = '%' . $soeg . '%';
+    // Hvert felt får sin egen pladsholder, selv om værdien er den samme:
+    // db.php slår PDO's efterligning fra, og MySQL kan ikke genbruge et
+    // navngivet felt flere steder i den samme sætning.
+    $soegFelter = ['kontaktperson', 'sommerhusadresse', 'mail', 'mail2',
+                   'hjemmeadresse', '`by`', 'telefon', 'telefon2'];
+    $dele = [];
+
+    foreach ($soegFelter as $i => $felt) {
+        $dele[] = $felt . ' LIKE :s' . $i;
+        $felter[':s' . $i] = '%' . $soeg . '%';
+    }
+
+    $hvor[] = '(' . implode(' OR ', $dele) . ')';
 }
 
 if ($vis === 'mangler') {

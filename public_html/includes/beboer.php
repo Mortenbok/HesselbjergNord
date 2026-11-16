@@ -77,13 +77,16 @@ function beboer_rolle_for_mail(PDO $pdo, string $mail): ?string
         return null;
     }
 
+    // To pladsholdere til den samme værdi. db.php slår PDO's egen
+    // efterligning fra (ATTR_EMULATE_PREPARES = false), og så kan MySQL ikke
+    // genbruge et navngivet felt to steder i samme sætning.
     $stmt = $pdo->prepare(
         'SELECT bestyrelse FROM beboerkartotek
-          WHERE mail = :m OR mail2 = :m
+          WHERE mail = :mail1 OR mail2 = :mail2
           ORDER BY bestyrelse DESC
           LIMIT 1'
     );
-    $stmt->execute([':m' => $mail]);
+    $stmt->execute([':mail1' => $mail, ':mail2' => $mail]);
     $raekke = $stmt->fetch();
 
     if (!$raekke) {
