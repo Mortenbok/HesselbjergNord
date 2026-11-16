@@ -104,6 +104,8 @@ CREATE TABLE IF NOT EXISTS adgangskort (
   spaerret TINYINT(1) NOT NULL DEFAULT 0,
   antal_brug INT NOT NULL DEFAULT 0,
   sidst_brugt DATETIME NULL DEFAULT NULL,
+  sendt_at DATETIME NULL DEFAULT NULL,
+  sendt_antal INT NOT NULL DEFAULT 0,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uniq_adgangskort_kode (kode),

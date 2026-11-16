@@ -118,6 +118,8 @@ try {
             spaerret TINYINT(1) NOT NULL DEFAULT 0,
             antal_brug INT NOT NULL DEFAULT 0,
             sidst_brugt DATETIME NULL DEFAULT NULL,
+            sendt_at DATETIME NULL DEFAULT NULL,
+            sendt_antal INT NOT NULL DEFAULT 0,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
             UNIQUE KEY uniq_adgangskort_kode (kode),
@@ -143,6 +145,17 @@ try {
             $brugte[$kode] = true;
             $saet->execute([':a' => $adresse, ':k' => $kode]);
         }
+    }
+
+    // Kortene kan sendes ud på mail, og det skal kunne ses hvornår —
+    // ellers kan en udsendelse til 200 husstande ikke genoptages, hvis
+    // den bliver afbrudt undervejs.
+    $akCols = $pdo->query('SHOW COLUMNS FROM adgangskort')->fetchAll(PDO::FETCH_COLUMN, 0);
+
+    if (!in_array('sendt_at', $akCols, true)) {
+        $pdo->exec('ALTER TABLE adgangskort
+            ADD COLUMN sendt_at DATETIME NULL DEFAULT NULL AFTER sidst_brugt,
+            ADD COLUMN sendt_antal INT NOT NULL DEFAULT 0 AFTER sendt_at');
     }
 
     $pdo->exec("

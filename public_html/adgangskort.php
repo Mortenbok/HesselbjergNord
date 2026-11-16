@@ -9,6 +9,7 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/adgang.php';
+require_once __DIR__ . '/includes/mail.php';
 
 auth_require('index.html');
 
@@ -23,6 +24,23 @@ if (($user['role'] ?? '') !== 'bestyrelse') {
 $e = 'adgang_e';
 $besked = '';
 $fejl = '';
+
+/** Husstande pr. udsendelse. Resten venter til næste klik. */
+const SEND_AD_GANGEN = 25;
+
+/** Mailadresserne fra beboerkartoteket, samlet pr. husstand. */
+$mailKort = adgang_mail_pr_husstand($pdo);
+
+/**
+ * Adressen, links i mailen peger på.
+ *
+ * Skemaet tages fra den aktuelle forespørgsel, så linket virker både på
+ * hesselbjergnord.dk og hvis siden en dag flytter.
+ */
+$https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+    || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+$base = ($https ? 'https://' : 'http://') . ($_SERVER['HTTP_HOST'] ?? 'hesselbjergnord.dk');
+$base .= rtrim(dirname($_SERVER['SCRIPT_NAME']), "/\\");
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!auth_csrf_valid($_POST['csrf_token'] ?? null)) {
@@ -76,12 +94,80 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($handling === 'slet' && $id > 0) {
             $pdo->prepare('DELETE FROM adgangskort WHERE id = :id')->execute([':id' => $id]);
             $besked = 'Kortet er fjernet fra listen.';
+        } elseif ($handling === 'send' || $handling === 'send-alle') {
+            // Ét kort, eller en bunke af dem der ikke har fået koden endnu.
+            if ($handling === 'send') {
+                $stmt = $pdo->prepare('SELECT * FROM adgangskort WHERE id = :id AND spaerret = 0 LIMIT 1');
+                $stmt->execute([':id' => $id]);
+                $bunke = array_filter([$stmt->fetch()]);
+            } else {
+                // Kun dem, der ikke er sendt før. Så kan en afbrudt
+                // udsendelse genoptages uden at nogen får koden to gange.
+                $kunNye = ($_POST['kun_nye'] ?? '1') === '1';
+
+                $sql = 'SELECT * FROM adgangskort WHERE spaerret = 0'
+                     . ($kunNye ? ' AND sendt_at IS NULL' : '')
+                     . ' ORDER BY id LIMIT ' . SEND_AD_GANGEN;
+
+                $bunke = $pdo->query($sql)->fetchAll();
+            }
+
+            $sendt = 0;
+            $husstande = 0;
+            $udenMail = [];
+            $fejlede = [];
+
+            $noter = $pdo->prepare(
+                'UPDATE adgangskort SET sendt_at = NOW(), sendt_antal = sendt_antal + :n WHERE id = :id'
+            );
+
+            foreach ($bunke as $k) {
+                $modtagere = adgang_modtagere($mailKort, $k['adresse']);
+
+                if ($modtagere === []) {
+                    $udenMail[] = $k['adresse'];
+                    continue;
+                }
+
+                $svar = adgang_send_kode($k, $modtagere, $base . '/adgang.php?k=' . $k['kode']);
+
+                if ($svar['ok'] > 0) {
+                    $sendt += $svar['ok'];
+                    $husstande++;
+                    $noter->execute([':n' => $svar['ok'], ':id' => (int)$k['id']]);
+                }
+
+                foreach ($svar['fejlede'] as $m) {
+                    $fejlede[] = $k['adresse'] . ': ' . $m;
+                }
+            }
+
+            $dele = [];
+
+            if ($husstande > 0) {
+                $dele[] = 'Koden er sendt til ' . $sendt . ' modtager'
+                    . ($sendt === 1 ? '' : 'e') . ' i ' . $husstande . ' husstand'
+                    . ($husstande === 1 ? '' : 'e') . '.';
+            }
+
+            if ($udenMail !== []) {
+                $dele[] = count($udenMail) . ' husstand' . (count($udenMail) === 1 ? '' : 'e')
+                    . ' har ingen mail i beboerkartoteket: ' . implode(', ', array_slice($udenMail, 0, 8))
+                    . (count($udenMail) > 8 ? ' m.fl.' : '');
+            }
+
+            if ($fejlede !== []) {
+                $fejl = 'Mailen kunne ikke sendes til: ' . implode(', ', array_slice($fejlede, 0, 8));
+            }
+
+            $besked = $dele !== [] ? implode(' ' , $dele) : 'Der var ingen at sende til.';
         }
     }
 }
 
 $kort = $pdo->query(
     'SELECT k.id, k.adresse, k.kode, k.spaerret, k.antal_brug, k.sidst_brugt,
+            k.sendt_at, k.sendt_antal,
             (SELECT COUNT(*) FROM users u WHERE u.address = k.adresse) AS brugere
        FROM adgangskort k'
 )->fetchAll();
@@ -92,10 +178,18 @@ usort($kort, static fn($a, $b) => strnatcasecmp($a['adresse'], $b['adresse']));
 $antal = count($kort);
 $oprettet = 0;
 $spaerrede = 0;
+$udenMailIalt = 0;
+$manglerMail = 0;
 
 foreach ($kort as $k) {
     if ((int)$k['brugere'] > 0) { $oprettet++; }
-    if ((int)$k['spaerret'] === 1) { $spaerrede++; }
+    if ((int)$k['spaerret'] === 1) { $spaerrede++; continue; }
+
+    if (adgang_modtagere($mailKort, $k['adresse']) === []) {
+        $udenMailIalt++;
+    } elseif ($k['sendt_at'] === null) {
+        $manglerMail++;
+    }
 }
 
 $csrf = auth_csrf_token();
@@ -175,6 +269,29 @@ $csrf = auth_csrf_token();
   }
   .print-knap:hover { background: rgba(80, 165, 240, 0.65); }
 
+  /* Udsendelse på mail. */
+  .udsend {
+    margin-top: 24px; padding-top: 20px;
+    border-top: 1px solid rgba(255,255,255,0.16);
+  }
+  .udsend h2 {
+    font-size: 1.1rem; letter-spacing: 1px; text-transform: uppercase;
+    color: rgba(150, 210, 255, 0.95); margin-bottom: 10px;
+  }
+  .udsend p {
+    font-weight: 300; line-height: 1.55; color: rgba(255,255,255,0.85);
+    max-width: 72ch; margin-bottom: 10px;
+  }
+  .udsend a { color: #cfe9ff; }
+  .mangler-mail { color: rgba(255, 210, 150, 0.9); }
+  .smaat { font-size: 0.86rem; color: rgba(255,255,255,0.6); line-height: 1.5; }
+  button.send-knap {
+    background: rgba(70, 150, 225, 0.55); border-color: rgba(150, 200, 255, 0.7);
+    padding: 11px 22px;
+  }
+  button.send-knap:hover:not(:disabled) { background: rgba(80, 165, 240, 0.7); }
+  button.send-knap:disabled { opacity: 0.5; cursor: default; }
+
   .besked { padding: 11px 14px; border-radius: 10px; margin-top: 16px; font-size: 0.93rem; }
   .besked.ok { background: rgba(40,140,70,0.32); color: #dcffe4; }
   .besked.fejl { background: rgba(180,40,40,0.35); color: #ffdede; }
@@ -249,6 +366,42 @@ $csrf = auth_csrf_token();
         </a>
       </div>
 
+      <div class="udsend">
+        <h2>Send koden på mail</h2>
+        <p>Mailadresserne kommer fra <a href="beboerkartotek.php">beboerkartoteket</a>.
+          Både ejer og medejere på adressen får mailen — kortet hører til
+          husstanden, ikke til én person. Hver modtager får sin egen mail, så
+          ingen kan se hinandens adresser.</p>
+
+        <?php if ($udenMailIalt > 0): ?>
+          <p class="mangler-mail">
+            <?php echo $udenMailIalt; ?> husstand<?php echo $udenMailIalt === 1 ? '' : 'e'; ?>
+            har ingen mail i kartoteket og kan kun nås med et postkort.
+          </p>
+        <?php endif; ?>
+
+        <form method="post" class="vaerktoej"
+              onsubmit="return confirm('Send koden til op til <?php echo min($manglerMail, SEND_AD_GANGEN); ?> husstande nu?');">
+          <input type="hidden" name="csrf_token" value="<?php echo $e($csrf); ?>">
+          <input type="hidden" name="kun_nye" value="1">
+          <button type="submit" name="handling" value="send-alle" class="send-knap"
+                  <?php echo $manglerMail === 0 ? 'disabled' : ''; ?>>
+            <?php if ($manglerMail === 0): ?>
+              Alle har fået koden
+            <?php else: ?>
+              Send til de næste <?php echo min($manglerMail, SEND_AD_GANGEN); ?>
+              (<?php echo $manglerMail; ?> mangler)
+            <?php endif; ?>
+          </button>
+        </form>
+
+        <?php if ($manglerMail > SEND_AD_GANGEN): ?>
+          <p class="smaat">Der sendes <?php echo SEND_AD_GANGEN; ?> ad gangen, så
+            udsendelsen ikke løber ind i serverens tidsgrænse. Tryk igen, til
+            tallet er nul — ingen får koden to gange.</p>
+        <?php endif; ?>
+      </div>
+
       <?php if ($besked !== ''): ?>
         <div class="besked ok"><?php echo $e($besked); ?></div>
       <?php endif; ?>
@@ -284,6 +437,7 @@ $csrf = auth_csrf_token();
               <th>Kode</th>
               <th>Oprettet sig</th>
               <th>Sidst brugt</th>
+              <th>Mail</th>
               <th>Handling</th>
             </tr>
           </thead>
@@ -308,7 +462,29 @@ $csrf = auth_csrf_token();
                 </td>
                 <td><?php echo $k['sidst_brugt'] ? $e(date('d-m-Y', strtotime($k['sidst_brugt']))) : '—'; ?></td>
                 <td>
+                  <?php $modt = adgang_modtagere($mailKort, $k['adresse']); ?>
+                  <?php if ($modt === []): ?>
+                    <span class="maerke nej">ingen mail</span>
+                  <?php elseif ($k['sendt_at']): ?>
+                    <span class="maerke ja" title="<?php echo $e(implode(', ', array_keys($modt))); ?>">
+                      sendt <?php echo $e(date('d-m-Y', strtotime($k['sendt_at']))); ?>
+                    </span>
+                  <?php else: ?>
+                    <span class="maerke nej" title="<?php echo $e(implode(', ', array_keys($modt))); ?>">
+                      <?php echo count($modt); ?> modtager<?php echo count($modt) === 1 ? '' : 'e'; ?>
+                    </span>
+                  <?php endif; ?>
+                </td>
+                <td>
                   <div class="rad-knapper">
+                    <?php if (!$erSpaerret && $modt !== []): ?>
+                      <form method="post" class="inline"
+                            onsubmit="return confirm('Send koden til <?php echo $e($k['adresse']); ?>?');">
+                        <input type="hidden" name="csrf_token" value="<?php echo $e($csrf); ?>">
+                        <input type="hidden" name="id" value="<?php echo (int)$k['id']; ?>">
+                        <button type="submit" name="handling" value="send"><?php echo $k['sendt_at'] ? 'Send igen' : 'Send'; ?></button>
+                      </form>
+                    <?php endif; ?>
                     <form method="post" class="inline">
                       <input type="hidden" name="csrf_token" value="<?php echo $e($csrf); ?>">
                       <input type="hidden" name="id" value="<?php echo (int)$k['id']; ?>">

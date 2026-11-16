@@ -176,3 +176,102 @@ function adgang_e(?string $v): string
 {
     return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
 }
+
+/**
+ * Mailadresserne i beboerkartoteket, samlet pr. husstand.
+ *
+ * Nøglen er adressen på foldet form ("klitrosevej18"), ikke teksten.
+ * Kortene er lavet ud fra OpenStreetMap, der skriver Hylleskovvænget, mens
+ * kartoteket skriver Hyldeskovvænget — en sammenligning tegn for tegn ville
+ * tabe 17 husstande på gulvet. adresse_noegle_af_fritekst() kender begge
+ * stavemåder og giver dem den samme nøgle.
+ *
+ * Både ejer og medejere kommer med: kortet hører til husstanden, ikke til
+ * én person, og alle på adressen skal kunne komme ind.
+ */
+function adgang_mail_pr_husstand(PDO $pdo): array
+{
+    $rows = $pdo->query(
+        'SELECT sommerhusadresse, kontaktperson, mail, mail2
+           FROM beboerkartotek
+          ORDER BY forhold, id'
+    )->fetchAll();
+
+    $ud = [];
+
+    foreach ($rows as $r) {
+        $noegle = adresse_noegle_af_fritekst((string)$r['sommerhusadresse']);
+
+        if ($noegle === '') {
+            continue;
+        }
+
+        foreach (['mail', 'mail2'] as $felt) {
+            $mail = mb_strtolower(trim((string)$r[$felt]));
+
+            if ($mail === '' || !filter_var($mail, FILTER_VALIDATE_EMAIL)) {
+                continue;
+            }
+
+            // Den samme mail kan stå flere gange på en adresse.
+            $ud[$noegle][$mail] = trim((string)$r['kontaktperson']);
+        }
+    }
+
+    return $ud;
+}
+
+/** Modtagerne til ét kort. Tom liste, hvis husstanden ikke har en mail. */
+function adgang_modtagere(array $mailKort, string $adresse): array
+{
+    return $mailKort[adresse_noegle_af_fritekst($adresse)] ?? [];
+}
+
+/**
+ * Sender koden til én husstand.
+ *
+ * Returnerer ['ok' => antal sendte, 'fejlede' => [adresser]].
+ */
+function adgang_send_kode(array $kort, array $modtagere, string $link): array
+{
+    if ($modtagere === []) {
+        return ['ok' => 0, 'fejlede' => []];
+    }
+
+    $emne = 'Din adgang til hesselbjergnord.dk — ' . $kort['adresse'];
+
+    $ok = 0;
+    $fejlede = [];
+
+    // Hver modtager får sin egen mail med sit eget navn. De må ikke kunne
+    // se hinandens adresser, og en fælles To-linje ville netop vise dem.
+    foreach ($modtagere as $mail => $navn) {
+        $hilsen = $navn !== '' ? 'Hej ' . $navn : 'Hej';
+
+        $tekst = $hilsen . "\n\n"
+            . "Her er jeres adgang til foreningens hjemmeside. Den hører til "
+            . $kort['adresse'] . ".\n\n"
+            . "Åbn dette link:\n"
+            . $link . "\n\n"
+            . "Eller gå ind på hesselbjergnord.dk/adgang.php og tast koden:\n"
+            . "    " . adgang_kode_paent($kort['kode']) . "\n\n"
+            . "Du vælger selv navn og adgangskode undervejs. Bag login finder du "
+            . "referater, regnskaber, vedtægter og medlemsbilleder.\n\n"
+            . "Gem denne mail. Koden bliver ved med at virke, så I kan begge "
+            . "oprette hver jeres login, og har du glemt din adgangskode, "
+            . "bruger du bare linket igen.\n\n"
+            . "Venlig hilsen\n"
+            . "Bestyrelsen\n"
+            . "Grundejerforeningen Hesselbjerg Nord";
+
+        $svar = mail_send([$mail], $emne, $tekst);
+
+        if (($svar['ok'] ?? 0) > 0) {
+            $ok++;
+        } else {
+            $fejlede[] = $mail;
+        }
+    }
+
+    return ['ok' => $ok, 'fejlede' => $fejlede];
+}
