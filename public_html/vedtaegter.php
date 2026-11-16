@@ -315,7 +315,7 @@ $underskrivere = [
     margin-right: 8px;
   }
 
-  /* Underskrifterne under § 10. */
+  /* Underskrifterne nederst på dokumentet. */
   .underskrifter {
     list-style: none;
     margin: 14px 0 0;
@@ -490,9 +490,7 @@ $underskrivere = [
         </section>
 
         <section>
-          <h2>§ 10</h2>
-          <p>Foreningens regnskabsår er kalenderåret.</p>
-          <p class="doc-meta" style="margin-top:18px;">Underskrevet den 19. februar 2017 af:</p>
+          <p class="doc-meta">Underskrevet den 19. februar 2017 af:</p>
           <ul class="underskrifter">
             <?php foreach ($underskrivere as $underskriver): ?>
               <li>
