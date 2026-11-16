@@ -247,6 +247,7 @@ try {
             telefon VARCHAR(32) NOT NULL DEFAULT '',
             telefon2 VARCHAR(32) NOT NULL DEFAULT '',
             rolle VARCHAR(60) NOT NULL DEFAULT '',
+            bfe VARCHAR(12) NOT NULL DEFAULT '',
             flyttet_ind DATE NULL DEFAULT NULL,
             noter TEXT NULL DEFAULT NULL,
             kilde ENUM('kartotek', 'ny-beboer') NOT NULL DEFAULT 'kartotek',
@@ -279,6 +280,13 @@ try {
     if (!in_array('sted', $bk, true)) {
         $pdo->exec("ALTER TABLE beboerkartotek
             ADD COLUMN sted VARCHAR(100) NOT NULL DEFAULT '' AFTER hjemmeadresse");
+    }
+
+    // BFE-nummeret (Bestemt Fast Ejendom) bruges til at slå ejeren op på
+    // nyt.ois.dk. Det står ikke i regnearket og udfyldes i hånden.
+    if (!in_array('bfe', $bk, true)) {
+        $pdo->exec("ALTER TABLE beboerkartotek
+            ADD COLUMN bfe VARCHAR(12) NOT NULL DEFAULT '' AFTER rolle");
     }
 
     // Kolonner fra en tidligere udgave af arket, som ikke er der længere.

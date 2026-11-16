@@ -168,6 +168,7 @@ CREATE TABLE IF NOT EXISTS beboerkartotek (
   telefon VARCHAR(32) NOT NULL DEFAULT '',
   telefon2 VARCHAR(32) NOT NULL DEFAULT '',
   rolle VARCHAR(60) NOT NULL DEFAULT '',
+  bfe VARCHAR(12) NOT NULL DEFAULT '',
   flyttet_ind DATE NULL DEFAULT NULL,
   noter TEXT NULL DEFAULT NULL,
   kilde ENUM('kartotek', 'ny-beboer') NOT NULL DEFAULT 'kartotek',

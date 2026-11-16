@@ -40,6 +40,7 @@ foreach (array_keys(BEBOER_FELTER) as $felt) {
 $v['forhold'] = 'ejer';
 $v['land'] = 'Danmark';
 $v['noter'] = '';
+$v['bfe'] = '';
 
 if (!$nyRaekke) {
     $stmt = $pdo->prepare('SELECT * FROM beboerkartotek WHERE id = :id LIMIT 1');
@@ -57,6 +58,7 @@ if (!$nyRaekke) {
     }
 
     $v['noter'] = (string)($raekke['noter'] ?? '');
+    $v['bfe'] = (string)($raekke['bfe'] ?? '');
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -72,6 +74,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $v['noter'] = trim((string)($_POST['noter'] ?? ''));
+        // BFE er altid tal; alt andet kasseres.
+        $v['bfe'] = preg_replace('/[^0-9]/', '', (string)($_POST['bfe'] ?? '')) ?? '';
 
         // Bestyrelse er et afkrydsningsfelt: det sendes kun med, når det er sat.
         $v['bestyrelse'] = isset($_POST['bestyrelse']) ? '1' : '0';
@@ -96,10 +100,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             $bind[':noter'] = $v['noter'];
+            $bind[':bfe'] = $v['bfe'];
 
             if ($nyRaekke) {
-                $kolonner = implode(', ', array_map('beboer_kolonne', $felter)) . ', noter, kilde';
-                $pladser = ':' . implode(', :', $felter) . ', :noter, \'kartotek\'';
+                $kolonner = implode(', ', array_map('beboer_kolonne', $felter)) . ', noter, bfe, kilde';
+                $pladser = ':' . implode(', :', $felter) . ', :noter, :bfe, \'kartotek\'';
 
                 $pdo->prepare("INSERT INTO beboerkartotek ($kolonner) VALUES ($pladser)")->execute($bind);
                 $id = (int)$pdo->lastInsertId();
@@ -112,6 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 $saet[] = 'noter = :noter';
+                $saet[] = 'bfe = :bfe';
                 $bind[':id'] = $id;
 
                 $pdo->prepare('UPDATE beboerkartotek SET ' . implode(', ', $saet) . ' WHERE id = :id')
@@ -152,6 +158,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   .gitter { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
   .felt { display: flex; flex-direction: column; gap: 5px; }
   .felt.bred { grid-column: 1 / -1; }
+  .hjaelp {
+    font-size: 0.82rem; line-height: 1.55; color: rgba(255,255,255,0.62); margin-top: 2px;
+  }
+  .hjaelp a { color: #cfe9ff; }
   label { font-size: 0.84rem; color: rgba(255,255,255,0.7); }
   input[type="text"], input[type="email"], select, textarea {
     padding: 11px 13px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.26);
@@ -236,6 +246,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               </div>
             <?php endif; ?>
           <?php endforeach; ?>
+
+          <div class="felt bred">
+            <label for="f-bfe">BFE-nummer</label>
+            <input id="f-bfe" type="text" name="bfe" maxlength="12"
+                   inputmode="numeric" pattern="[0-9]*"
+                   value="<?php echo $e($v['bfe']); ?>">
+            <p class="hjaelp">
+              Ejendommens nummer i Det Fælleskommunale Ejendomsstamregister.
+              Slå sommerhusadressen op på
+              <a href="https://boligejer.dk/" target="_blank" rel="noopener">boligejer.dk</a>
+              og klik videre til OIS. Tallet står til sidst i adressen på den
+              side, du ender på &mdash; fx nyt.ois.dk/search/<b>9856478</b>.
+              Når det står her, kan ejeren slås op direkte fra kartoteket.
+            </p>
+          </div>
 
           <div class="felt bred">
             <label for="f-noter">Note — kun til bestyrelsen</label>

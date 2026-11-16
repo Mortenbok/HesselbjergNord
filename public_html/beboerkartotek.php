@@ -152,6 +152,17 @@ $medNoter = (int)$pdo->query("SELECT COUNT(*) FROM beboerkartotek WHERE noter IS
     padding: 4px 12px; font-size: 0.84rem;
   }
   a.ret:hover { background: rgba(150,210,255,0.2); text-decoration: none; }
+  /* Ejeropslag: enten et direkte link til OIS, eller en knap der kopierer
+     adressen, så den kan søges frem på boligejer.dk én gang. */
+  .ejer {
+    display: inline-block; white-space: nowrap; font: inherit; font-size: 0.84rem;
+    color: #cfe9ff; text-decoration: none; cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.28); border-radius: 8px; padding: 4px 12px;
+    background: transparent;
+  }
+  .ejer:hover { background: rgba(150,210,255,0.2); text-decoration: none; }
+  /* Mangler BFE-nummeret, er knappen dæmpet — den fører kun til søgningen. */
+  button.ejer { color: rgba(255,255,255,0.7); border-style: dashed; }
   a.tilfoej {
     display: inline-block; text-decoration: none; color: #fff;
     background: rgba(70, 150, 225, 0.5); border: 1px solid rgba(150, 200, 255, 0.7);
@@ -256,6 +267,7 @@ $medNoter = (int)$pdo->query("SELECT COUNT(*) FROM beboerkartotek WHERE noter IS
                 <th>Mail</th>
                 <th>Telefon</th>
                 <th></th>
+                <th>Ejer</th>
                 <th></th>
               </tr>
             </thead>
@@ -310,6 +322,18 @@ $medNoter = (int)$pdo->query("SELECT COUNT(*) FROM beboerkartotek WHERE noter IS
                     <?php endif; ?>
                   </td>
                   <td>
+                    <?php if (trim((string)($r['bfe'] ?? '')) !== ''): ?>
+                      <a class="ejer" target="_blank" rel="noopener"
+                         title="BFE <?php echo $e($r['bfe']); ?> — åbner OIS i en ny fane"
+                         href="https://nyt.ois.dk/search/<?php echo $e($r['bfe']); ?>">Ejer</a>
+                    <?php else: ?>
+                      <button type="button" class="ejer" data-ejer-adresse="<?php
+                          echo $e(trim($r['sommerhusadresse']) . ', ' . HBN_POSTNR . ' ' . HBN_BY);
+                      ?>"
+                         title="Kopierer adressen og åbner boligejer.dk">Find ejer</button>
+                    <?php endif; ?>
+                  </td>
+                  <td>
                     <a class="ret" href="beboer-ret.php?id=<?php echo (int)$r['id']; ?>">Ret</a>
                   </td>
                 </tr>
@@ -326,5 +350,51 @@ $medNoter = (int)$pdo->query("SELECT COUNT(*) FROM beboerkartotek WHERE noter IS
   </div>
 
   <footer>&copy; <?php echo date('Y'); ?> Grundejerforeningen Hesselbjerg Nord</footer>
+<script>
+  /* "Find ejer": vi har ikke BFE-nummeret på adressen endnu. Der findes ikke
+     et frit opslag fra adresse til ejer uden en nøgle hos Datafordeleren, så
+     i stedet kopierer vi adressen og åbner boligejer.dk, hvor den kan søges
+     frem. Nummeret til sidst i OIS-adressen gemmes så på beboer-ret.php, og
+     derefter er knappen et direkte link. */
+  (function () {
+    function kopier(tekst) {
+      // execCommand virker synkront og dermed også, når vi lige bagefter
+      // åbner en ny fane. Clipboard-API'et kan nægte, når vinduet mister fokus.
+      try {
+        var felt = document.createElement('textarea');
+        felt.value = tekst;
+        felt.setAttribute('readonly', '');
+        felt.style.position = 'fixed';
+        felt.style.top = '-1000px';
+        document.body.appendChild(felt);
+        felt.select();
+        var ok = document.execCommand('copy');
+        document.body.removeChild(felt);
+        if (ok) { return true; }
+      } catch (e) { /* falder igennem til Clipboard-API'et */ }
+
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(tekst);
+        return true;
+      }
+      return false;
+    }
+
+    document.addEventListener('click', function (e) {
+      var mål = e.target instanceof Element ? e.target : null;
+      var knap = mål ? mål.closest('button[data-ejer-adresse]') : null;
+      if (!knap) { return; }
+
+      var adresse = knap.getAttribute('data-ejer-adresse');
+      var ok = kopier(adresse);
+
+      var oprindelig = knap.textContent;
+      knap.textContent = ok ? 'Adressen er kopieret' : adresse;
+      setTimeout(function () { knap.textContent = oprindelig; }, 4000);
+
+      window.open('https://boligejer.dk/', '_blank', 'noopener');
+    });
+  })();
+</script>
 </body>
 </html>

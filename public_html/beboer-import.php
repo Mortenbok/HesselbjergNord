@@ -82,6 +82,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $sprunget = 0;
                 $linjer = [];
 
+                // BFE-numrene står ikke i regnearket — de er tastet i hånden
+                // på beboer-ret.php. De ville gå tabt ved en genimport, så vi
+                // gemmer dem på adressen og lægger dem tilbage bagefter.
+                $gemtBfe = [];
+
+                $bfeRaekker = $pdo->query(
+                    "SELECT sommerhusadresse, bfe FROM beboerkartotek WHERE bfe <> ''"
+                )->fetchAll();
+
+                foreach ($bfeRaekker as $b) {
+                    $noegle = adresse_noegle_af_fritekst((string)$b['sommerhusadresse']);
+
+                    if ($noegle !== '') {
+                        $gemtBfe[$noegle] = (string)$b['bfe'];
+                    }
+                }
+
                 $pdo->beginTransaction();
 
                 try {
@@ -96,8 +113,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $pladser = ':' . implode(', :', $felter);
 
                     $ind = $pdo->prepare(
-                        "INSERT INTO beboerkartotek ($kolonner, kilde, status)
-                         VALUES ($pladser, 'kartotek', 'aktiv')"
+                        "INSERT INTO beboerkartotek ($kolonner, bfe, kilde, status)
+                         VALUES ($pladser, :bfe, 'kartotek', 'aktiv')"
                     );
 
                     while (($r = fgetcsv($f, 0, ',', '"', '\\')) !== false) {
@@ -127,6 +144,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 default => $raa,
                             };
                         }
+
+                        $noegle = adresse_noegle_af_fritekst($adresse);
+                        $bind[':bfe'] = $gemtBfe[$noegle] ?? '';
 
                         $ind->execute($bind);
 

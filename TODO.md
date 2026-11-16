@@ -129,12 +129,21 @@ Beslut for hver enkelt:
       `betalingsservice.html` har stadig `INDSAET_TILMELDINGSLINK_HER`,
       så knappen virker ikke, og vejledningsboksen er synlig for
       besøgende. Linket dannes i BS Customer Portal.
-- [ ] **Uffe Gangelhof mangler telefon og adresse** i
-      `includes/bestyrelse.php`. De øvrige syv er på plads.
+- [x] **Uffe Gangelhof mangler telefon og adresse** i
+      `includes/bestyrelse.php`. Udfyldt.
 - [ ] **Læg beboerkartoteket ind.** Gå til `beboer-import.php` og upload
       `Adressekartotek 2026 - faerdig.csv` (213 rækker). Filen må ALDRIG
       lægges i git — depotet er offentligt, og filen rummer navne,
       hjemmeadresser, mails og telefonnumre på ~200 mennesker.
+- [ ] **BFE-numre mangler i kartoteket.** Knappen "Find ejer" på
+      `beboerkartotek.php` kopierer sommerhusadressen og åbner
+      boligejer.dk. Søg adressen frem, klik videre til OIS, og tag tallet
+      til sidst i adressen (`nyt.ois.dk/search/`**9856478**). Gem det i
+      feltet *BFE-nummer* på `beboer-ret.php`. Derefter er knappen et
+      direkte link til ejeroplysningerne. Det skal kun gøres én gang pr.
+      adresse — numrene overlever en genimport af regnearket.
+      Et automatisk opslag fra adresse til ejer kræver en nøgle hos
+      Datafordeleren (gratis, men skal søges); den er ikke sat op.
 - [ ] **28 rækker i kartoteket har en note.** Se dem på
       `beboerkartotek.php` under "med note". De vigtigste:
       *Odese SV* og *Koldeing* er stavefejl; Birkevænget 5 og
