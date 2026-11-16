@@ -155,6 +155,12 @@ Beslut for hver enkelt:
 
 - **"Download alle billeder som zip"** på medlemsfotos, hvis galleriet
   vokser.
+- **Vejlisten står nu to steder.** `includes/adresser.php` har den
+  rigtige stavemåde og bruges til at kontrollere adresser; `vedtaegter.php`
+  har sin egen liste, fordi den skal gengive vedtægterne ordret — med
+  slåfejlen. De to lister skal derfor IKKE slås sammen, men kommer en vej
+  til eller fra, skal begge rettes. Det samme gælder vejene i
+  `tools/kort/veje.overpassql`.
 - **Menuen bag login fylder meget** — Vedtægter, Medlemsfotos,
   Generalforsamling og Beskeder kunne samles under ét punkt. Menuen
   bryder stadig over to linjer på en bred skærm, når man er logget ind

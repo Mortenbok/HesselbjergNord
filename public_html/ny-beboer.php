@@ -14,6 +14,7 @@
 
 require __DIR__ . '/includes/auth.php';
 require __DIR__ . '/includes/db.php';
+require __DIR__ . '/includes/adresser.php';
 
 auth_start_session();
 
@@ -25,7 +26,16 @@ define('RESIDENT_MOVED_MIN', date('Y-m-d', strtotime('-1 year')));
 
 $errors = [];
 $done = false;
-$form = ['name' => '', 'address' => '', 'email' => '', 'phone' => '', 'moved_in' => '', 'note' => ''];
+// Adressen er delt i vej og husnummer. Vejen vælges fra foreningens egen
+// liste, så den ikke kan staves forkert, og nummeret kontrolleres for sig.
+// Den samlede adresse dannes først, når begge dele er godkendt.
+$form = [
+    'name' => '', 'road' => '', 'house_number' => '', 'email' => '',
+    'phone' => '', 'moved_in' => '', 'note' => '',
+];
+
+/** Den godkendte adresse på fast form, fx "Klitrosevej 18A". */
+$address = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     foreach ($form as $key => $_) {
@@ -72,8 +82,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Skriv navnet helt ud — undlad forkortelser som "M." eller "Jens K.".';
         }
 
-        if (mb_strlen($form['address']) < 3) {
-            $errors[] = 'Skriv din adresse i Hesselbjerg Nord.';
+        // ---------------------------------------------------------------
+        // Adressen
+        // ---------------------------------------------------------------
+        $vej = adresse_find_vej($form['road']);
+        $nummer = adresse_husnummer($form['house_number']);
+
+        if ($form['road'] === '') {
+            $errors[] = 'Vælg den vej, du bor på.';
+        } elseif ($vej === null) {
+            $errors[] = 'Vejen hører ikke til Grundejerforeningen Hesselbjerg Nord. '
+                . 'Vælg en vej på listen — kan du ikke finde din, så skriv til '
+                . 'bestyrelsen@hesselbjergnord.dk.';
+        }
+
+        if ($form['house_number'] === '') {
+            $errors[] = 'Skriv dit husnummer.';
+        } elseif ($nummer === null) {
+            $errors[] = 'Husnummeret skal være et tal fra 1 til 999, eventuelt '
+                . 'med ét bogstav efter — fx 12 eller 12A.';
+        }
+
+        if ($vej !== null && $nummer !== null) {
+            // Vejen gemmes med den rigtige stavemåde, og nummeret på fast
+            // form, så den samme adresse altid står ens i listen.
+            $address = adresse_saml($vej, $nummer);
+
+            $tilmeldte = $pdo->query('SELECT id, name, email, address FROM residents')->fetchAll();
+            $findes = adresse_findes_i_forvejen($tilmeldte, adresse_noegle($vej, $nummer));
+
+            if ($findes !== null) {
+                // Er det den samme person, er det en dobbeltindsendelse.
+                // Er det en anden, er huset formodentlig skiftet ejer, og
+                // så skal bestyrelsen ind over frem for at få to rækker.
+                $sammePerson = strcasecmp(trim((string)$findes['email']), $form['email']) === 0
+                    || strcasecmp(trim((string)$findes['name']), $form['name']) === 0;
+
+                $errors[] = $sammePerson
+                    ? 'Du har allerede tilmeldt ' . $address . '. Vi har din '
+                        . 'tilmelding — du behøver ikke sende den igen.'
+                    : $address . ' er allerede tilmeldt. Er huset skiftet ejer, '
+                        . 'så skriv til bestyrelsen@hesselbjergnord.dk, så retter '
+                        . 'vi det.';
+            }
         }
         if (!filter_var($form['email'], FILTER_VALIDATE_EMAIL)) {
             $errors[] = 'Skriv en gyldig mailadresse.';
@@ -108,7 +159,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         );
         $stmt->execute([
             ':name' => $form['name'],
-            ':address' => $form['address'],
+            ':address' => $address,
             ':email' => $form['email'],
             ':phone' => $form['phone'],
             ':moved_in' => $form['moved_in'] !== '' ? $form['moved_in'] : null,
@@ -522,6 +573,7 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
   .signup-form input[type="email"],
   .signup-form input[type="tel"],
   .signup-form input[type="date"],
+  .signup-form select,
   .signup-form textarea {
     width: 100%;
     padding: 12px 14px;
@@ -536,7 +588,27 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
 
   .signup-form textarea { resize: vertical; min-height: 96px; }
 
+  /* Rullelisten tegnes af styresystemet; punkterne skal derfor have en
+     baggrund for sig, ellers står hvid tekst på hvidt på Windows. */
+  .signup-form select option { background: #16222b; color: #fff; }
+
+  /* Vej og husnummer står på samme linje — nummeret fylder kun lidt. */
+  .adresse {
+    display: flex;
+    gap: 10px;
+  }
+  .adresse select { flex: 1 1 auto; min-width: 0; }
+  .adresse input { flex: 0 0 92px; }
+
+  .adresse-hjaelp {
+    margin-top: 8px;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: rgba(255,255,255,0.65);
+  }
+
   .signup-form input:focus-visible,
+  .signup-form select:focus-visible,
   .signup-form textarea:focus-visible {
     outline: 2px solid rgba(255,255,255,0.7);
     outline-offset: 1px;
@@ -694,10 +766,23 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
                  autocomplete="name" placeholder="fx Jette Hansen"
                  value="<?php echo $e($form['name']); ?>">
 
-          <label for="nbAddress">Adresse i Hesselbjerg Nord <span class="req">*</span></label>
-          <input id="nbAddress" type="text" name="address" required maxlength="255"
-                 autocomplete="street-address" placeholder="fx Klitrosevej 12"
-                 value="<?php echo $e($form['address']); ?>">
+          <label for="nbRoad">Adresse i Hesselbjerg Nord <span class="req">*</span></label>
+          <div class="adresse">
+            <select id="nbRoad" name="road" required>
+              <option value="">Vælg vej …</option>
+              <?php foreach (HBN_VEJE as $vej): ?>
+                <option value="<?php echo $e($vej); ?>"<?php echo $form['road'] === $vej ? ' selected' : ''; ?>>
+                  <?php echo $e($vej); ?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+            <input id="nbNumber" type="text" name="house_number" required maxlength="4"
+                   inputmode="numeric" aria-label="Husnummer" placeholder="Nr."
+                   value="<?php echo $e($form['house_number']); ?>">
+          </div>
+          <p class="adresse-hjaelp">Vælg din vej på listen, og skriv husnummeret —
+            fx 12 eller 12A. Står din vej ikke på listen, hører den ikke til
+            foreningen; skriv i så fald til bestyrelsen@hesselbjergnord.dk.</p>
 
           <label for="nbEmail">Mail <span class="req">*</span></label>
           <input id="nbEmail" type="email" name="email" required maxlength="255"
