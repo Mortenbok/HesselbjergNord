@@ -40,9 +40,12 @@ function sms_config(): array
         $config = is_readable($file) ? (array)require $file : [];
         $config += [
             'suresms_apikey' => '',
-            // Tom: beskeden kommer fra kontoens eget nummer. Et navn
-            // skal være godkendt under Sender-ID hos SureSMS først.
-            'sms_sender' => '',
+            // Godkendt som Sender-ID hos SureSMS 16. 11. 2026. Sættes
+            // der et navn, der IKKE er godkendt, tager SureSMS imod
+            // beskeden og smider den væk bagefter med "Unauthorized
+            // SenderID" — og det ses kun i udbakken. Tom streng
+            // betyder, at beskeden kommer fra kontoens eget nummer.
+            'sms_sender' => 'Hesselbjerg',
             // Kun nødvendig på maskiner uden en certifikatliste i PHP — fx
             // en arbejdscomputer. Står den tom, bruges systemets egen, og
             // det er det rigtige på serveren.

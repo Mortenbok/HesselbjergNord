@@ -16,17 +16,18 @@ login hos [SureSMS](https://suresms.com).
 
    ```php
    'suresms_apikey' => 'DIN NØGLE',
-   'sms_sender' => '',          // tom, til navnet er godkendt
+   'sms_sender' => 'Hesselbjerg',
    ```
 
-   **Lad `sms_sender` stå tom**, indtil navnet er godkendt under
-   **Sender-ID** hos SureSMS. Tom betyder, at beskeden kommer fra
-   kontoens eget telefonnummer, og så kommer den frem.
+   **Hesselbjerg** er godkendt som Sender-ID hos SureSMS den 16. 11.
+   2026, så modtagerne ser foreningens navn.
 
-   Sættes der et navn, der ikke er godkendt, siger SureSMS **ja** ved
-   afsendelsen og smider beskeden væk bagefter med *Unauthorized
-   SenderID*. Den afvisning står KUN i udbakken — derfor tjekker
-   `proev-sms.php` udbakken, før den siger, at det gik godt.
+   Skal der bruges et andet navn, skal det godkendes først. Et navn,
+   der ikke er godkendt, bliver **taget imod** ved afsendelsen og
+   smidt væk bagefter med *Unauthorized SenderID* — den afvisning står
+   KUN i udbakken. Derfor slår `proev-sms.php` beskeden op i udbakken,
+   før den siger, at det gik godt. En tom streng betyder, at beskeden
+   kommer fra kontoens eget telefonnummer; det virker altid.
 
 3. Filen ligger hverken i git eller i FTP-overførslen — den skal lægges på
    serveren i hånden med FileZilla. Det er med vilje: den indeholder

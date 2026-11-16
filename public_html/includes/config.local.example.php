@@ -11,12 +11,11 @@ return [
     // SureSMS: en API-nøgle fra https://app.suresms.com/UserApi/Index.
     'suresms_apikey' => '',
 
-    // Afsendernavnet, modtageren ser. LAD DEN STÅ TOM, indtil navnet
-    // er godkendt under Sender-ID hos SureSMS — ellers tager de imod
-    // beskeden og smider den væk bagefter med "Unauthorized
-    // SenderID", og det ses kun i udbakken. Tom betyder, at
-    // beskeden kommer fra kontoens eget telefonnummer.
-    'sms_sender' => '',
+    // Afsendernavnet, modtageren ser. "Hesselbjerg" er godkendt som
+    // Sender-ID hos SureSMS. Et navn, der IKKE er godkendt, bliver
+    // taget imod og smidt væk bagefter med "Unauthorized SenderID",
+    // og det ses kun i udbakken. Tom streng = kontoens eget nummer.
+    'sms_sender' => 'Hesselbjerg',
     'sms_sender' => 'Hesselbjerg',
 
     // Kun nødvendig på en maskine bag en TLS-inspicerende proxy,

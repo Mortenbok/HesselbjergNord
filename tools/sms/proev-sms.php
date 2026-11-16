@@ -148,4 +148,13 @@ if (stripos($status, 'fail') !== false || stripos($status, 'unauthor') !== false
     exit(1);
 }
 
-echo "\n   Beskeden er kommet frem.\n";
+// "Delivered" er det eneste, der betyder fremme. "Message accepted" vil
+// sige, at SureSMS har taget imod den og er på vej — det kan stadig gå
+// galt hos teleselskabet.
+if (stripos($status, 'deliver') !== false) {
+    echo "\n   Beskeden er leveret.\n";
+    exit(0);
+}
+
+echo "\n   Taget imod og på vej. Kør igen om et øjeblik for at se, om der\n";
+echo "   kommer til at stå \"Delivered\".\n";

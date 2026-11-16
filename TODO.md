@@ -111,11 +111,11 @@ Beslut for hver enkelt:
       nummer sender den intet. Mail virker allerede.
       Bemærk: et Client Id og et Secret Id virker IKKE — det skal
       være en API-nøgle. (Client Id'et ER bare teksten "APIKey".)
-- [ ] **Få "Hesselbjerg" godkendt som Sender-ID hos SureSMS.** Indtil
-      da står `sms_sender` tom, og beskederne kommer fra kontoens eget
-      telefonnummer. Sættes der et navn, der ikke er godkendt, siger
-      SureSMS ja ved afsendelsen og smider beskeden væk bagefter med
-      "Unauthorized SenderID" — det ses KUN i udbakken.
+- [x] **"Hesselbjerg" er godkendt som Sender-ID hos SureSMS**
+      (16. 11. 2026). `sms_sender` står nu til `Hesselbjerg`, så
+      beskederne kommer fra foreningens navn og ikke fra et
+      telefonnummer. Husk at rette linjen i `config.local.php` på
+      SERVEREN også — den følger ikke med et push.
 - [ ] **Syv bestyrelseslogins mangler.** Der er kun én bruger
       (`MortenBoKristensen`). De oprettes på `opret-medlemmer.php` —
       husk at sætte Rolle til **Bestyrelse**. Siden er ikke linket fra
