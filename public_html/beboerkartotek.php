@@ -53,7 +53,7 @@ $raekker = $stmt->fetchAll();
 
 // Husnumre sorteres ikke naturligt af databasen ("Klitrosevej 10" før "2").
 usort($raekker, static fn($a, $b) => strnatcasecmp($a['sommerhusadresse'], $b['sommerhusadresse'])
-    ?: strcmp($a['type'], $b['type']));
+    ?: strcmp($a['forhold'], $b['forhold']));
 
 $ialt = (int)$pdo->query('SELECT COUNT(*) FROM beboerkartotek')->fetchColumn();
 $mangler = (int)$pdo->query("SELECT COUNT(*) FROM beboerkartotek WHERE status = 'afventer_oplysninger'")->fetchColumn();
@@ -136,6 +136,22 @@ $medNoter = (int)$pdo->query("SELECT COUNT(*) FROM beboerkartotek WHERE noter IS
   td a { color: #cfe9ff; text-decoration: none; }
   td a:hover { text-decoration: underline; }
   .tom { color: rgba(255,255,255,0.8); font-weight: 300; }
+  a.ret {
+    color: #cfe9ff; text-decoration: none; white-space: nowrap;
+    border: 1px solid rgba(255,255,255,0.28); border-radius: 8px;
+    padding: 4px 12px; font-size: 0.84rem;
+  }
+  a.ret:hover { background: rgba(150,210,255,0.2); text-decoration: none; }
+  a.tilfoej {
+    display: inline-block; text-decoration: none; color: #fff;
+    background: rgba(70, 150, 225, 0.5); border: 1px solid rgba(150, 200, 255, 0.7);
+    border-radius: 10px; padding: 10px 20px;
+  }
+  a.tilfoej:hover { background: rgba(80, 165, 240, 0.65); }
+  .besked-ok {
+    background: rgba(40,140,70,0.32); color: #dcffe4; padding: 11px 14px;
+    border-radius: 10px; margin-bottom: 14px; font-size: 0.93rem;
+  }
   footer {
     position: relative; z-index: 1; text-align: center; padding: 10px 10px 30px;
     font-size: 0.85rem; color: rgba(255,255,255,0.8);
@@ -165,6 +181,9 @@ $medNoter = (int)$pdo->query("SELECT COUNT(*) FROM beboerkartotek WHERE noter IS
   <div class="container">
     <div class="panel">
       <h1>Beboerkartotek</h1>
+      <?php if (($_GET['besked'] ?? '') !== ''): ?>
+        <div class="besked-ok"><?php echo $e((string)$_GET['besked']); ?></div>
+      <?php endif; ?>
       <p class="lead">Hvem bor hvor. Kartoteket fyldes fra bestyrelsens regneark
         og vokser derefter af sig selv, når nye beboere tilmelder sig på
         <a href="ny-beboer.php" style="color:#cfe9ff;">Ny beboer</a>.</p>
@@ -188,6 +207,10 @@ $medNoter = (int)$pdo->query("SELECT COUNT(*) FROM beboerkartotek WHERE noter IS
           <b><?php echo $medNoter; ?></b><span>med note</span>
         </a>
       </div>
+
+      <p style="margin-bottom:14px;">
+        <a class="tilfoej" href="beboer-ret.php">+ Tilføj beboer</a>
+      </p>
 
       <form method="get" class="soeg">
         <input type="search" name="s" placeholder="Søg på navn, adresse, mail, by eller telefon"
@@ -220,21 +243,19 @@ $medNoter = (int)$pdo->query("SELECT COUNT(*) FROM beboerkartotek WHERE noter IS
                 <th>Mail</th>
                 <th>Telefon</th>
                 <th></th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
               <?php foreach ($raekker as $r): ?>
                 <?php
                   $venter = $r['status'] === 'afventer_oplysninger';
-                  $klasse = trim(($r['type'] === 'medejer' ? 'medejer ' : '') . ($venter ? 'mangler' : ''));
+                  $klasse = trim(($r['forhold'] === 'medejer' ? 'medejer ' : '') . ($venter ? 'mangler' : ''));
                 ?>
                 <tr class="<?php echo $klasse; ?>">
                   <td>
                     <?php echo $e($r['sommerhusadresse']); ?>
-                    <?php if ($r['nr2'] !== ''): ?>
-                      <span class="note">&amp; <?php echo $e($r['nr2']); ?></span>
-                    <?php endif; ?>
-                    <?php if ($r['type'] === 'medejer'): ?>
+                    <?php if ($r['forhold'] === 'medejer'): ?>
                       <div class="note">medejer</div>
                     <?php endif; ?>
                   </td>
@@ -243,15 +264,13 @@ $medNoter = (int)$pdo->query("SELECT COUNT(*) FROM beboerkartotek WHERE noter IS
                     <?php if ((int)$r['bestyrelse'] === 1): ?>
                       <div><span class="maerke best"><?php echo $e($r['rolle'] !== '' ? $r['rolle'] : 'Bestyrelse'); ?></span></div>
                     <?php endif; ?>
-                    <?php if ($r['navn_i_arket'] !== ''): ?>
-                      <div class="note">i arket: <?php echo $e($r['navn_i_arket']); ?></div>
-                    <?php endif; ?>
                   </td>
                   <td>
                     <?php if ($venter): ?>
                       <span class="maerke vent">afventer</span>
                     <?php else: ?>
                       <?php echo $e($r['hjemmeadresse']); ?><br>
+                      <?php if ($r['sted'] !== ''): ?><div class="note"><?php echo $e($r['sted']); ?></div><?php endif; ?>
                       <?php echo $e(trim($r['postnr'] . ' ' . $r['by'])); ?>
                       <?php if ($r['land'] !== ''): ?>
                         <div class="note"><?php echo $e($r['land']); ?></div>
@@ -276,6 +295,9 @@ $medNoter = (int)$pdo->query("SELECT COUNT(*) FROM beboerkartotek WHERE noter IS
                     <?php if (trim((string)$r['noter']) !== ''): ?>
                       <span class="note"><?php echo $e($r['noter']); ?></span>
                     <?php endif; ?>
+                  </td>
+                  <td>
+                    <a class="ret" href="beboer-ret.php?id=<?php echo (int)$r['id']; ?>">Ret</a>
                   </td>
                 </tr>
               <?php endforeach; ?>

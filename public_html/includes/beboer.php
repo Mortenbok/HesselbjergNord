@@ -20,6 +20,45 @@ require_once __DIR__ . '/adresser.php';
 /** Hvor længe et link fra bekræftelsesmailen virker. */
 const BEBOER_TOKEN_DAGE = 30;
 
+/**
+ * Kartotekets felter — ét sted, som både importen, listen og rettesiden
+ * retter sig efter.
+ *
+ * Nøglen er kolonnen i databasen, 'ark' er overskriften i regnearket, og
+ * 'navn' er det, der står på skærmen. Kommer der en kolonne til i arket,
+ * skal den tilføjes her OG i CREATE TABLE i includes/db.php.
+ */
+const BEBOER_FELTER = [
+    'forhold' => ['ark' => 'Forhold', 'navn' => 'Forhold', 'type' => 'valg'],
+    'sommerhusadresse' => ['ark' => 'Sommerhusadresse', 'navn' => 'Sommerhusadresse', 'type' => 'tekst'],
+    'vej' => ['ark' => 'Vej', 'navn' => 'Vej', 'type' => 'tekst'],
+    'nr' => ['ark' => 'Nr', 'navn' => 'Nr.', 'type' => 'kort'],
+    'bestyrelse' => ['ark' => 'Bestyrelse', 'navn' => 'I bestyrelsen', 'type' => 'ja-nej'],
+    'kontaktperson' => ['ark' => 'Kontaktperson', 'navn' => 'Kontaktperson', 'type' => 'tekst'],
+    'hjemmeadresse' => ['ark' => 'Hjemmeadresse', 'navn' => 'Hjemmeadresse', 'type' => 'tekst'],
+    'sted' => ['ark' => 'Sted', 'navn' => 'Sted', 'type' => 'tekst'],
+    'postnr' => ['ark' => 'Postnr', 'navn' => 'Postnr.', 'type' => 'kort'],
+    'by' => ['ark' => 'By', 'navn' => 'By', 'type' => 'tekst'],
+    'land' => ['ark' => 'Land', 'navn' => 'Land', 'type' => 'tekst'],
+    'mail' => ['ark' => 'Mail', 'navn' => 'Mail', 'type' => 'mail'],
+    'mail2' => ['ark' => 'Mail 2', 'navn' => 'Mail 2', 'type' => 'mail'],
+    'telefon' => ['ark' => 'Telefon', 'navn' => 'Telefon', 'type' => 'kort'],
+    'telefon2' => ['ark' => 'Telefon 2', 'navn' => 'Telefon 2', 'type' => 'kort'],
+    'rolle' => ['ark' => 'Rolle', 'navn' => 'Rolle i bestyrelsen', 'type' => 'tekst'],
+];
+
+/** Kolonnen 'by' er et reserveret ord i MySQL og skal i backticks. */
+function beboer_kolonne(string $felt): string
+{
+    return $felt === 'by' ? '`by`' : $felt;
+}
+
+/** Felterne, som de skrives i en SELECT/INSERT. */
+function beboer_kolonner(): array
+{
+    return array_map('beboer_kolonne', array_keys(BEBOER_FELTER));
+}
+
 /** Kun bestyrelsen må se og rette i kartoteket. */
 function beboer_can_manage(?array $user): bool
 {
@@ -67,17 +106,17 @@ function beboer_opret(PDO $pdo, array $data): array
 {
     $stmt = $pdo->prepare(
         'INSERT INTO beboerkartotek
-            (type, sommerhusadresse, vej, nr, kontaktperson, mail, telefon,
+            (forhold, sommerhusadresse, vej, nr, kontaktperson, mail, telefon,
              flyttet_ind, noter, kilde, status, token, token_udloeb, created_at)
          VALUES
-            (:type, :adresse, :vej, :nr, :navn, :mail, :telefon,
+            (:forhold, :adresse, :vej, :nr, :navn, :mail, :telefon,
              :flyttet_ind, :noter, :kilde, :status, :token, :udloeb, NOW())'
     );
 
     $token = beboer_nyt_token();
 
     $stmt->execute([
-        ':type' => 'ejer',
+        ':forhold' => 'ejer',
         ':adresse' => $data['adresse'],
         ':vej' => $data['vej'],
         ':nr' => $data['nr'],

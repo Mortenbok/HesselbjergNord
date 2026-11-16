@@ -218,16 +218,14 @@ try {
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS beboerkartotek (
             id INT NOT NULL AUTO_INCREMENT,
-            type ENUM('ejer', 'medejer') NOT NULL DEFAULT 'ejer',
+            forhold ENUM('ejer', 'medejer') NOT NULL DEFAULT 'ejer',
             sommerhusadresse VARCHAR(255) NOT NULL,
             vej VARCHAR(100) NOT NULL DEFAULT '',
             nr VARCHAR(10) NOT NULL DEFAULT '',
-            nr2 VARCHAR(10) NOT NULL DEFAULT '',
             bestyrelse TINYINT(1) NOT NULL DEFAULT 0,
-            rolle VARCHAR(60) NOT NULL DEFAULT '',
             kontaktperson VARCHAR(255) NOT NULL,
-            navn_i_arket VARCHAR(255) NOT NULL DEFAULT '',
             hjemmeadresse VARCHAR(255) NOT NULL DEFAULT '',
+            sted VARCHAR(100) NOT NULL DEFAULT '',
             postnr VARCHAR(12) NOT NULL DEFAULT '',
             `by` VARCHAR(100) NOT NULL DEFAULT '',
             land VARCHAR(80) NOT NULL DEFAULT '',
@@ -235,6 +233,7 @@ try {
             mail2 VARCHAR(255) NOT NULL DEFAULT '',
             telefon VARCHAR(32) NOT NULL DEFAULT '',
             telefon2 VARCHAR(32) NOT NULL DEFAULT '',
+            rolle VARCHAR(60) NOT NULL DEFAULT '',
             flyttet_ind DATE NULL DEFAULT NULL,
             noter TEXT NULL DEFAULT NULL,
             kilde ENUM('kartotek', 'ny-beboer') NOT NULL DEFAULT 'kartotek',
@@ -251,6 +250,30 @@ try {
             KEY idx_beboer_status (status)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     ");
+
+    // Kartoteket skal have præcis de kolonner, regnearket har. Tabellen kan
+    // være oprettet efter en ældre udgave af arket, så den rettes til her.
+    // Kolonnerne flyttes med ALTER og ikke ved at droppe tabellen — en
+    // DROP ville tage alle rækker med sig, også dem beboerne selv har
+    // oprettet gennem Ny beboer.
+    $bk = $pdo->query('SHOW COLUMNS FROM beboerkartotek')->fetchAll(PDO::FETCH_COLUMN, 0);
+
+    if (in_array('type', $bk, true) && !in_array('forhold', $bk, true)) {
+        $pdo->exec("ALTER TABLE beboerkartotek
+            CHANGE `type` forhold ENUM('ejer', 'medejer') NOT NULL DEFAULT 'ejer'");
+    }
+
+    if (!in_array('sted', $bk, true)) {
+        $pdo->exec("ALTER TABLE beboerkartotek
+            ADD COLUMN sted VARCHAR(100) NOT NULL DEFAULT '' AFTER hjemmeadresse");
+    }
+
+    // Kolonner fra en tidligere udgave af arket, som ikke er der længere.
+    foreach (['navn_i_arket', 'valgt_ud_fra', 'nr2'] as $vaek) {
+        if (in_array($vaek, $bk, true)) {
+            $pdo->exec('ALTER TABLE beboerkartotek DROP COLUMN ' . $vaek);
+        }
+    }
 
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS residents (

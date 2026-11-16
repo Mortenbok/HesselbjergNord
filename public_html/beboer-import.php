@@ -29,16 +29,22 @@ $csrf = auth_csrf_token();
 $fejl = '';
 $resultat = null;
 
-/** Kolonnerne, filen skal have. Rækkefølgen er ligegyldig — navnene tæller. */
-const KOLONNER = [
-    'Sektion', 'Sommerhusadresse', 'Vej', 'Nr', 'Bestyrelse', 'Rolle',
-    'Kontaktperson', 'Hjemmeadresse', 'Postnr', 'By', 'Land', 'Mail',
-    'Mail 2', 'Telefon', 'Telefon 2',
-];
+/**
+ * Overskrifterne, filen skal have. De kommer fra BEBOER_FELTER, så importen
+ * følger med af sig selv, hvis regnearket får en kolonne mere.
+ */
+$KOLONNER = array_column(BEBOER_FELTER, 'ark');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!auth_csrf_valid($_POST['csrf_token'] ?? null)) {
         $fejl = 'Sessionen er udløbet. Genindlæs siden, og prøv igen.';
+    } elseif (($_POST['handling'] ?? '') === 'toem') {
+        // Tømmer HELE tabellen — også dem, der selv har tilmeldt sig.
+        // TRUNCATE nulstiller samtidig id-tælleren.
+        $foer = (int)$pdo->query('SELECT COUNT(*) FROM beboerkartotek')->fetchColumn();
+        $pdo->exec('TRUNCATE TABLE beboerkartotek');
+        $resultat = ['indsat' => 0, 'sprunget' => 0, 'linjer' => [],
+                     'toemt' => $foer];
     } elseif (!isset($_FILES['fil']) || $_FILES['fil']['error'] !== UPLOAD_ERR_OK) {
         $fejl = 'Vælg en CSV-fil.';
     } else {
@@ -61,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $plads[trim((string)$navn)] = $i;
             }
 
-            $mangler = array_values(array_filter(KOLONNER, fn($k) => !isset($plads[$k])));
+            $mangler = array_values(array_filter($KOLONNER, fn($k) => !isset($plads[$k])));
 
             if ($mangler) {
                 $fejl = 'Filen mangler kolonnerne: ' . implode(', ', $mangler);
@@ -85,15 +91,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $pdo->exec("DELETE FROM beboerkartotek WHERE kilde = 'kartotek'");
                     }
 
+                    $felter = array_keys(BEBOER_FELTER);
+                    $kolonner = implode(', ', array_map('beboer_kolonne', $felter));
+                    $pladser = ':' . implode(', :', $felter);
+
                     $ind = $pdo->prepare(
-                        'INSERT INTO beboerkartotek
-                            (type, sommerhusadresse, vej, nr, nr2, bestyrelse, rolle,
-                             kontaktperson, navn_i_arket, hjemmeadresse, postnr, `by`, land,
-                             mail, mail2, telefon, telefon2, noter, kilde, status)
-                         VALUES
-                            (:type, :adresse, :vej, :nr, :nr2, :best, :rolle,
-                             :navn, :navn_ark, :hjem, :postnr, :by, :land,
-                             :mail, :mail2, :tlf, :tlf2, :noter, :kilde, :status)'
+                        "INSERT INTO beboerkartotek ($kolonner, kilde, status)
+                         VALUES ($pladser, 'kartotek', 'aktiv')"
                     );
 
                     while (($r = fgetcsv($f, 0, ',', '"', '\\')) !== false) {
@@ -110,30 +114,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             continue;
                         }
 
-                        $best = strtoupper($hent($r, 'Bestyrelse'));
+                        $bind = [];
 
-                        $ind->execute([
-                            ':type' => strtolower($hent($r, 'Sektion')) === 'medejer' ? 'medejer' : 'ejer',
-                            ':adresse' => $adresse,
-                            ':vej' => $hent($r, 'Vej'),
-                            ':nr' => $hent($r, 'Nr'),
-                            ':nr2' => isset($plads['Nr 2']) ? $hent($r, 'Nr 2') : '',
-                            ':best' => ($best === 'TRUE' || $best === 'SAND' || $best === '1') ? 1 : 0,
-                            ':rolle' => $hent($r, 'Rolle'),
-                            ':navn' => $navn,
-                            ':navn_ark' => isset($plads['Navn som i arket']) ? $hent($r, 'Navn som i arket') : '',
-                            ':hjem' => $hent($r, 'Hjemmeadresse'),
-                            ':postnr' => $hent($r, 'Postnr'),
-                            ':by' => $hent($r, 'By'),
-                            ':land' => $hent($r, 'Land'),
-                            ':mail' => mb_strtolower($hent($r, 'Mail')),
-                            ':mail2' => mb_strtolower($hent($r, 'Mail 2')),
-                            ':tlf' => $hent($r, 'Telefon'),
-                            ':tlf2' => $hent($r, 'Telefon 2'),
-                            ':noter' => isset($plads['Skal tjekkes']) ? $hent($r, 'Skal tjekkes') : '',
-                            ':kilde' => 'kartotek',
-                            ':status' => 'aktiv',
-                        ]);
+                        foreach (BEBOER_FELTER as $felt => $info) {
+                            $raa = $hent($r, $info['ark']);
+
+                            $bind[':' . $felt] = match ($info['type']) {
+                                // Regneark skriver TRUE/SAND/1 — alt andet er nej.
+                                'ja-nej' => in_array(strtoupper($raa), ['TRUE', 'SAND', '1', 'JA'], true) ? 1 : 0,
+                                'valg' => strtolower($raa) === 'medejer' ? 'medejer' : 'ejer',
+                                'mail' => mb_strtolower($raa),
+                                default => $raa,
+                            };
+                        }
+
+                        $ind->execute($bind);
 
                         $indsat++;
                     }
@@ -233,9 +228,13 @@ $fraArk = (int)$pdo->query("SELECT COUNT(*) FROM beboerkartotek WHERE kilde = 'k
 
       <?php if ($resultat !== null): ?>
         <div class="besked ok">
+          <?php if (isset($resultat['toemt'])): ?>
+            Kartoteket er tømt. <?php echo (int)$resultat['toemt']; ?> rækker blev slettet.
+          <?php else: ?>
           <?php echo (int)$resultat['indsat']; ?> rækker lagt i kartoteket.
           <?php if ($resultat['sprunget'] > 0): ?>
             <?php echo (int)$resultat['sprunget']; ?> sprunget over.
+          <?php endif; ?>
           <?php endif; ?>
         </div>
         <?php if ($resultat['linjer']): ?>
@@ -263,6 +262,22 @@ $fraArk = (int)$pdo->query("SELECT COUNT(*) FROM beboerkartotek WHERE kilde = 'k
         </label>
 
         <button type="submit">Importér</button>
+      </form>
+    </div>
+
+    <div class="panel">
+      <h2 style="font-size:1.2rem;margin-bottom:10px;">Tøm kartoteket</h2>
+      <p>Sletter <strong>alle</strong> rækker — også dem, beboerne selv har
+        oprettet gennem Ny beboer. Brug det, når kartoteket skal fyldes helt
+        forfra fra regnearket. Det kan ikke fortrydes.</p>
+
+      <form method="post"
+            onsubmit="return confirm('Slet alle <?php echo $antal; ?> rækker i beboerkartoteket? Det kan ikke fortrydes.');">
+        <input type="hidden" name="csrf_token" value="<?php echo $e($csrf); ?>">
+        <button type="submit" name="handling" value="toem"
+                style="background:transparent;border-color:rgba(255,140,140,0.55);color:#ffd3d3;">
+          Tøm kartoteket (<?php echo $antal; ?> rækker)
+        </button>
       </form>
     </div>
 
