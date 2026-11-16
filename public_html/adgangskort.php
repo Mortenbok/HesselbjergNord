@@ -326,6 +326,7 @@ $csrf = auth_csrf_token();
     <div class="nav-links">
       <a href="index.html">Forside</a>
       <a href="bestyrelsen.php">Bestyrelsen</a>
+      <a href="hjertestarter.html">Hjertestarter</a>
       <a href="omraade.html">Området</a>
       <a href="aarshjul.php">Årshjul</a>
       <a href="vedtaegter.php">Vedtægter</a>

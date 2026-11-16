@@ -80,6 +80,14 @@ nav.open .nav-toggle span:nth-child(3) { transform: translateY(-7px) rotate(-45d
     white-space: normal;      /* Lange ord som "Generalforsamling" må brydes. */
   }
 
+  /* Reglen ovenfor sætter display på ALLE links i menuen og slår dermed
+     browserens egen [hidden] { display: none } ud — den har lavere vægt.
+     Uden denne linje dukkede medlems- og bestyrelsessiderne op i
+     mobilmenuen for alle, også dem der ikke kunne åbne dem. */
+  nav.has-toggle .nav-links a[hidden] {
+    display: none;
+  }
+
   nav.has-toggle .nav-links a:hover,
   nav.has-toggle .nav-links a:focus-visible {
     background: rgba(255, 255, 255, 0.14);
