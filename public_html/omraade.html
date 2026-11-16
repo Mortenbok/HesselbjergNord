@@ -463,6 +463,11 @@
     kort.fitBounds([[DATA.bounds[0][0], DATA.bounds[0][1]], [DATA.bounds[1][0], DATA.bounds[1][1]]],
       { padding: [30, 30] });
 
+    // Et trin længere ud end det, der lige præcis omslutter vejene. Så kan
+    // man se, hvor området ligger i forhold til stranden, klinten og
+    // Ristingevej, i stedet for at det fylder hele rammen.
+    kort.setZoom(kort.getZoom() - 1);
+
     // Rullehjulet skal ikke stjæle siden, når man scroller forbi kortet.
     kort.on('click', function () { kort.scrollWheelZoom.enable(); });
     kort.on('mouseout', function () { kort.scrollWheelZoom.disable(); });
