@@ -1,6 +1,6 @@
 # TODO — hesselbjergnord.dk
 
-Sidst opdateret: 13. september 2026
+Sidst opdateret: 16. november 2026
 
 ---
 
@@ -29,7 +29,7 @@ Skaleres til 1920 px bred og gemmes som WebP med JPG som reserve.
 Forventet: over 90 % mindre uden synlig forskel.
 
 ### 1.2 robots.txt og sitemap.xml mangler helt
-Ingen af delene findes. Et sitemap betyder ekstra meget her, fordi fem
+Ingen af delene findes. Et sitemap betyder ekstra meget her, fordi fire
 sider nu er skjult i menuen (se punkt 3) — Google kan ikke længere finde
 dem ved at følge links.
 
@@ -42,38 +42,44 @@ indhold og dele placeringen mellem dem.
 Deles siden på Facebook — som er den måde, en grundejerforening spreder
 sig på — vises den som et nøgent link uden billede og beskrivelse.
 
-### 1.5 Beskrivelser mangler på fire sider
-`omraade.html`, `vedtaegter.html`, `kontingent.html`, `aktiviteter.html`.
+### 1.5 Beskrivelser mangler på tre sider
+`omraade.html`, `kontingent.html`, `aktiviteter.html`.
 
 ### 1.6 Strukturerede data
 `Organization`/`LocalBusiness` i JSON-LD. Lille gevinst, hurtigt gjort.
 
 ---
 
-## 2. Fire sider er reelt tomme  ← vigtigst af alt, og kun du kan gøre det
+## 2. Tre sider er reelt tomme  ← vigtigst af alt, og kun du kan gøre det
 
 Målt synligt indhold:
 
 | Side | Ord |
 |---|---|
 | `omraade.html` | ~39 |
-| `vedtaegter.html` | ~32 |
 | `kontingent.html` | ~32 |
 | `aktiviteter.html` | ~32 |
 | `betalingsservice.html` | ~345 |
 | `hjertestarter.html` | ~260 |
 | `index.html` | ~101 |
 
-De fire første står stadig som "Under opbygning". Ingen meta-tags kan
+De tre første står stadig som "Under opbygning". Ingen meta-tags kan
 løfte en tom side — der skal tekst på. Det er skrivearbejde, ikke kodning.
+
+`vedtaegter.html` er klaret: vedtægterne ligger nu på `vedtaegter.php`
+bag login, med hele teksten og den underskrevne PDF vedhæftet. Den gamle
+offentlige fil står tilbage som henvisning til den nye side.
 
 ---
 
-## 3. De fem skjulte sider er nu forældreløse
+## 3. De fire skjulte sider er nu forældreløse
 
-`omraade`, `vedtaegter`, `kontingent`, `aktiviteter` og
-`betalingsservice` er taget ud af menuen, men findes stadig og svarer
-med 200. Ingen sider linker til dem længere.
+`omraade`, `kontingent`, `aktiviteter` og `betalingsservice` er taget ud
+af menuen, men findes stadig og svarer med 200. Ingen sider linker til
+dem længere.
+
+(`vedtaegter.html` er afgjort: den har fået `noindex` og sender videre
+til `vedtaegter.php` i medlemsområdet.)
 
 Beslut for hver enkelt:
 - **Skal findes** → den skal linkes fra et sted, ellers regner Google den
@@ -106,6 +112,10 @@ Beslut for hver enkelt:
 - [ ] **Tjek at `includes/db.php` giver 403** i browseren. Gør den ikke
       det, er `.htaccess` ikke kommet med op, og databasens adgangskode
       kan hentes.
+- [ ] **Tjek at `dokumenter/vedtaegter-2017-02-19.pdf` giver 403** i
+      browseren — og at den samme PDF kan åbnes fra `vedtaegter.php`,
+      når man er logget ind. Giver den direkte adresse 200, er
+      `dokumenter/.htaccess` ikke kommet med op.
 - [ ] **Overvej at flytte databasens adgangskode** ud af
       `includes/db.php`, som ligger i git, og ind i
       `config.local.php`, som ikke gør.
@@ -116,8 +126,10 @@ Beslut for hver enkelt:
 
 - **"Download alle billeder som zip"** på medlemsfotos, hvis galleriet
   vokser.
-- **Menuen bag login fylder meget** — Medlemsfotos, Generalforsamling,
-  Regnskab og Beskeder kunne samles under ét punkt.
+- **Menuen bag login fylder meget** — Vedtægter, Medlemsfotos,
+  Generalforsamling, Regnskab og Beskeder kunne samles under ét punkt.
+  Med Vedtægter som nyt punkt bryder menuen nu over to linjer på en
+  bred skærm, når man er logget ind som bestyrelse.
 - **Fælles stylesheet.** CSS'en står i dag som `<style>` i hver enkelt
   fil — omkring 2.900 linjer, hvor menuen alene findes i ti kopier.
   Et fælles `style.css` ville gøre alle senere rettelser til ét sted.

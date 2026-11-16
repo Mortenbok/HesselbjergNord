@@ -397,6 +397,7 @@ $loggedIn = $user !== null;
         <a href="ny-beboer.php">Ny beboer</a>
       <?php endif; ?>
       <?php if ($loggedIn): ?>
+        <a href="vedtaegter.php">Vedtægter</a>
         <a href="medlemsfotos.php">Medlemsfotos</a>
         <a href="generalforsamling.php">Generalforsamling</a>
         <a href="regnskab.php">Regnskab</a>

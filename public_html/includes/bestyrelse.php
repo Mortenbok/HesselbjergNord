@@ -67,7 +67,7 @@ const BOARD_MEMBERS = [
     ],
     [
         'name' => 'Morten Bo Kristensen',
-        'role' => 'Vejudvalg',
+        'role' => 'Webkoordinator',
         'initials' => 'MBK',
         'photo' => '',
         'phone' => '+4542403323',

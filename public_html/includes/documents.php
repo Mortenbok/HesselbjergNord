@@ -527,6 +527,7 @@ function documents_render_page(PDO $pdo, string $category, array $page, array $u
       <a href="index.html">Forside</a>
       <a href="bestyrelsen.php">Bestyrelsen</a>
       <a href="hjertestarter.html">Hjertestarter</a>
+      <a href="vedtaegter.php">Vedtægter</a>
       <a href="medlemsfotos.php"<?php echo $page['nav'] === 'medlemsfotos.php' ? ' class="active"' : ''; ?>>Medlemsfotos</a>
       <a href="generalforsamling.php"<?php echo $page['nav'] === 'generalforsamling.php' ? ' class="active"' : ''; ?>>Generalforsamling</a>
       <a href="regnskab.php"<?php echo $page['nav'] === 'regnskab.php' ? ' class="active"' : ''; ?>>Regnskab</a>

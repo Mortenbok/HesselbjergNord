@@ -50,6 +50,7 @@ $password = (string)($_POST['password'] ?? '');
 // bruges til at sende folk videre til et fremmed domæne.
 $allowedNext = [
     'medlemsfotos.php',
+    'vedtaegter.php',
     'generalforsamling.php',
     'regnskab.php',
     'bestyrelsen.php',
