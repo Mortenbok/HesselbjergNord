@@ -650,6 +650,7 @@ function documents_render_page(array $arkiv, array $user, array $message): void
       <?php if (($user['role'] ?? '') === 'bestyrelse'): ?>
         <a href="besked.php">Beskeder</a>
         <a href="adgangskort.php">Adgangskort</a>
+        <a href="beboerkartotek.php">Beboerkartotek</a>
       <?php endif; ?>
     </div>
     <div class="nav-account">

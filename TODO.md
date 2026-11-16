@@ -131,6 +131,31 @@ Beslut for hver enkelt:
       besøgende. Linket dannes i BS Customer Portal.
 - [ ] **Uffe Gangelhof mangler telefon og adresse** i
       `includes/bestyrelse.php`. De øvrige syv er på plads.
+- [ ] **Læg beboerkartoteket ind.** Gå til `beboer-import.php` og upload
+      `Adressekartotek 2026 - faerdig.csv` (213 rækker). Filen må ALDRIG
+      lægges i git — depotet er offentligt, og filen rummer navne,
+      hjemmeadresser, mails og telefonnumre på ~200 mennesker.
+- [ ] **28 rækker i kartoteket har en note.** Se dem på
+      `beboerkartotek.php` under "med note". De vigtigste:
+      *Odese SV* og *Koldeing* er stavefejl; Birkevænget 5 og
+      Gulspurvevænget 1 mangler postnummer; Duevænget 10 har en ugyldig
+      mail; og 18 rækker har en **gættet kontaktperson**, fordi mailen
+      ikke pegede på nogen af navnene (fx `wulff@wulffmetal.dk` for
+      "Dorte S. og Torben H. Pedersen").
+- [ ] **Vejnavnet: Hyldeskovvænget eller Hylleskovvænget?** Kartoteket og
+      vedtægterne skriver *Hyldeskov*; OpenStreetMap og
+      `includes/bestyrelse.php` skriver *Hylleskov*. Hjemmesiden retter i
+      dag til *Hylleskov* (`includes/adresser.php`), og 17 af de 203
+      adgangskort er trykt med den stavemåde. Find ud af, hvad der er
+      rigtigt, før kortene printes.
+- [ ] **Ristingevej 121 og 123 står i kartoteket**, men Ristingevej er
+      ikke en af de 20 veje i vedtægternes § 1. Enten mangler vejen i
+      vedtægterne, eller også hører de to huse ikke til foreningen.
+      Hjemmesiden afviser i dag adressen som "uden for foreningen".
+- [ ] **`residents`-tabellen er ikke længere i brug.** `ny-beboer.php`
+      skriver nu i `beboerkartotek`. De gamle rækker i `residents` kan
+      slettes, når bestyrelsen har set dem efter — og `beboere.php`
+      skal stadig fjernes fra serveren (se ovenfor).
 - [ ] **Årshjulet: bestyrelsesmøde i september "inden generalforsamlingen".**
       Generalforsamlingen er sidste lørdag i august, så et møde i
       september ligger EFTER den, ikke før. Enten er måneden forkert

@@ -1,6 +1,6 @@
 <?php
-require __DIR__ . '/includes/auth.php';
-require __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/db.php';
 
 // Alt herunder kræver login — besøgende uden session sendes til forsiden,
 // hvor loginvinduet åbner automatisk.
@@ -277,6 +277,7 @@ $photos = $stmt->fetchAll();
       <?php if (($user['role'] ?? '') === 'bestyrelse'): ?>
         <a href="besked.php">Beskeder</a>
         <a href="adgangskort.php">Adgangskort</a>
+        <a href="beboerkartotek.php">Beboerkartotek</a>
       <?php endif; ?>
     </div>
     <div class="nav-account">

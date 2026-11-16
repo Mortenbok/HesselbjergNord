@@ -4,7 +4,7 @@
  * navigationen kan vise "Log ud" og linket til Medlemsfotos.
  */
 
-require __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/auth.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, private');

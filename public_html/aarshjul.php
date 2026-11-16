@@ -10,9 +10,9 @@
  * includes/aarshjul.php.
  */
 
-require __DIR__ . '/includes/auth.php';
-require __DIR__ . '/includes/db.php';
-require __DIR__ . '/includes/aarshjul.php';
+require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/aarshjul.php';
 
 auth_start_session();
 

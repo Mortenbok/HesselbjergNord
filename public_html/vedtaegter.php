@@ -8,7 +8,7 @@
  * brugere, der er logget ind.
  */
 
-require __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/auth.php';
 
 /** Den underskrevne udgave, som ligger vedhæftet siden. */
 const VEDTAEGTER_PDF = 'vedtaegter-2017-02-19.pdf';
@@ -359,6 +359,7 @@ $underskrivere = [
       <?php if (($user['role'] ?? '') === 'bestyrelse'): ?>
         <a href="besked.php">Beskeder</a>
         <a href="adgangskort.php">Adgangskort</a>
+        <a href="beboerkartotek.php">Beboerkartotek</a>
       <?php endif; ?>
     </div>
     <div class="nav-account">

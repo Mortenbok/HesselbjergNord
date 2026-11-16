@@ -4,8 +4,8 @@
  * fetch() og forventer JSON; uden JavaScript virker et almindeligt POST også.
  */
 
-require __DIR__ . '/includes/auth.php';
-require __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/db.php';
 
 $wantsJson = strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false
     || strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'fetch';

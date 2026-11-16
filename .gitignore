@@ -1,2 +1,9 @@
 # Hemmeligheder hører ikke til i git.
 public_html/includes/config.local.php
+
+# Medlems- og beboeroplysninger må ALDRIG i git: depotet er offentligt, og
+# regnearket rummer navne, hjemmeadresser, mails og telefonnumre på ~200
+# navngivne mennesker. Kartoteket lægges i databasen via beboer-import.php.
+*.csv
+*.xls
+*.xlsx

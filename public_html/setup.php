@@ -6,8 +6,8 @@
  * bruger, afviser den enhver henvendelse. Slet gerne filen bagefter.
  */
 
-require __DIR__ . '/includes/auth.php';
-require __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/db.php';
 
 $userCount = (int)$pdo->query('SELECT COUNT(*) FROM users')->fetchColumn();
 $locked = $userCount > 0;

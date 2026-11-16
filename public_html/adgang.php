@@ -9,8 +9,8 @@
  * hvilke adresser der findes, eller om en kode er tæt på at være rigtig.
  */
 
-require __DIR__ . '/includes/auth.php';
-require __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/adgang.php';
 
 auth_start_session();

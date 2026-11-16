@@ -7,9 +7,9 @@
  * ?id=12&download=1 gemmer filen med sit oprindelige navn
  */
 
-require __DIR__ . '/includes/auth.php';
-require __DIR__ . '/includes/db.php';
-require __DIR__ . '/includes/documents.php';
+require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/documents.php';
 
 if (!auth_check()) {
     http_response_code(403);

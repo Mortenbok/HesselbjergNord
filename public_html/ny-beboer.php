@@ -12,9 +12,11 @@
  *   - Karantæne: samme session må sende én gang i minuttet.
  */
 
-require __DIR__ . '/includes/auth.php';
-require __DIR__ . '/includes/db.php';
-require __DIR__ . '/includes/adresser.php';
+require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/adresser.php';
+require_once __DIR__ . '/includes/mail.php';
+require_once __DIR__ . '/includes/beboer.php';
 
 auth_start_session();
 
@@ -26,6 +28,8 @@ define('RESIDENT_MOVED_MIN', date('Y-m-d', strtotime('-1 year')));
 
 $errors = [];
 $done = false;
+$mailSendt = false;
+$fortsaetLink = '';
 // Adressen er delt i vej og husnummer. Vejen vælges fra foreningens egen
 // liste, så den ikke kan staves forkert, og nummeret kontrolleres for sig.
 // Den samlede adresse dannes først, når begge dele er godkendt.
@@ -108,7 +112,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // form, så den samme adresse altid står ens i listen.
             $address = adresse_saml($vej, $nummer);
 
-            $tilmeldte = $pdo->query('SELECT id, name, email, address FROM residents')->fetchAll();
+            // Dubletter søges nu i beboerkartoteket, som både rummer
+            // bestyrelsens regneark og dem, der selv har tilmeldt sig.
+            $tilmeldte = $pdo->query(
+                'SELECT id, kontaktperson AS name, mail AS email,
+                        sommerhusadresse AS address
+                   FROM beboerkartotek'
+            )->fetchAll();
             $findes = adresse_findes_i_forvejen($tilmeldte, adresse_noegle($vej, $nummer));
 
             if ($findes !== null) {
@@ -153,18 +163,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$done && $errors === []) {
-        $stmt = $pdo->prepare(
-            'INSERT INTO residents (name, address, email, phone, moved_in, note, consent)
-             VALUES (:name, :address, :email, :phone, :moved_in, :note, 1)'
-        );
-        $stmt->execute([
-            ':name' => $form['name'],
-            ':address' => $address,
-            ':email' => $form['email'],
-            ':phone' => $form['phone'],
-            ':moved_in' => $form['moved_in'] !== '' ? $form['moved_in'] : null,
-            ':note' => $form['note'] !== '' ? $form['note'] : null,
+        $nyBeboer = beboer_opret($pdo, [
+            'adresse' => $address,
+            'vej' => $vej,
+            'nr' => $nummer,
+            'navn' => $form['name'],
+            'mail' => $form['email'],
+            'telefon' => $form['phone'],
+            'flyttet_ind' => $form['moved_in'],
+            'noter' => $form['note'],
         ]);
+
+        // Linket vises også på skærmen. Går mailen galt — forkert adresse,
+        // spamfilter, udbyder nede — må tilmeldingen ikke gå i stå.
+        $fortsaetLink = beboer_link($nyBeboer['token']);
+
+        $mailSendt = beboer_send_bekraeftelse(
+            $form['name'],
+            $form['email'],
+            $address,
+            $nyBeboer['token']
+        );
 
         $_SESSION['resident_last_post'] = time();
         $done = true;
@@ -616,6 +635,26 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
 
   .req { color: #ffc9a8; }
 
+  /* Knappen videre til resten af oplysningerne. */
+  .fortsaet {
+    display: inline-block;
+    margin: 6px 0 4px;
+    padding: 13px 26px;
+    border-radius: 10px;
+    background: rgba(70, 150, 225, 0.6);
+    border: 1px solid rgba(150, 200, 255, 0.75);
+    color: #fff;
+    text-decoration: none;
+    font-size: 1.02rem;
+  }
+  .fortsaet:hover { background: rgba(80, 165, 240, 0.75); }
+
+  .smaat {
+    font-size: 0.88rem;
+    color: rgba(255,255,255,0.7);
+    line-height: 1.5;
+  }
+
   .consent {
     display: flex;
     align-items: flex-start;
@@ -687,6 +726,7 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
       <a href="generalforsamling.php" data-members-only hidden>Generalforsamling</a>
       <a href="besked.php" data-board-only hidden>Beskeder</a>
       <a href="adgangskort.php" data-board-only hidden>Adgangskort</a>
+      <a href="beboerkartotek.php" data-board-only hidden>Beboerkartotek</a>
     </div>
     <div class="nav-account">
       <span class="nav-user" data-user-name hidden></span>
@@ -733,9 +773,37 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
     <?php if ($done): ?>
       <div class="panel ok" role="status">
         <h2>Tak for din tilmelding</h2>
-        <p>
-          Bestyrelsen har modtaget dine oplysninger og kontakter dig, hvis der
-          mangler noget. Du er velkommen til at skrive til
+
+        <?php if ($fortsaetLink !== ''): ?>
+          <p>
+            <?php if ($mailSendt): ?>
+              Vi har sendt dig en bekræftelse på mail.
+            <?php else: ?>
+              Bekræftelsen kunne ikke sendes på mail lige nu, men din tilmelding
+              er gemt.
+            <?php endif; ?>
+            Der mangler kun ét skridt: vi skal bruge din <strong>hjemmeadresse</strong>,
+            så indkaldelse til generalforsamlingen og opkrævning af kontingent
+            havner det rigtige sted — ikke i sommerhusets postkasse.
+          </p>
+
+          <p>
+            <a class="fortsaet" href="<?php echo $e($fortsaetLink); ?>">Udfyld resten nu</a>
+          </p>
+
+          <p class="smaat">
+            Du kan også gøre det senere — linket står i mailen og virker i
+            <?php echo BEBOER_TOKEN_DAGE; ?> dage.
+          </p>
+        <?php else: ?>
+          <p>
+            Bestyrelsen har modtaget dine oplysninger og kontakter dig, hvis der
+            mangler noget.
+          </p>
+        <?php endif; ?>
+
+        <p class="smaat">
+          Spørgsmål? Skriv til
           <a href="mailto:bestyrelsen@hesselbjergnord.dk">bestyrelsen@hesselbjergnord.dk</a>.
         </p>
       </div>

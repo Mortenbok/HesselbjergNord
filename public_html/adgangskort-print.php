@@ -9,8 +9,8 @@
  * endnu. Det er den, man bruger anden gang, man deler ud.
  */
 
-require __DIR__ . '/includes/auth.php';
-require __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/adgang.php';
 
 auth_require('index.html');

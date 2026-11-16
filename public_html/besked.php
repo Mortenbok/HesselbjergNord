@@ -12,10 +12,10 @@
  *           så det er i praksis alle)
  */
 
-require __DIR__ . '/includes/auth.php';
-require __DIR__ . '/includes/db.php';
-require __DIR__ . '/includes/sms.php';
-require __DIR__ . '/includes/mail.php';
+require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/sms.php';
+require_once __DIR__ . '/includes/mail.php';
 
 auth_require('index.html');
 
@@ -651,6 +651,7 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
       <a href="generalforsamling.php" data-members-only hidden>Generalforsamling</a>
       <a href="besked.php" class="active" data-board-only hidden>Beskeder</a>
       <a href="adgangskort.php" data-board-only hidden>Adgangskort</a>
+      <a href="beboerkartotek.php" data-board-only hidden>Beboerkartotek</a>
     </div>
     <div class="nav-account">
       <span class="nav-user" data-user-name hidden></span>

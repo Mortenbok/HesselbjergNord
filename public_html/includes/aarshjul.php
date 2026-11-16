@@ -681,6 +681,7 @@ function aarshjul_render_page(array $poster, ?array $user, array $message, int $
         <?php if ($canManage): ?>
           <a href="besked.php">Beskeder</a>
           <a href="adgangskort.php">Adgangskort</a>
+          <a href="beboerkartotek.php">Beboerkartotek</a>
         <?php endif; ?>
       <?php endif; ?>
     </div>

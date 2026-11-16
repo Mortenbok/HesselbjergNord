@@ -6,8 +6,8 @@
  * når et hus skifter ejer. Siden kræver login som bestyrelsesmedlem.
  */
 
-require __DIR__ . '/includes/auth.php';
-require __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/adgang.php';
 
 auth_require('index.html');
@@ -216,6 +216,7 @@ $csrf = auth_csrf_token();
       <a href="generalforsamling.php">Generalforsamling</a>
       <a href="besked.php">Beskeder</a>
       <a href="adgangskort.php" class="active">Adgangskort</a>
+      <a href="beboerkartotek.php">Beboerkartotek</a>
     </div>
     <div class="nav-account">
       <span class="nav-user">Logget ind som <?php echo $e($user['display_name']); ?></span>

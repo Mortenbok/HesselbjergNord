@@ -137,6 +137,53 @@ CREATE TABLE IF NOT EXISTS aarshjul (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------------
+-- beboerkartotek — hvem bor hvor
+-- ---------------------------------------------------------------------------
+-- Fyldes først med bestyrelsens regneark via beboer-import.php (filen
+-- uploades; den må IKKE ligge i git, da depotet er offentligt), og derefter
+-- af ny-beboer.php, når nye beboere tilmelder sig.
+--
+-- Tilmeldingen spørger kun om det nødvendige. Beboeren får en mail med et
+-- link (token), og udfylder hjemmeadressen på beboer-oplysninger.php.
+-- Når det er gjort, ryddes token, og status bliver aktiv.
+--
+-- INDEHOLDER PERSONOPLYSNINGER. Kun bestyrelsen må se tabellen.
+CREATE TABLE IF NOT EXISTS beboerkartotek (
+  id INT NOT NULL AUTO_INCREMENT,
+  type ENUM('ejer', 'medejer') NOT NULL DEFAULT 'ejer',
+  sommerhusadresse VARCHAR(255) NOT NULL,
+  vej VARCHAR(100) NOT NULL DEFAULT '',
+  nr VARCHAR(10) NOT NULL DEFAULT '',
+  nr2 VARCHAR(10) NOT NULL DEFAULT '',
+  bestyrelse TINYINT(1) NOT NULL DEFAULT 0,
+  rolle VARCHAR(60) NOT NULL DEFAULT '',
+  kontaktperson VARCHAR(255) NOT NULL,
+  navn_i_arket VARCHAR(255) NOT NULL DEFAULT '',
+  hjemmeadresse VARCHAR(255) NOT NULL DEFAULT '',
+  postnr VARCHAR(12) NOT NULL DEFAULT '',
+  by VARCHAR(100) NOT NULL DEFAULT '',
+  land VARCHAR(80) NOT NULL DEFAULT '',
+  mail VARCHAR(255) NOT NULL DEFAULT '',
+  mail2 VARCHAR(255) NOT NULL DEFAULT '',
+  telefon VARCHAR(32) NOT NULL DEFAULT '',
+  telefon2 VARCHAR(32) NOT NULL DEFAULT '',
+  flyttet_ind DATE NULL DEFAULT NULL,
+  noter TEXT NULL DEFAULT NULL,
+  kilde ENUM('kartotek', 'ny-beboer') NOT NULL DEFAULT 'kartotek',
+  status ENUM('aktiv', 'afventer_oplysninger') NOT NULL DEFAULT 'aktiv',
+  token CHAR(32) NULL DEFAULT NULL,
+  token_udloeb DATETIME NULL DEFAULT NULL,
+  bekraeftet_at DATETIME NULL DEFAULT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uniq_beboer_token (token),
+  KEY idx_beboer_adresse (sommerhusadresse),
+  KEY idx_beboer_mail (mail),
+  KEY idx_beboer_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------------
 -- residents — tilmeldinger fra "Ny beboer"-formularen
 -- ---------------------------------------------------------------------------
 -- Formularen er offentlig, så alle kan sende oplysninger ind. Selve listen
