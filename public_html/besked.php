@@ -166,17 +166,48 @@ function besked_kvittering(array $svar, array $koe): array
 }
 
 $channel = ($_POST['channel'] ?? 'sms') === 'email' ? 'email' : 'sms';
-$gruppe = ($_POST['gruppe'] ?? 'alle') === 'bestyrelse' ? 'bestyrelse' : 'alle';
+$gruppe = (string)($_POST['gruppe'] ?? 'alle');
+
+if (!in_array($gruppe, ['alle', 'bestyrelse', 'valgte'], true)) {
+    $gruppe = 'alle';
+}
+
+/**
+ * De enkeltpersoner, der er sat flueben ved.
+ *
+ * Nøglen er selve kontaktoplysningen — mailadressen eller nummeret — og
+ * ikke rækkens id. En husstand kan have to mails på samme række, og de
+ * skal kunne vælges hver for sig.
+ */
+$valgte = array_filter(array_map(
+    static fn($v): string => trim((string)$v),
+    (array)($_POST['valgte'] ?? [])
+));
 $subject = trim((string)($_POST['subject'] ?? ''));
 $body = trim((string)($_POST['body'] ?? ''));
 $message = null;
 $confirming = false;
 
 $kunBestyrelse = $gruppe === 'bestyrelse';
+$kanal = $channel === 'sms' ? 'sms' : 'mail';
 
 // Modtagerne kommer fra beboerkartoteket. Den gamle residents-tabel bliver
 // ikke længere fyldt — ny-beboer.php skriver i kartoteket.
-$recipients = $denied ? [] : beboer_modtagere($pdo, $channel === 'sms' ? 'sms' : 'mail', $kunBestyrelse);
+//
+// Hele listen hentes altid: den skal vises med afkrydsningsfelter, når der
+// skal vælges enkelte ud.
+$alleModtagere = $denied ? [] : beboer_modtagere($pdo, $kanal, $kunBestyrelse);
+
+if ($gruppe === 'valgte') {
+    $oensket = array_flip($valgte);
+
+    $recipients = array_values(array_filter(
+        $alleModtagere,
+        static fn(array $r): bool => isset($oensket[$r['email'] !== '' ? $r['email'] : $r['msisdn']])
+    ));
+} else {
+    $recipients = $alleModtagere;
+}
 
 // Begge tal skal med ud i siden, så teksten kan opdateres, når kanalen
 // skiftes — uden at spørge serveren igen.
@@ -210,6 +241,8 @@ if (!$denied && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = ['bad', 'Skriv en besked, før du sender.'];
     } elseif ($channel === 'email' && $subject === '') {
         $message = ['bad', 'Skriv et emne, før du sender en mail.'];
+    } elseif ($recipients === [] && $gruppe === 'valgte') {
+        $message = ['bad', 'Sæt flueben ved mindst én modtager.'];
     } elseif ($recipients === []) {
         $message = ['bad', $channel === 'sms'
             ? 'Der er ingen i beboerkartoteket med et brugbart telefonnummer.'
@@ -767,6 +800,78 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
   #msgSubject[readonly] { opacity: 0.75; }
   .hidden-row { display: none; }
 
+  /* Vælgeren til enkelte modtagere. */
+  .vaelger {
+    margin-bottom: 16px;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.04);
+    overflow: hidden;
+  }
+  .vaelger-top {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.14);
+  }
+  .vaelger-top input[type="search"] {
+    flex: 1 1 200px;
+    min-width: 0;
+    margin: 0;
+  }
+  button.lille {
+    font: inherit;
+    font-size: 0.85rem;
+    padding: 7px 13px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  button.lille:hover { background: rgba(255,255,255,0.16); }
+  .vaelger-liste {
+    list-style: none;
+    margin: 0;
+    padding: 4px;
+    max-height: 310px;
+    overflow-y: auto;
+  }
+  .vaelger-liste li { margin: 0; }
+  .vaelger-liste label {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 10px;
+    align-items: baseline;
+    padding: 7px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin: 0;
+    font-weight: 400;
+  }
+  .vaelger-liste label:hover { background: rgba(255,255,255,0.07); }
+  .vaelger-liste input[type="checkbox"] {
+    grid-row: span 2;
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    align-self: center;
+  }
+  .vaelger-navn { font-size: 0.95rem; }
+  .vaelger-under {
+    grid-column: 2;
+    font-size: 0.82rem;
+    color: rgba(255,255,255,0.58);
+  }
+  .vaelger .smaat {
+    margin: 0;
+    padding: 9px 11px;
+    border-top: 1px solid rgba(255,255,255,0.14);
+    font-size: 0.84rem;
+  }
+
   .log-subject { margin: 6px 0 2px; }
   .tag.kanal { background: rgba(255,255,255,0.14); color: rgba(255,255,255,0.85); margin-right: 6px; }
 </style>
@@ -929,10 +1034,51 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
                      <?php echo $confirming ? 'disabled' : ''; ?>>
               <span>Kun bestyrelsen</span>
             </label>
+            <label>
+              <input type="radio" name="gruppe" value="valgte"
+                     <?php echo $gruppe === 'valgte' ? 'checked' : ''; ?>
+                     <?php echo $confirming ? 'disabled' : ''; ?>>
+              <span>Udvalgte</span>
+            </label>
           </fieldset>
 
           <?php if ($confirming): ?>
             <input type="hidden" name="gruppe" value="<?php echo $e($gruppe); ?>">
+            <?php if ($gruppe === 'valgte'): ?>
+              <?php foreach ($recipients as $r): ?>
+                <input type="hidden" name="valgte[]"
+                       value="<?php echo $e($r['email'] !== '' ? $r['email'] : $r['msisdn']); ?>">
+              <?php endforeach; ?>
+            <?php endif; ?>
+          <?php else: ?>
+            <div id="vaelger" class="vaelger<?php echo $gruppe === 'valgte' ? '' : ' hidden-row'; ?>">
+              <div class="vaelger-top">
+                <input type="search" id="vaelgerSoeg" placeholder="Søg efter navn eller adresse"
+                       autocomplete="off">
+                <button type="button" id="vaelgAlle" class="lille">Vælg alle viste</button>
+                <button type="button" id="vaelgIngen" class="lille">Ryd</button>
+              </div>
+
+              <ul class="vaelger-liste">
+                <?php foreach ($alleModtagere as $r): ?>
+                  <?php $kontakt = $r['email'] !== '' ? $r['email'] : $r['msisdn']; ?>
+                  <li data-soeg="<?php echo $e(mb_strtolower($r['navn'] . ' ' . $r['adresse'] . ' ' . $kontakt)); ?>">
+                    <label>
+                      <input type="checkbox" name="valgte[]"
+                             value="<?php echo $e($kontakt); ?>"
+                             <?php echo in_array($kontakt, $valgte, true) ? 'checked' : ''; ?>>
+                      <span class="vaelger-navn"><?php echo $e($r['navn'] !== '' ? $r['navn'] : $kontakt); ?></span>
+                      <span class="vaelger-under"><?php echo $e($r['adresse']); ?> &middot; <?php echo $e($kontakt); ?></span>
+                    </label>
+                  </li>
+                <?php endforeach; ?>
+              </ul>
+
+              <p class="muted smaat">
+                Listen følger kanalen: ved mail står de, der har en mailadresse,
+                ved SMS dem med et telefonnummer.
+              </p>
+            </div>
           <?php endif; ?>
 
           <p class="muted" id="rcptInfo"
@@ -1098,17 +1244,61 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
 
       var info = document.getElementById('rcptInfo');
 
-      function kunBestyrelse() {
+      function gruppe() {
         var valgt = form.querySelector('input[name="gruppe"]:checked');
-        return valgt ? valgt.value === 'bestyrelse' : false;
+        return valgt ? valgt.value : 'alle';
+      }
+
+      function kunBestyrelse() {
+        return gruppe() === 'bestyrelse';
+      }
+
+      /* Vælgeren til enkelte modtagere. */
+      var vaelger = document.getElementById('vaelger');
+      var soeg = document.getElementById('vaelgerSoeg');
+
+      function afkrydsede() {
+        if (!vaelger) return [];
+        return Array.prototype.filter.call(
+          vaelger.querySelectorAll('input[name="valgte[]"]'),
+          function (el) { return el.checked; }
+        );
+      }
+
+      /* Kun de rækker, søgefeltet ikke har gemt væk. */
+      function synligeRaekker() {
+        if (!vaelger) return [];
+        return Array.prototype.filter.call(
+          vaelger.querySelectorAll('.vaelger-liste li'),
+          function (li) { return !li.hidden; }
+        );
+      }
+
+      function filtrer() {
+        if (!vaelger || !soeg) return;
+        var q = soeg.value.trim().toLowerCase();
+
+        vaelger.querySelectorAll('.vaelger-liste li').forEach(function (li) {
+          li.hidden = q !== '' && (li.getAttribute('data-soeg') || '').indexOf(q) === -1;
+        });
       }
 
       function syncRecipients(isMail) {
         if (!info) return;
+
+        if (gruppe() === 'valgte') {
+          var n = afkrydsede().length;
+          info.innerHTML = n === 0
+            ? 'Sæt flueben ved dem, beskeden skal til.'
+            : 'Sendes til <strong>' + n + '</strong> ' +
+              (n === 1 ? 'udvalgt modtager.' : 'udvalgte modtagere.');
+          return;
+        }
+
         var navn = (isMail ? 'data-mail' : 'data-sms') + (kunBestyrelse() ? '-best' : '');
-        var n = parseInt(info.getAttribute(navn), 10) || 0;
-        info.innerHTML = 'Sendes til <strong>' + n + '</strong> ' +
-          (n === 1 ? 'modtager' : 'modtagere') +
+        var antal = parseInt(info.getAttribute(navn), 10) || 0;
+        info.innerHTML = 'Sendes til <strong>' + antal + '</strong> ' +
+          (antal === 1 ? 'modtager' : 'modtagere') +
           (isMail ? ' med mailadresse' : ' med telefonnummer') +
           (kunBestyrelse() ? ' i bestyrelsen.' : ' i beboerkartoteket.');
       }
@@ -1116,12 +1306,47 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
       function sync() {
         var isMail = channel() === 'email';
         syncRecipients(isMail);
+        if (vaelger) vaelger.classList.toggle('hidden-row', gruppe() !== 'valgte');
         if (subjectRow) subjectRow.classList.toggle("hidden-row", !isMail);
         if (subject) subject.required = isMail;
         if (counter) counter.hidden = isMail;
         if (box) {
           box.rows = isMail ? 10 : 5;
           box.maxLength = isMail ? 5000 : 1000;
+        }
+      }
+
+      if (vaelger) {
+        vaelger.addEventListener('change', sync);
+
+        if (soeg) {
+          soeg.addEventListener('input', filtrer);
+          // Enter i søgefeltet må ikke sende formularen af sted.
+          soeg.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); }
+          });
+        }
+
+        var alle = document.getElementById('vaelgAlle');
+        var ingen = document.getElementById('vaelgIngen');
+
+        if (alle) {
+          alle.addEventListener('click', function () {
+            synligeRaekker().forEach(function (li) {
+              var f = li.querySelector('input[type="checkbox"]');
+              if (f) f.checked = true;
+            });
+            sync();
+          });
+        }
+
+        if (ingen) {
+          ingen.addEventListener('click', function () {
+            vaelger.querySelectorAll('input[name="valgte[]"]').forEach(function (f) {
+              f.checked = false;
+            });
+            sync();
+          });
         }
       }
 
