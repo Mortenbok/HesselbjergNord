@@ -85,6 +85,19 @@ function sms_msisdn(string $phone): ?string
 }
 
 /**
+ * Retter teksten til, som den faktisk sendes.
+ *
+ * Et tekstfelt i browseren sender linjeskift som \r\n. En SMS har kun
+ * brug for \n, og hvert \r optager en plads uden at vise noget — en
+ * besked med fire afsnit spilder altså fire tegn og kan tippe over i en
+ * SMS mere. Afsluttende mellemrum ryger samme vej.
+ */
+function sms_normaliser(string $text): string
+{
+    return rtrim(str_replace(["\r\n", "\r"], "\n", $text));
+}
+
+/**
  * Hvor lang er beskeden, og hvor mange SMS'er bliver det?
  *
  * GSM-alfabetet giver 160 tegn pr. SMS, og æøå er med i alfabetet. Tegn
@@ -92,6 +105,8 @@ function sms_msisdn(string $phone): ?string
  */
 function sms_length(string $text): array
 {
+    $text = sms_normaliser($text);
+
     $gsm = "@£\$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞÆæßÉ !\"#¤%&'()*+,-./0123456789:;<=>?"
          . "¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿abcdefghijklmnopqrstuvwxyzäöñüà";
     $udvidet = "^{}\\[~]|€";
@@ -235,6 +250,8 @@ function sms_send(array $msisdns, string $text): array
     if (trim($text) === '') {
         return ['ok' => 0, 'failed' => $msisdns, 'error' => 'Beskeden er tom.'];
     }
+
+    $text = sms_normaliser($text);
 
     $token = sms_token();
 

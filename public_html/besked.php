@@ -1132,6 +1132,13 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
                   Beskeden sendes som SMS til <strong><?php echo count($recipients); ?></strong>
                   modtagere som <strong><?php echo $length['parts']; ?></strong> SMS hver
                   — i alt <strong><?php echo count($recipients) * $length['parts']; ?></strong> SMS.
+                  <?php $afsender = sms_config()['sms_sender']; ?>
+                  <?php if ($afsender !== ''): ?>
+                    Modtagerne ser <strong><?php echo $e($afsender); ?></strong> som afsender.
+                  <?php else: ?>
+                    Modtagerne ser <strong>kontoens telefonnummer</strong> som afsender —
+                    der er ikke sat et navn i <code>includes/config.local.php</code>.
+                  <?php endif; ?>
                 <?php else: ?>
                   Mailen sendes til <strong><?php echo count($recipients); ?></strong> modtagere.
                   Hver enkelt får sin egen mail, så ingen kan se de andres adresser.
