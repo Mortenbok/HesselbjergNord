@@ -6,7 +6,7 @@
  * oprette ét adgangskort pr. husstand. OpenStreetMap er ikke et
  * folkeregister: mangler et hus, får det intet kort, og står der et hus,
  * som ikke findes, bliver kortet aldrig brugt. Begge dele rettes i
- * adgangskort.php, når kortene er delt ud — listen her bruges kun til at
+ * kartoteket på admin.php — listen her bruges kun til at
  * fylde tabellen ud allerførste gang.
  */
 

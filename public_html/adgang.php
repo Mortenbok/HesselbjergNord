@@ -210,8 +210,7 @@ $csrf = auth_csrf_token();
 
       <?php if ($rolle === 'bestyrelse'): ?>
         <p class="intro">Du står i beboerkartoteket som bestyrelsesmedlem, så du
-          har også adgang til bestyrelsens sider — beskeder, adgangskort og
-          beboerkartoteket.</p>
+          har også adgang til bestyrelsens sider — beskeder og admin.</p>
       <?php endif; ?>
 
       <a class="knap-link" href="medlemsfotos.php">Gå til medlemsområdet</a>

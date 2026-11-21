@@ -28,12 +28,52 @@ function auth_start_session(): void
     session_start();
 }
 
-/** Er den besøgende logget ind? */
+/**
+ * Er den besøgende logget ind?
+ *
+ * Kontoen slås op én gang pr. forespørgsel. Lukker bestyrelsen et login
+ * (admin.php → Send ny kode), bliver den, der allerede sidder logget ind,
+ * smidt ud ved sit næste klik — ellers ville en tidligere ejer kunne blive
+ * ved, så længe browseren er åben.
+ */
 function auth_check(): bool
 {
+    static $aktiv = [];
+
     auth_start_session();
 
-    return isset($_SESSION['user_id']);
+    if (!isset($_SESSION['user_id'])) {
+        return false;
+    }
+
+    $id = (int)$_SESSION['user_id'];
+
+    if (!isset($aktiv[$id])) {
+        $aktiv[$id] = auth_konto_aktiv($id);
+
+        if (!$aktiv[$id]) {
+            auth_logout();
+        }
+    }
+
+    return $aktiv[$id];
+}
+
+/** Findes kontoen stadig, og er den åben? */
+function auth_konto_aktiv(int $id): bool
+{
+    // Siden har måske ikke hentet databasen endnu. "global" gør, at
+    // forbindelsen, db.php opretter herinde, også kan bruges af siden.
+    global $pdo;
+
+    if (!isset($pdo)) {
+        require_once __DIR__ . '/db.php';
+    }
+
+    $stmt = $pdo->prepare('SELECT 1 FROM users WHERE id = :id AND is_active = 1 LIMIT 1');
+    $stmt->execute([':id' => $id]);
+
+    return (bool)$stmt->fetchColumn();
 }
 
 /** Den aktuelt loggede bruger, eller null. */

@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS documents (
 --
 -- Koden brænder ikke ved brug: begge ejere kan oprette hver deres login, og
 -- et glemt kodeord klares ved at scanne igen. Skifter huset ejer, får kortet
--- en ny kode fra adgangskort.php, og det gamle postkort dør.
+-- en ny kode fra admin.php: den gamle dør, og logins på adressen lukkes.
 --
 -- includes/db.php laver ét kort pr. adresse i includes/husstande.php, første
 -- gang tabellen er tom.

@@ -70,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $fejl = 'Sessionen er udløbet. Genindlæs siden, og prøv igen.';
     } elseif (($_POST['handling'] ?? '') === 'slet' && !$nyRaekke) {
         $pdo->prepare('DELETE FROM beboerkartotek WHERE id = :id')->execute([':id' => $id]);
-        header('Location: beboerkartotek.php?besked=' . rawurlencode('Rækken er slettet.'), true, 302);
+        header('Location: admin.php?besked=' . rawurlencode('Rækken er slettet.'), true, 302);
         exit;
     } else {
         foreach (array_keys(BEBOER_FELTER) as $felt) {
@@ -208,7 +208,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="panel">
       <h1><?php echo $nyRaekke ? 'Ny beboer' : $e($v['kontaktperson']); ?></h1>
       <p class="sti">
-        <a href="beboerkartotek.php">&larr; Beboerkartotek</a>
+        <a href="admin.php">&larr; Admin</a>
         <?php if (!$nyRaekke): ?>
           &nbsp;·&nbsp; <?php echo $e($v['sommerhusadresse']); ?>
         <?php endif; ?>
@@ -274,7 +274,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <div class="knapper">
           <button type="submit" class="gem"><?php echo $nyRaekke ? 'Opret' : 'Gem'; ?></button>
-          <a class="knap retur" href="beboerkartotek.php">Tilbage</a>
+          <a class="knap retur" href="admin.php">Tilbage</a>
 
           <?php if (!$nyRaekke): ?>
             <button type="submit" name="handling" value="slet" class="slet"

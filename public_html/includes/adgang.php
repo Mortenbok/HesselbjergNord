@@ -1,18 +1,16 @@
 <?php
 /**
- * Adgangskort — ét kort pr. husstand, med en QR-kode der giver login.
+ * Adgangskoder — én kode pr. husstand, der giver login.
  *
- * Tanken: bestyrelsen deler et postkort ud til hver husstand. Kortet bærer
- * en kode, der hører til netop den adresse. At kortet er afleveret i
- * postkassen på Klitrosevej 18, er i sig selv beviset for, at den, der
- * samler det op, hører til Klitrosevej 18 — derfor skal bestyrelsen ikke
- * godkende noget i hånden.
+ * Bestyrelsen sender koden fra admin.php til ejerens mail i
+ * beboerkartoteket. At mailen står på ejeren, er beviset for, at
+ * modtageren hører til adressen — derfor skal bestyrelsen ikke godkende
+ * noget i hånden.
  *
- * Koden brænder ikke ved brug. Et sommerhus har tit to ejere, og et login,
- * man bruger tre gange om året, bliver glemt. Kortet er derfor husstandens
- * blivende nøgle: scan igen for at oprette en bruger mere eller for at
- * sætte en ny adgangskode. Bliver et hus solgt, spærrer bestyrelsen kortet
- * og laver et nyt.
+ * Koden brænder ikke ved brug: ejer og medejer kan oprette hver deres
+ * login, og et glemt kodeord klares ved at bruge linket igen. Sender
+ * bestyrelsen en ny kode, dør den gamle, og alle logins på adressen
+ * lukkes (fx når et hus skifter ejer).
  */
 
 require_once __DIR__ . '/adresser.php';
@@ -130,7 +128,7 @@ function adgang_opret_bruger(PDO $pdo, array $kort, string $navn, string $mail, 
         // efter en generalforsamling, bliver kontoen menigt medlem igen.
         //
         // Men aldrig det sidste bestyrelseslogin. Røg det, kunne ingen komme
-        // ind på beboerkartotek.php og sætte fluebenet tilbage, og så ville
+        // ind på admin.php og sætte fluebenet tilbage, og så ville
         // der ikke være nogen vej ind igen uden adgang til databasen.
         $nyRolle = $findes['role'];
 
@@ -215,100 +213,33 @@ function adgang_e(?string $v): string
 }
 
 /**
- * Mailadresserne i beboerkartoteket, samlet pr. husstand.
+ * Sender koden til husstandens ejer. Returnerer true, hvis mailen gik af.
  *
- * Nøglen er adressen på foldet form ("klitrosevej18"), ikke teksten.
- * Kortene er lavet ud fra OpenStreetMap, der skriver Hylleskovvænget, mens
- * kartoteket skriver Hyldeskovvænget — en sammenligning tegn for tegn ville
- * tabe 17 husstande på gulvet. adresse_noegle_af_fritekst() kender begge
- * stavemåder og giver dem den samme nøgle.
- *
- * Både ejer og medejere kommer med: kortet hører til husstanden, ikke til
- * én person, og alle på adressen skal kunne komme ind.
+ * Koden sendes kun til ejeren — se admin_ejer_mail() i includes/admin.php.
  */
-function adgang_mail_pr_husstand(PDO $pdo): array
+function adgang_send_kode(string $adresse, string $kode, string $mail, string $navn, string $link): bool
 {
-    $rows = $pdo->query(
-        'SELECT sommerhusadresse, kontaktperson, mail, mail2
-           FROM beboerkartotek
-          ORDER BY forhold, id'
-    )->fetchAll();
+    $emne = 'Din adgang til hesselbjergnord.dk — ' . $adresse;
+    $hilsen = $navn !== '' ? 'Hej ' . $navn : 'Hej';
 
-    $ud = [];
+    $tekst = $hilsen . "\n\n"
+        . "Her er jeres adgang til foreningens hjemmeside. Den hører til "
+        . $adresse . ".\n\n"
+        . "Åbn dette link:\n"
+        . $link . "\n\n"
+        . "Eller gå ind på hesselbjergnord.dk/adgang.php og tast koden:\n"
+        . "    " . adgang_kode_paent($kode) . "\n\n"
+        . "Du vælger selv adgangskode undervejs. Bag login finder du "
+        . "referater, regnskaber, vedtægter og medlemsbilleder.\n\n"
+        . "Er I flere på adressen, kan I hver især oprette et login med den "
+        . "samme kode. Koden virker, indtil bestyrelsen sender en ny — og så "
+        . "lukkes de logins, der er oprettet på adressen. Havde du et login "
+        . "i forvejen, skal du derfor oprette det igen med linket ovenfor.\n\n"
+        . "Venlig hilsen\n"
+        . "Bestyrelsen\n"
+        . "Grundejerforeningen Hesselbjerg Nord";
 
-    foreach ($rows as $r) {
-        $noegle = adresse_noegle_af_fritekst((string)$r['sommerhusadresse']);
+    $svar = mail_send([$mail], $emne, $tekst);
 
-        if ($noegle === '') {
-            continue;
-        }
-
-        foreach (['mail', 'mail2'] as $felt) {
-            $mail = mb_strtolower(trim((string)$r[$felt]));
-
-            if ($mail === '' || !filter_var($mail, FILTER_VALIDATE_EMAIL)) {
-                continue;
-            }
-
-            // Den samme mail kan stå flere gange på en adresse.
-            $ud[$noegle][$mail] = trim((string)$r['kontaktperson']);
-        }
-    }
-
-    return $ud;
-}
-
-/** Modtagerne til ét kort. Tom liste, hvis husstanden ikke har en mail. */
-function adgang_modtagere(array $mailKort, string $adresse): array
-{
-    return $mailKort[adresse_noegle_af_fritekst($adresse)] ?? [];
-}
-
-/**
- * Sender koden til én husstand.
- *
- * Returnerer ['ok' => antal sendte, 'fejlede' => [adresser]].
- */
-function adgang_send_kode(array $kort, array $modtagere, string $link): array
-{
-    if ($modtagere === []) {
-        return ['ok' => 0, 'fejlede' => []];
-    }
-
-    $emne = 'Din adgang til hesselbjergnord.dk — ' . $kort['adresse'];
-
-    $ok = 0;
-    $fejlede = [];
-
-    // Hver modtager får sin egen mail med sit eget navn. De må ikke kunne
-    // se hinandens adresser, og en fælles To-linje ville netop vise dem.
-    foreach ($modtagere as $mail => $navn) {
-        $hilsen = $navn !== '' ? 'Hej ' . $navn : 'Hej';
-
-        $tekst = $hilsen . "\n\n"
-            . "Her er jeres adgang til foreningens hjemmeside. Den hører til "
-            . $kort['adresse'] . ".\n\n"
-            . "Åbn dette link:\n"
-            . $link . "\n\n"
-            . "Eller gå ind på hesselbjergnord.dk/adgang.php og tast koden:\n"
-            . "    " . adgang_kode_paent($kort['kode']) . "\n\n"
-            . "Du vælger selv navn og adgangskode undervejs. Bag login finder du "
-            . "referater, regnskaber, vedtægter og medlemsbilleder.\n\n"
-            . "Gem denne mail. Koden bliver ved med at virke, så I kan begge "
-            . "oprette hver jeres login, og har du glemt din adgangskode, "
-            . "bruger du bare linket igen.\n\n"
-            . "Venlig hilsen\n"
-            . "Bestyrelsen\n"
-            . "Grundejerforeningen Hesselbjerg Nord";
-
-        $svar = mail_send([$mail], $emne, $tekst);
-
-        if (($svar['ok'] ?? 0) > 0) {
-            $ok++;
-        } else {
-            $fejlede[] = $mail;
-        }
-    }
-
-    return ['ok' => $ok, 'fejlede' => $fejlede];
+    return ($svar['ok'] ?? 0) > 0;
 }

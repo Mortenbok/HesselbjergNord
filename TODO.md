@@ -121,17 +121,15 @@ Beslut for hver enkelt:
       husk at sætte Rolle til **Bestyrelse**. Siden er ikke linket fra
       nogen menu; skriv adressen direkte. (`setup.php` er låst for
       altid og kan ikke bruges til det.)
-- [ ] **Del adgangskortene ud.** 203 postkort, ét pr. husstand, hentet
-      fra OpenStreetMap. Før de printes:
-      1. Scan ét kort med en telefon, og gå hele vejen igennem.
-         QR-koderne er afprøvet maskinelt, men ikke med et rigtigt
-         kamera på rigtigt papir.
-      2. Gennemgå listen på `adgangskort.php` mod jeres egen
-         medlemsliste. OpenStreetMap er ikke et folkeregister:
-         **Rosenvænget 500A** ser forkert ud, og huse, der mangler i
-         OSM, har slet ikke fået et kort. Tilføj og fjern på siden.
-      3. Print først derefter. Husk, at printfilen indeholder ALLE
-         koder — den må ikke sendes rundt eller gemmes.
+- [ ] **Send adgangskoderne ud.** Postkortene er droppet; koden sendes
+      fra `admin.php` til ejerens mail. Før den store udsendelse:
+      1. Send én kode til jer selv (Send kode på jeres egen adresse), og
+         gå hele vejen igennem på en telefon.
+      2. Kig `admin.php` igennem under "uden beboer": det er adresser
+         fra OpenStreetMap, som ingen i kartoteket bor på.
+         **Rosenvænget 500A** ser forkert ud.
+      3. Ret ejerne under "ejer uden mail" — de kan ikke få en kode.
+      4. Tryk "Send til de næste 25" under Udsendelse, til tallet er nul.
 - [ ] **Overvej at slette `setup.php`** fra git og serveren. Den er
       låst og kan ikke misbruges, men den er overflødig.
 - [ ] **Skift SMTP-adgangskoden.** Den har været skrevet i en chat.
@@ -160,19 +158,12 @@ Beslut for hver enkelt:
       tysk eller svensk nummer. SureSMS kan sende til udlandet — det er
       vores egen kontrol, der står i vejen. Tjek, om der overhovedet er
       nogen, før der bruges tid på det.
-- [ ] **Et login kan ikke lukkes fra hjemmesiden.** At spærre en kode eller
-      give en ny på `adgangskort.php` stopper kun selve koden. De logins,
-      der allerede er oprettet på adressen, bliver ved med at virke, så en
-      tidligere ejer kan stadig logge ind og se beboerkartoteket. Siden
-      siger det nu ligeud, men der mangler en knap, der sætter
-      `users.is_active = 0` for adressen. Indtil da skal det gøres i
-      databasen.
-- [ ] **Ristingevej 121 og 123 kan ikke få en kode.** `adgangskort.php`
-      tilbyder kun vejene fra `HBN_VEJE`, når man opretter et kort, og
-      `adgang_mail_pr_husstand()` springer adresser uden for de 20 veje
-      over. De to husstande kan derfor hverken få et postkort eller en
-      mail. Hænger sammen med spørgsmålet om, hvorvidt vejen hører til
-      foreningen — se punktet længere nede.
+- [x] **Et login kan ikke lukkes fra hjemmesiden.** Løst: Send kode på
+      `admin.php` lukker alle logins på adressen (undtagen ens eget), og
+      den, der sidder logget ind, bliver smidt ud ved næste klik.
+- [x] **Ristingevej 121 og 123 kan ikke få en kode.** Løst: `admin.php`
+      opretter koden, første gang den sendes, også uden for de 20 veje.
+      Om de overhovedet skal have en, afhænger af punktet længere nede.
 - [ ] **Seks BFE-numre er kun fundet ad én vej** (Enebærvænget 9,
       Hylleskovvænget 7, Lindevænget 4, Rosenvænget 500A, Syrenvænget 26,
       Ørnevænget 2). Det er ubebyggede grunde, så kun grundvejen gav svar
@@ -181,10 +172,10 @@ Beslut for hver enkelt:
 - [ ] **Ret `feriefond@rema1000` til `feriefond@rema1000.dk`** på
       Duevænget 10. Adressen mangler et topdomæne og bliver afvist, så
       husstanden får hverken beskeder eller adgangskode på mail. Rettes på
-      `beboerkartotek.php` → Ret. Kartoteket mærker nu selv den slags med
+      `admin.php` → Ret. Siden mærker nu selv den slags med
       "Mail kan ikke bruges", så kig listen igennem for flere.
 - [ ] **28 rækker i kartoteket har en note.** Se dem på
-      `beboerkartotek.php` under "med note". De vigtigste:
+      `admin.php` under "med note". De vigtigste:
       *Odese SV* og *Koldeing* er stavefejl; Birkevænget 5 og
       Gulspurvevænget 1 mangler postnummer; Duevænget 10 har en ugyldig
       mail; og 18 rækker har en **gættet kontaktperson**, fordi mailen
@@ -194,8 +185,8 @@ Beslut for hver enkelt:
       vedtægterne skriver *Hyldeskov*; OpenStreetMap og
       `includes/bestyrelse.php` skriver *Hylleskov*. Hjemmesiden retter i
       dag til *Hylleskov* (`includes/adresser.php`), og 17 af de 203
-      adgangskort er trykt med den stavemåde. Find ud af, hvad der er
-      rigtigt, før kortene printes.
+      adgangskoder står med den stavemåde. Find ud af, hvad der er
+      rigtigt, før koderne sendes ud.
 - [ ] **Ristingevej 121 og 123 står i kartoteket**, men Ristingevej er
       ikke en af de 20 veje i vedtægternes § 1. Enten mangler vejen i
       vedtægterne, eller også hører de to huse ikke til foreningen.

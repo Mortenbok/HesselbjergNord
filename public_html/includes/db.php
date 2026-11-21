@@ -128,7 +128,7 @@ try {
     ");
 
     // Første gang laves ét kort pr. husstand fra listen i husstande.php.
-    // Derefter styres kortene kun fra adgangskort.php — her røres de ikke.
+    // Derefter styres koderne kun fra admin.php — her røres de ikke.
     if ((int)$pdo->query('SELECT COUNT(*) FROM adgangskort')->fetchColumn() === 0) {
         require_once __DIR__ . '/husstande.php';
         require_once __DIR__ . '/adgang.php';

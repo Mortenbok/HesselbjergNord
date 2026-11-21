@@ -302,7 +302,7 @@ $fraArk = (int)$pdo->query("SELECT COUNT(*) FROM beboerkartotek WHERE kilde = 'k
     </div>
 
     <div class="panel">
-      <p><a href="beboerkartotek.php">Se kartoteket</a> &nbsp;·&nbsp;
+      <p><a href="admin.php">Se kartoteket</a> &nbsp;·&nbsp;
          <a href="index.html">Forsiden</a></p>
     </div>
   </div>

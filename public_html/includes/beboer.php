@@ -274,7 +274,7 @@ function beboer_mail(string $raa): string
  * Kan rækken nås på den kanal?
  *
  * Returnerer en liste med det, der er galt — tom liste betyder, at alt er
- * i orden. Bruges af beboerkartotek.php til at mærke de rækker, der ikke
+ * i orden. Bruges af admin.php til at mærke de rækker, der ikke
  * kan modtage noget.
  */
 function beboer_problemer(array $raekke): array
