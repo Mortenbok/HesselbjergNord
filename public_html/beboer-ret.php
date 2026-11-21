@@ -227,6 +227,8 @@ $hus = !$nyRaekke ? admin_hus($pdo, (string)$raekke['sommerhusadresse']) : null;
   .status {
     font-size: 0.86rem; color: rgba(255,255,255,0.6); margin-top: 14px; line-height: 1.6;
   }
+  /* .felt stabler lodret og strækker; knappen skal have sin egen bredde. */
+  .gem-midt { align-items: flex-start; }
   h2 { font-size: 1.25rem; margin-bottom: 10px; }
   .tekst { font-size: 0.95rem; line-height: 1.55; color: rgba(255,255,255,0.88); margin-bottom: 14px; max-width: 68ch; }
   @media (max-width: 620px) { .gitter { grid-template-columns: 1fr; } }
@@ -276,6 +278,13 @@ $hus = !$nyRaekke ? admin_hus($pdo, (string)$raekke['sommerhusadresse']) : null;
                        type="<?php echo $info['type'] === 'mail' ? 'email' : 'text'; ?>"
                        name="<?php echo $e($felt); ?>" maxlength="255"
                        value="<?php echo $e($v[$felt]); ?>">
+              </div>
+            <?php endif; ?>
+
+            <?php if ($felt === 'telefon2'): ?>
+              <?php // Ekstra Gem midt i formularen, så man ikke skal rulle ned efter mail og telefon. ?>
+              <div class="felt bred gem-midt">
+                <button type="submit" class="gem"><?php echo $nyRaekke ? 'Opret' : 'Gem'; ?></button>
               </div>
             <?php endif; ?>
           <?php endforeach; ?>
