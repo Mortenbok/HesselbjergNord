@@ -282,7 +282,7 @@ $naesteBunke = min(count($tilUdsendelse), ADMIN_SEND_AD_GANGEN);
       <p class="lead">Én række pr. sommerhus og én linje pr. person: hvem der
         bor der, og om hver af dem har et login. Alle — ejer som medejer — får
         deres egen kode på deres egen mail. Skal én have en ny kode, så tryk
-        <b>Ret</b> ud for personen og <b>Send kode</b> derinde. Personens
+        <b>Ret</b> ud for personen og <b>Send login</b> derinde. Personens
         gamle kode holder op med at virke; de andre på adressen røres ikke.</p>
 
       <div class="advarsel">
@@ -328,11 +328,11 @@ $naesteBunke = min(count($tilUdsendelse), ADMIN_SEND_AD_GANGEN);
                   title="Til hver person — ejer og medejer — der har en mail, men hverken har et login eller har fået en kode før. <?php echo ADMIN_SEND_AD_GANGEN; ?> ad gangen."
                   <?php echo $naesteBunke === 0 ? 'disabled' : ''; ?>>
             <?php if ($naesteBunke === 0): ?>
-              Alle med mail har fået en kode
+              Alle med mail har fået et login
             <?php elseif (count($tilUdsendelse) > $naesteBunke): ?>
-              Send kode til de næste <?php echo $naesteBunke; ?> (<?php echo count($tilUdsendelse); ?> mangler)
+              Send login til de næste <?php echo $naesteBunke; ?> (<?php echo count($tilUdsendelse); ?> mangler)
             <?php else: ?>
-              Send kode til alle (<?php echo $naesteBunke; ?>)
+              Send login til alle (<?php echo $naesteBunke; ?>)
             <?php endif; ?>
           </button>
         </form>

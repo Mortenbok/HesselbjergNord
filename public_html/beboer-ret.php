@@ -340,7 +340,7 @@ $person = $hus !== null ? admin_hus_person($hus, $id) : null;
 
     <?php if ($person !== null): ?>
       <div class="panel">
-        <h2>Adgangskode</h2>
+        <h2>Login</h2>
         <p class="tekst">
           <?php if ($hus['logins'] !== []): ?>
             <?php echo $e($hus['adresse']); ?> har
@@ -374,7 +374,7 @@ $person = $hus !== null ? admin_hus_person($hus, $id) : null;
           <form method="post" data-bekraeft="<?php echo $e(admin_send_spoergsmaal($person, (int)$user['id'])); ?>">
             <input type="hidden" name="csrf_token" value="<?php echo $e($csrf); ?>">
             <input type="hidden" name="id" value="<?php echo (int)$id; ?>">
-            <button type="submit" name="handling" value="send-kode" class="gem">Send kode</button>
+            <button type="submit" name="handling" value="send-kode" class="gem">Send login</button>
           </form>
         <?php else: ?>
           <p class="tekst">Koden kan ikke sendes: <?php echo $e($modtager['navn']); ?>
