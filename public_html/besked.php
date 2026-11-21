@@ -331,8 +331,26 @@ $igang = $denied ? null : $pdo->query(
 $igangKoe = $igang ? besked_koe($pdo, (int)$igang['id']) : null;
 
 $history = $denied ? [] : $pdo->query(
-    'SELECT * FROM messages ORDER BY created_at DESC LIMIT 20'
+    'SELECT * FROM messages ORDER BY created_at DESC, id DESC'
 )->fetchAll();
+
+// Sendte beskeder grupperet: først SMS og Mail, så måned (nyeste først).
+// ['sms' => ['2026-11' => [beskeder...]], 'email' => [...]]
+$historik = ['sms' => [], 'email' => []];
+
+foreach ($history as $h) {
+    $kanalNoegle = $h['channel'] === 'email' ? 'email' : 'sms';
+    $historik[$kanalNoegle][substr((string)$h['created_at'], 0, 7)][] = $h;
+}
+
+/** "2026-11" → "November 2026". */
+$maanedNavn = static function (string $aarMaaned): string {
+    static $navne = ['Januar', 'Februar', 'Marts', 'April', 'Maj', 'Juni', 'Juli',
+                     'August', 'September', 'Oktober', 'November', 'December'];
+    [$aar, $maaned] = array_map('intval', explode('-', $aarMaaned) + [1 => 1]);
+
+    return ($navne[$maaned - 1] ?? $aarMaaned) . ' ' . $aar;
+};
 
 $csrf = auth_csrf_token();
 $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
@@ -764,6 +782,26 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
 
   .log { list-style: none; display: grid; gap: 12px; }
 
+  /* Sendte beskeder: SMS og Mail hver for sig, og inden i dem én
+     sammenklappelig boks pr. måned. */
+  .historik-kanal {
+    display: flex; align-items: center; gap: 10px;
+    margin: 22px 0 10px; font-size: 1.05rem;
+  }
+  .historik-kanal:first-of-type { margin-top: 6px; }
+  .historik-kanal .muted { font-size: 0.86rem; font-weight: 400; }
+  details.maaned {
+    margin-bottom: 10px;
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.03);
+  }
+  details.maaned summary {
+    padding: 11px 16px; cursor: pointer; font-weight: 600;
+  }
+  details.maaned[open] summary { border-bottom: 1px solid rgba(255,255,255,0.1); }
+  details.maaned .log { padding: 12px; }
+
   .log li {
     padding: 14px 16px;
     border: 1px solid rgba(255,255,255,0.14);
@@ -810,40 +848,6 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
 
   #msgSubject[readonly] { opacity: 0.75; }
   .hidden-row { display: none; }
-
-  /* Opsætningspanelet: sammenklappet, så det ikke fylder til daglig. */
-  details.opsaet { padding: 0; }
-  details.opsaet summary {
-    padding: 14px 18px;
-    cursor: pointer;
-    font-weight: 600;
-    list-style-position: inside;
-  }
-  details.opsaet[open] summary { border-bottom: 1px solid rgba(255,255,255,0.14); }
-  details.opsaet dl {
-    display: grid;
-    grid-template-columns: minmax(130px, auto) 1fr;
-    gap: 7px 16px;
-    margin: 0;
-    padding: 14px 18px;
-    font-size: 0.92rem;
-  }
-  details.opsaet dt { color: rgba(255,255,255,0.62); }
-  details.opsaet dd { margin: 0; }
-  details.opsaet code {
-    background: rgba(255,255,255,0.1);
-    padding: 1px 6px;
-    border-radius: 5px;
-    font-size: 0.88em;
-    word-break: break-all;
-  }
-  details.opsaet .smaat {
-    margin: 0;
-    padding: 0 18px 15px;
-    font-size: 0.84rem;
-    color: rgba(255,255,255,0.58);
-    line-height: 1.5;
-  }
 
   /* Vælgeren til enkelte modtagere. */
   .vaelger {
@@ -987,63 +991,6 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
         <p>Kun bestyrelsen kan sende beskeder til beboerne.</p>
       </div>
     <?php else: ?>
-
-      <?php
-        /*
-         * Hvad læser serveren egentlig?
-         *
-         * Indstillingerne ligger i includes/config.local.php, som hverken
-         * følger med et push eller med FTP-overførslen — den lægges på
-         * serveren i hånden. Derfor kan den sagtens være en anden end den,
-         * man selv har åben. Her står, hvad serveren faktisk ser, så man
-         * ikke skal gætte.
-         *
-         * Værdierne vises ALDRIG: kun om de er sat, og hvor lange de er.
-         */
-        $konfigFil = __DIR__ . '/includes/config.local.php';
-        $smsKonf = sms_config();
-      ?>
-      <details class="panel opsaet">
-        <summary>Opsætning — hvad serveren læser</summary>
-        <dl>
-          <dt>Afsendernavn (SMS)</dt>
-          <dd>
-            <?php if ($smsKonf['sms_sender'] !== ''): ?>
-              <code><?php echo $e($smsKonf['sms_sender']); ?></code>
-            <?php else: ?>
-              <em>ikke sat</em> — modtagerne ser kontoens telefonnummer.
-              Ret <code>'sms_sender' =&gt; 'Hesselbjerg',</code> i filen herunder.
-            <?php endif; ?>
-          </dd>
-
-          <dt>API-nøgle (SureSMS)</dt>
-          <dd>
-            <?php echo $smsKonf['suresms_apikey'] !== ''
-                ? 'sat, ' . strlen($smsKonf['suresms_apikey']) . ' tegn'
-                : '<em>mangler</em>'; ?>
-          </dd>
-
-          <dt>Mail (SMTP)</dt>
-          <dd><?php echo mail_uses_smtp() ? 'sat op' : '<em>ikke sat op</em>'; ?></dd>
-
-          <dt>Indstillingsfil</dt>
-          <dd>
-            <code><?php echo $e($konfigFil); ?></code><br>
-            <?php if (is_readable($konfigFil)): ?>
-              fundet, sidst ændret
-              <?php echo date('d-m-Y H:i', (int)filemtime($konfigFil)); ?>
-            <?php else: ?>
-              <em>ikke fundet</em> — så bruges kodens standardværdier.
-            <?php endif; ?>
-          </dd>
-        </dl>
-        <p class="smaat">
-          Filen følger bevidst ikke med et push, fordi den indeholder
-          adgangskoder og depotet er offentligt. Er tidspunktet ovenfor
-          ældre, end du regnede med, er din rettelse ikke nået frem.
-        </p>
-      </details>
-
       <?php if ($channel === 'sms' && !sms_enabled()): ?>
         <div class="panel warn">
           <strong>SMS er ikke sat op endnu.</strong>
@@ -1282,37 +1229,53 @@ $e = static fn(?string $v): string => htmlspecialchars((string)$v, ENT_QUOTES, '
         <?php if ($history === []): ?>
           <p class="muted">Der er ikke sendt nogen beskeder endnu.</p>
         <?php else: ?>
-          <ul class="log">
-            <?php foreach ($history as $h): ?>
-              <li class="<?php echo $e($h['status']); ?>">
-                <div class="log-top">
-                  <span class="log-when"><?php echo $e($h['created_at']); ?></span>
-                  <span>
-                    <span class="tag kanal <?php echo $h['channel'] === 'email' ? 'mail' : 'sms'; ?>"><?php
-                      echo $h['channel'] === 'email' ? 'Mail' : 'SMS';
-                    ?></span>
-                    <span class="tag <?php echo $e($h['status']); ?>">
-                      <?php echo $h['status'] === 'sendt' ? 'Sendt' : 'Fejlet'; ?>
-                    </span>
-                  </span>
-                </div>
-                <?php if ($h['subject'] !== ''): ?>
-                  <p class="log-subject"><strong><?php echo $e($h['subject']); ?></strong></p>
-                <?php endif; ?>
-                <p class="log-body"><?php echo nl2br($e($h['body'])); ?></p>
-                <p class="log-meta">
-                  <?php echo (int)$h['ok_count']; ?> af <?php echo (int)$h['recipient_count']; ?> modtagere
-                  <?php if ($h['channel'] === 'sms'): ?>
-                    &middot; <?php echo (int)$h['parts']; ?> SMS hver
-                  <?php endif; ?>
-                  &middot; <?php echo $e($h['sent_by_name']); ?>
-                  <?php if ($h['error'] !== ''): ?>
-                    <br><span class="warn-text"><?php echo $e($h['error']); ?></span>
-                  <?php endif; ?>
-                </p>
-              </li>
+          <?php foreach (['sms' => 'SMS', 'email' => 'Mail'] as $kanalNoegle => $kanalNavn): ?>
+            <?php $maaneder = $historik[$kanalNoegle]; ?>
+            <h3 class="historik-kanal">
+              <span class="tag kanal <?php echo $kanalNoegle === 'email' ? 'mail' : 'sms'; ?>"><?php echo $kanalNavn; ?></span>
+              <?php $ialt = array_sum(array_map('count', $maaneder)); ?>
+              <span class="muted"><?php echo $ialt; ?> <?php
+                echo $kanalNoegle === 'email'
+                    ? ($ialt === 1 ? 'mail' : 'mails')
+                    : ($ialt === 1 ? 'besked' : 'beskeder'); ?></span>
+            </h3>
+            <?php if ($maaneder === []): ?>
+              <p class="muted">Ingen endnu.</p>
+            <?php endif; ?>
+            <?php $foerste = true; ?>
+            <?php foreach ($maaneder as $aarMaaned => $beskeder): ?>
+              <details class="maaned" <?php echo $foerste ? 'open' : ''; ?>>
+                <summary><?php echo $e($maanedNavn((string)$aarMaaned)); ?> (<?php echo count($beskeder); ?>)</summary>
+                <ul class="log">
+                  <?php foreach ($beskeder as $h): ?>
+                    <li class="<?php echo $e($h['status']); ?>">
+                      <div class="log-top">
+                        <span class="log-when"><?php echo $e(date('d-m-Y H:i', strtotime((string)$h['created_at']))); ?></span>
+                        <span class="tag <?php echo $e($h['status']); ?>">
+                          <?php echo $h['status'] === 'sendt' ? 'Sendt' : ($h['status'] === 'sender' ? 'I gang' : 'Fejlet'); ?>
+                        </span>
+                      </div>
+                      <?php if ($h['subject'] !== ''): ?>
+                        <p class="log-subject"><strong><?php echo $e($h['subject']); ?></strong></p>
+                      <?php endif; ?>
+                      <p class="log-body"><?php echo nl2br($e($h['body'])); ?></p>
+                      <p class="log-meta">
+                        <?php echo (int)$h['ok_count']; ?> af <?php echo (int)$h['recipient_count']; ?> modtagere
+                        <?php if ($h['channel'] === 'sms'): ?>
+                          &middot; <?php echo (int)$h['parts']; ?> SMS hver
+                        <?php endif; ?>
+                        &middot; <?php echo $e($h['sent_by_name']); ?>
+                        <?php if ($h['error'] !== ''): ?>
+                          <br><span class="warn-text"><?php echo $e($h['error']); ?></span>
+                        <?php endif; ?>
+                      </p>
+                    </li>
+                  <?php endforeach; ?>
+                </ul>
+              </details>
+              <?php $foerste = false; ?>
             <?php endforeach; ?>
-          </ul>
+          <?php endforeach; ?>
         <?php endif; ?>
       </div>
     <?php endif; ?>
