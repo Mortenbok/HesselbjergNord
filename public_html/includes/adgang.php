@@ -213,9 +213,10 @@ function adgang_e(?string $v): string
 }
 
 /**
- * Sender koden til husstandens ejer. Returnerer true, hvis mailen gik af.
+ * Sender koden til én person på adressen. Returnerer true, hvis mailen gik af.
  *
- * Koden sendes kun til ejeren — se admin_ejer_mail() i includes/admin.php.
+ * Fra forsiden går den til ejeren (admin_ejer_mail), fra Ret-siden til den
+ * person, der er åbnet (admin_person_mail) — se includes/admin.php.
  */
 function adgang_send_kode(string $adresse, string $kode, string $mail, string $navn, string $link): bool
 {

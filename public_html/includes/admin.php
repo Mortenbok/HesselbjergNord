@@ -66,11 +66,29 @@ function admin_kanonisk_adresse(string $adresse): string
 }
 
 /**
- * Ejerens mail — den, koden sendes til.
+ * Én persons mail som modtager af koden: mail, ellers mail2.
  *
- * Første ejer-række på adressen; mail, ellers mail2. Medejere får aldrig
- * koden: det er ejeren, der står inde for adressen. Tom streng, hvis der
- * ikke er en brugbar mail.
+ * Returnerer ['mail', 'navn', 'id'] — mail er tom streng, hvis personen
+ * ikke har en brugbar mail.
+ */
+function admin_person_mail(array $p): array
+{
+    foreach (['mail', 'mail2'] as $felt) {
+        $mail = beboer_mail((string)($p[$felt] ?? ''));
+
+        if ($mail !== '') {
+            return ['mail' => mb_strtolower($mail), 'navn' => trim((string)$p['kontaktperson']), 'id' => (int)$p['id']];
+        }
+    }
+
+    return ['mail' => '', 'navn' => trim((string)($p['kontaktperson'] ?? '')), 'id' => (int)($p['id'] ?? 0)];
+}
+
+/**
+ * Ejerens mail — den, koden sendes til, når den sendes fra forsiden.
+ *
+ * Første ejer-række på adressen med en brugbar mail. Fra Ret-siden kan
+ * koden i stedet sendes til den person, der er åbnet — se admin_send_kode().
  */
 function admin_ejer_mail(array $personer): array
 {
@@ -79,12 +97,10 @@ function admin_ejer_mail(array $personer): array
             continue;
         }
 
-        foreach (['mail', 'mail2'] as $felt) {
-            $mail = beboer_mail((string)$p[$felt]);
+        $m = admin_person_mail($p);
 
-            if ($mail !== '') {
-                return ['mail' => mb_strtolower($mail), 'navn' => trim((string)$p['kontaktperson']), 'id' => (int)$p['id']];
-            }
+        if ($m['mail'] !== '') {
+            return $m;
         }
     }
 
@@ -176,12 +192,13 @@ function admin_base_url(): string
  * Teksten i bekræftelsen, før en kode sendes: hvem får den, og hvilke
  * logins lukkes.
  */
-function admin_send_spoergsmaal(array $hus, int $migSelv): string
+function admin_send_spoergsmaal(array $hus, int $migSelv, ?array $modtager = null): string
 {
+    $modtager ??= $hus['ejer'];
     $andres = array_filter($hus['logins'], static fn($u) => (int)$u['id'] !== $migSelv);
     $lukkes = count($andres);
 
-    return 'Send en ny kode til ' . $hus['ejer']['mail'] . '?' . "\n\n"
+    return 'Send en ny kode til ' . $modtager['navn'] . ' (' . $modtager['mail'] . ')?' . "\n\n"
         . 'Den gamle kode til ' . $hus['adresse'] . ' holder op med at virke.'
         . ($lukkes > 0
             ? "\n" . $lukkes . ' login' . ($lukkes === 1 ? '' : 's') . ' på adressen lukkes: '
@@ -264,7 +281,8 @@ function admin_ledig_kode(PDO $pdo): string
 }
 
 /**
- * Sender en ny kode til husstandens ejer.
+ * Sender en ny kode til husstandens ejer — eller til $modtager (se
+ * admin_person_mail), når den sendes fra en bestemt persons Ret-side.
  *
  * Den gamle kode holder op med at virke, og alle logins på adressen
  * lukkes — undtagen den, der trykker på knappen, så bestyrelsen aldrig
@@ -275,12 +293,12 @@ function admin_ledig_kode(PDO $pdo): string
  *
  * Returnerer ['ok' => bool, 'fejl' => string, 'mail' => string, 'lukkede' => int].
  */
-function admin_send_kode(PDO $pdo, array $hus, string $base, int $migSelv): array
+function admin_send_kode(PDO $pdo, array $hus, string $base, int $migSelv, ?array $modtager = null): array
 {
-    $ejer = $hus['ejer'];
+    $ejer = $modtager ?? $hus['ejer'];
 
     if ($ejer['mail'] === '') {
-        return ['ok' => false, 'fejl' => $hus['adresse'] . ' har ingen brugbar mail på ejeren.', 'mail' => '', 'lukkede' => 0];
+        return ['ok' => false, 'fejl' => ($modtager !== null ? $ejer['navn'] : $hus['adresse'] . ' (ejeren)') . ' har ingen brugbar mail.', 'mail' => '', 'lukkede' => 0];
     }
 
     $pdo->beginTransaction();

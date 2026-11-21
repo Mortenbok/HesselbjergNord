@@ -75,14 +75,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: admin.php?besked=' . rawurlencode('Rækken er slettet.'), true, 302);
         exit;
     } elseif (($_POST['handling'] ?? '') === 'send-kode' && !$nyRaekke) {
-        // Koden går til husstandens ejer — også når det er en medejers
-        // række, der er åbnet. Se admin_send_kode().
+        // Koden går til den person, der er åbnet — ud fra den gemte række,
+        // ikke det, der måske står halvt rettet i formularen. Se
+        // admin_send_kode().
         $hus = admin_hus($pdo, (string)$raekke['sommerhusadresse']);
 
         if ($hus === null) {
             $fejl = 'Husstanden blev ikke fundet.';
         } else {
-            $svar = admin_send_kode($pdo, $hus, admin_base_url(), (int)$user['id']);
+            $svar = admin_send_kode($pdo, $hus, admin_base_url(), (int)$user['id'], admin_person_mail($raekke));
 
             if (!$svar['ok']) {
                 $fejl = $svar['fejl'];
@@ -353,20 +354,40 @@ $hus = !$nyRaekke ? admin_hus($pdo, (string)$raekke['sommerhusadresse']) : null;
           <?php endif; ?>
         </p>
 
-        <?php if ($hus['ejer']['mail'] !== ''): ?>
-          <p class="tekst">En ny kode sendes til ejeren,
-            <b><?php echo $e($hus['ejer']['navn']); ?></b> (<?php echo $e($hus['ejer']['mail']); ?>).
+        <?php
+          // Personen, der er åbnet: får koden, og har vedkommende selv et login?
+          $modtager = admin_person_mail($raekke);
+          $egneMails = array_filter([
+              mb_strtolower(trim((string)$raekke['mail'])),
+              mb_strtolower(trim((string)$raekke['mail2'])),
+          ]);
+          $egetLogin = array_values(array_filter(
+              $hus['logins'],
+              static fn($u) => in_array(mb_strtolower((string)$u['username']), $egneMails, true)
+          ));
+        ?>
+        <p class="tekst"><b><?php echo $e($modtager['navn']); ?></b>
+          <?php if ($egetLogin !== []): ?>
+            har login som <?php echo $e($egetLogin[0]['username']); ?>.
+          <?php else: ?>
+            har ikke selv et login endnu.
+          <?php endif; ?>
+        </p>
+
+        <?php if ($modtager['mail'] !== ''): ?>
+          <p class="tekst">En ny kode sendes til
+            <b><?php echo $e($modtager['navn']); ?></b> (<?php echo $e($modtager['mail']); ?>).
             Den gamle kode holder op med at virke, og de logins, der er
             oprettet på adressen, lukkes — brug den, når huset skifter ejer,
             eller når nogen har brug for koden igen.</p>
-          <form method="post" data-bekraeft="<?php echo $e(admin_send_spoergsmaal($hus, (int)$user['id'])); ?>">
+          <form method="post" data-bekraeft="<?php echo $e(admin_send_spoergsmaal($hus, (int)$user['id'], $modtager)); ?>">
             <input type="hidden" name="csrf_token" value="<?php echo $e($csrf); ?>">
             <input type="hidden" name="id" value="<?php echo (int)$id; ?>">
             <button type="submit" name="handling" value="send-kode" class="gem">Send kode</button>
           </form>
         <?php else: ?>
-          <p class="tekst">Koden kan ikke sendes: ejeren på adressen har ingen
-            brugbar mail. Skriv en mail på ejerens række og gem, så kommer
+          <p class="tekst">Koden kan ikke sendes: <?php echo $e($modtager['navn']); ?>
+            har ingen brugbar mail. Skriv en mail ovenfor og gem, så kommer
             knappen frem.</p>
         <?php endif; ?>
       </div>
