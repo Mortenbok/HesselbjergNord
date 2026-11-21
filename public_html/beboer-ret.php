@@ -12,6 +12,8 @@ require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/beboer.php';
 require_once __DIR__ . '/includes/bfe.php';
+require_once __DIR__ . '/includes/mail.php';
+require_once __DIR__ . '/includes/admin.php';
 
 auth_require('index.html');
 
@@ -72,6 +74,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $pdo->prepare('DELETE FROM beboerkartotek WHERE id = :id')->execute([':id' => $id]);
         header('Location: admin.php?besked=' . rawurlencode('Rækken er slettet.'), true, 302);
         exit;
+    } elseif (($_POST['handling'] ?? '') === 'send-kode' && !$nyRaekke) {
+        // Koden går til husstandens ejer — også når det er en medejers
+        // række, der er åbnet. Se admin_send_kode().
+        $hus = admin_hus($pdo, (string)$raekke['sommerhusadresse']);
+
+        if ($hus === null) {
+            $fejl = 'Husstanden blev ikke fundet.';
+        } else {
+            $svar = admin_send_kode($pdo, $hus, admin_base_url(), (int)$user['id']);
+
+            if (!$svar['ok']) {
+                $fejl = $svar['fejl'];
+            } else {
+                $tekst = 'Ny kode sendt til ' . $svar['mail'] . '.'
+                    . ($svar['lukkede'] > 0
+                        ? ' ' . $svar['lukkede'] . ' login' . ($svar['lukkede'] === 1 ? '' : 's') . ' på adressen er lukket.'
+                        : '');
+                header('Location: beboer-ret.php?id=' . $id . '&besked=' . rawurlencode($tekst), true, 303);
+                exit;
+            }
+        }
     } else {
         foreach (array_keys(BEBOER_FELTER) as $felt) {
             $v[$felt] = trim((string)($_POST[$felt] ?? ''));
@@ -134,6 +157,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+
+// Husstanden til boksen med adgangskoden — ud fra den gemte adresse, ikke
+// det, der måske står halvt rettet i formularen.
+$hus = !$nyRaekke ? admin_hus($pdo, (string)$raekke['sommerhusadresse']) : null;
 ?>
 <!DOCTYPE html>
 <html lang="da">
@@ -200,6 +227,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   .status {
     font-size: 0.86rem; color: rgba(255,255,255,0.6); margin-top: 14px; line-height: 1.6;
   }
+  h2 { font-size: 1.25rem; margin-bottom: 10px; }
+  .tekst { font-size: 0.95rem; line-height: 1.55; color: rgba(255,255,255,0.88); margin-bottom: 14px; max-width: 68ch; }
   @media (max-width: 620px) { .gitter { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -298,6 +327,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </p>
       <?php endif; ?>
     </div>
+
+    <?php if ($hus !== null): ?>
+      <div class="panel">
+        <h2>Adgangskode</h2>
+        <p class="tekst">
+          <?php if ($hus['logins'] !== []): ?>
+            <?php echo $e($hus['adresse']); ?> har
+            <?php echo count($hus['logins']); ?> login<?php echo count($hus['logins']) === 1 ? '' : 's'; ?>:
+            <?php echo $e(implode(', ', array_column($hus['logins'], 'username'))); ?>.
+          <?php else: ?>
+            Ingen på <?php echo $e($hus['adresse']); ?> har et login endnu.
+          <?php endif; ?>
+          <?php if ($hus['kort'] !== null && $hus['kort']['sendt_at']): ?>
+            Sidste kode blev sendt <?php echo $e(date('d-m-Y', strtotime($hus['kort']['sendt_at']))); ?>.
+          <?php endif; ?>
+        </p>
+
+        <?php if ($hus['ejer']['mail'] !== ''): ?>
+          <p class="tekst">En ny kode sendes til ejeren,
+            <b><?php echo $e($hus['ejer']['navn']); ?></b> (<?php echo $e($hus['ejer']['mail']); ?>).
+            Den gamle kode holder op med at virke, og de logins, der er
+            oprettet på adressen, lukkes — brug den, når huset skifter ejer,
+            eller når nogen har brug for koden igen.</p>
+          <form method="post" data-bekraeft="<?php echo $e(admin_send_spoergsmaal($hus, (int)$user['id'])); ?>">
+            <input type="hidden" name="csrf_token" value="<?php echo $e($csrf); ?>">
+            <input type="hidden" name="id" value="<?php echo (int)$id; ?>">
+            <button type="submit" name="handling" value="send-kode" class="gem">Send kode</button>
+          </form>
+        <?php else: ?>
+          <p class="tekst">Koden kan ikke sendes: ejeren på adressen har ingen
+            brugbar mail. Skriv en mail på ejerens række og gem, så kommer
+            knappen frem.</p>
+        <?php endif; ?>
+      </div>
+    <?php endif; ?>
   </div>
+<script>
+  document.addEventListener('submit', function (e) {
+    var spoerg = e.target.getAttribute('data-bekraeft');
+    if (spoerg && !confirm(spoerg)) { e.preventDefault(); }
+  });
+</script>
 </body>
 </html>

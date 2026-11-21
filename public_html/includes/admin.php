@@ -153,6 +153,43 @@ function admin_husstande(PDO $pdo): array
     return $huse;
 }
 
+/** Husstanden, en adresse hører til, eller null. */
+function admin_hus(PDO $pdo, string $adresse): ?array
+{
+    return admin_husstande($pdo)[admin_noegle($adresse)] ?? null;
+}
+
+/**
+ * Adressen, links i mailen peger på. Skemaet og værten tages fra den
+ * aktuelle forespørgsel, så linket virker, hvor siden end ligger.
+ */
+function admin_base_url(): string
+{
+    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+
+    return ($https ? 'https://' : 'http://') . ($_SERVER['HTTP_HOST'] ?? 'hesselbjergnord.dk')
+        . rtrim(dirname($_SERVER['SCRIPT_NAME']), "/\\");
+}
+
+/**
+ * Teksten i bekræftelsen, før en kode sendes: hvem får den, og hvilke
+ * logins lukkes.
+ */
+function admin_send_spoergsmaal(array $hus, int $migSelv): string
+{
+    $andres = array_filter($hus['logins'], static fn($u) => (int)$u['id'] !== $migSelv);
+    $lukkes = count($andres);
+
+    return 'Send en ny kode til ' . $hus['ejer']['mail'] . '?' . "\n\n"
+        . 'Den gamle kode til ' . $hus['adresse'] . ' holder op med at virke.'
+        . ($lukkes > 0
+            ? "\n" . $lukkes . ' login' . ($lukkes === 1 ? '' : 's') . ' på adressen lukkes: '
+                . implode(', ', array_column($andres, 'username'))
+            : '')
+        . ($lukkes < count($hus['logins']) ? "\nDit eget login bliver ikke lukket." : '');
+}
+
 /** Passer husstanden på filteret? */
 function admin_filter(array $h, string $vis): bool
 {

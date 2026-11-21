@@ -53,31 +53,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $tilbage('', 'Sessionen er udløbet. Genindlæs siden, og prøv igen.');
     }
 
-    $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
-    $base = ($https ? 'https://' : 'http://') . ($_SERVER['HTTP_HOST'] ?? 'hesselbjergnord.dk')
-          . rtrim(dirname($_SERVER['SCRIPT_NAME']), "/\\");
-
+    // Den enkelte husstand får sin kode fra beboer-ret.php (Ret). Her er
+    // kun den samlede udsendelse.
+    $base = admin_base_url();
     $handling = (string)($_POST['handling'] ?? '');
-
-    if ($handling === 'send') {
-        $hus = $huse[(string)($_POST['hus'] ?? '')] ?? null;
-
-        if ($hus === null) {
-            $tilbage('', 'Husstanden blev ikke fundet. Genindlæs siden.');
-        }
-
-        $svar = admin_send_kode($pdo, $hus, $base, (int)$user['id']);
-
-        if (!$svar['ok']) {
-            $tilbage('', $svar['fejl']);
-        }
-
-        $tilbage('Ny kode sendt til ' . $svar['mail'] . ' (' . $hus['adresse'] . ').'
-            . ($svar['lukkede'] > 0
-                ? ' ' . $svar['lukkede'] . ' login' . ($svar['lukkede'] === 1 ? '' : 's') . ' på adressen er lukket.'
-                : ''));
-    }
 
     if ($handling === 'send-alle') {
         $sendt = 0;
@@ -236,17 +215,10 @@ $naesteBunke = min(count($tilUdsendelse), ADMIN_SEND_AD_GANGEN);
     border: 1px solid rgba(255,255,255,0.28); border-radius: 8px; padding: 4px 12px;
   }
   a.lille:hover, button.lille:hover:not(:disabled), .ejer:hover { background: rgba(150,210,255,0.2); }
-  button.lille.send { color: #fff; background: rgba(70,150,225,0.4); border-color: rgba(150,200,255,0.6); }
   button.ejer { color: rgba(255,255,255,0.7); border-style: dashed; }
   .knapper form { display: inline; }
   .knapper > * + * { margin-left: 4px; }
-  .person-ret { margin-left: 6px; font-size: 0.8rem; }
 
-  details.vaerktoej summary { cursor: pointer; font-size: 1.1rem; font-weight: 600; }
-  details.vaerktoej[open] summary { margin-bottom: 14px; }
-  .vaerktoej section + section { margin-top: 20px; }
-  .vaerktoej h2 { font-size: 1rem; margin-bottom: 6px; }
-  .vaerktoej p { font-size: 0.9rem; line-height: 1.5; color: rgba(255,255,255,0.85); max-width: 72ch; margin-bottom: 10px; }
 
   footer {
     position: relative; z-index: 1; text-align: center; padding: 10px 10px 30px;
@@ -280,10 +252,10 @@ $naesteBunke = min(count($tilUdsendelse), ADMIN_SEND_AD_GANGEN);
     <div class="panel">
       <h1>Admin</h1>
       <p class="lead">Én række pr. sommerhus: hvem der bor der, og om de har
-        et login. <b>Send kode</b> sender en ny adgangskode til ejerens mail
-        (<span class="stjerne">★</span>). Den gamle kode holder op med at
-        virke, og de logins, der er oprettet på adressen, lukkes — så brug
-        den også, når et hus skifter ejer.</p>
+        et login. Koden sendes til ejerens mail (<span class="stjerne">★</span>).
+        Skal én husstand have en ny kode — fx når huset skifter ejer — så tryk
+        <b>Ret</b> og <b>Send kode</b> derinde. Den gamle kode holder op med
+        at virke, og de logins, der er oprettet på adressen, lukkes.</p>
 
       <div class="advarsel">
         Siden indeholder personoplysninger om navngivne mennesker. Del ikke
@@ -320,7 +292,28 @@ $naesteBunke = min(count($tilUdsendelse), ADMIN_SEND_AD_GANGEN);
           <?php endif; ?>
         </form>
         <a class="tilfoej" href="beboer-ret.php">+ Tilføj beboer</a>
+        <form method="post" data-bekraeft="Send en kode til ejeren på <?php echo $naesteBunke; ?> husstande nu?">
+          <input type="hidden" name="csrf_token" value="<?php echo $e($csrf); ?>">
+          <input type="hidden" name="s" value="<?php echo $e($soeg); ?>">
+          <input type="hidden" name="vis" value="<?php echo $e($vis); ?>">
+          <button type="submit" name="handling" value="send-alle" class="blaa"
+                  title="Til ejeren på hver husstand, der hverken har et login eller har fået en kode før. <?php echo ADMIN_SEND_AD_GANGEN; ?> ad gangen."
+                  <?php echo $naesteBunke === 0 ? 'disabled' : ''; ?>>
+            <?php if ($naesteBunke === 0): ?>
+              Alle har fået en kode
+            <?php elseif (count($tilUdsendelse) > $naesteBunke): ?>
+              Send kode til de næste <?php echo $naesteBunke; ?> (<?php echo count($tilUdsendelse); ?> mangler)
+            <?php else: ?>
+              Send kode til alle (<?php echo $naesteBunke; ?>)
+            <?php endif; ?>
+          </button>
+        </form>
       </div>
+      <?php if (count($tilUdsendelse) > ADMIN_SEND_AD_GANGEN): ?>
+        <p class="smaat">Der sendes <?php echo ADMIN_SEND_AD_GANGEN; ?> ad gangen, så
+          serveren ikke løber tør for tid. Tryk igen, til alle har fået en —
+          ingen får koden to gange.</p>
+      <?php endif; ?>
     </div>
 
     <div class="panel">
@@ -346,6 +339,13 @@ $naesteBunke = min(count($tilUdsendelse), ADMIN_SEND_AD_GANGEN);
             </thead>
             <tbody>
               <?php foreach ($viste as $noegle => $h): ?>
+                <?php
+                  // Under "Bestyrelse" vises kun bestyrelsesmedlemmerne selv,
+                  // ikke medejerne på deres adresse.
+                  $personer = $vis === 'bestyrelse'
+                      ? array_values(array_filter($h['personer'], static fn($p) => (int)$p['bestyrelse'] === 1))
+                      : $h['personer'];
+                ?>
                 <tr class="<?php echo $h['personer'] === [] ? 'tom-hus' : ''; ?>">
                   <td class="hus"><?php echo $e($h['adresse']); ?></td>
 
@@ -353,7 +353,7 @@ $naesteBunke = min(count($tilUdsendelse), ADMIN_SEND_AD_GANGEN);
                     <?php if ($h['personer'] === []): ?>
                       <span class="maerke nej">ingen i kartoteket</span>
                     <?php endif; ?>
-                    <?php foreach ($h['personer'] as $p): ?>
+                    <?php foreach ($personer as $p): ?>
                       <?php
                         $faarKoden = (int)$p['id'] === $h['ejer']['id'];
                         $venter = $p['status'] === 'afventer_oplysninger';
@@ -369,7 +369,6 @@ $naesteBunke = min(count($tilUdsendelse), ADMIN_SEND_AD_GANGEN);
                         <?php if ((int)$p['bestyrelse'] === 1): ?>
                           <span class="maerke best"><?php echo $e($p['rolle'] !== '' ? $p['rolle'] : 'Bestyrelse'); ?></span>
                         <?php endif; ?>
-                        <a class="person-ret lille" href="beboer-ret.php?id=<?php echo (int)$p['id']; ?>">Ret</a>
 
                         <?php
                           $kontakt = [];
@@ -418,6 +417,9 @@ $naesteBunke = min(count($tilUdsendelse), ADMIN_SEND_AD_GANGEN);
                     <?php elseif ($h['personer'] !== []): ?>
                       <span class="maerke nej">ingen login</span>
                     <?php endif; ?>
+                    <?php if ($h['personer'] !== [] && $h['ejer']['mail'] === ''): ?>
+                      <div><span class="maerke stop" title="Koden kan ikke sendes, før ejeren har en brugbar mail.">ejer uden mail</span></div>
+                    <?php endif; ?>
                     <?php if ($h['kort'] !== null && $h['kort']['sendt_at']): ?>
                       <div class="smaat">kode sendt <?php echo $e(date('d-m-Y', strtotime($h['kort']['sendt_at']))); ?></div>
                     <?php endif; ?>
@@ -437,29 +439,15 @@ $naesteBunke = min(count($tilUdsendelse), ADMIN_SEND_AD_GANGEN);
                       ?>" title="Kopierer adressen og åbner boligejer.dk">Find ejer</button>
                     <?php endif; ?>
 
-                    <?php if ($h['ejer']['mail'] !== ''): ?>
+                    <?php foreach ($personer as $p): ?>
                       <?php
-                        $andres = array_filter($h['logins'], static fn($u) => (int)$u['id'] !== (int)$user['id']);
-                        $lukkes = count($andres);
-                        $spoerg = 'Send en ny kode til ' . $h['ejer']['mail'] . '?' . "\n\n"
-                            . 'Den gamle kode til ' . $h['adresse'] . ' holder op med at virke.'
-                            . ($lukkes > 0
-                                ? "\n" . $lukkes . ' login' . ($lukkes === 1 ? '' : 's') . ' på adressen lukkes: '
-                                    . implode(', ', array_column($andres, 'username'))
-                                : '')
-                            . ($lukkes < count($h['logins']) ? "\nDit eget login bliver ikke lukket." : '');
+                        // Bor der flere, står fornavnet på knappen, så man kan se, hvem man retter.
+                        $fornavn = strtok(trim((string)$p['kontaktperson']), ' ') ?: '';
                       ?>
-                      <form method="post" data-bekraeft="<?php echo $e($spoerg); ?>">
-                        <input type="hidden" name="csrf_token" value="<?php echo $e($csrf); ?>">
-                        <input type="hidden" name="hus" value="<?php echo $e($noegle); ?>">
-                        <input type="hidden" name="s" value="<?php echo $e($soeg); ?>">
-                        <input type="hidden" name="vis" value="<?php echo $e($vis); ?>">
-                        <button type="submit" name="handling" value="send" class="lille send">Send kode</button>
-                      </form>
-                    <?php elseif ($h['personer'] !== []): ?>
-                      <button type="button" class="lille" disabled
-                              title="Ejeren har ingen brugbar mail. Ret den, så kan koden sendes.">Ingen mail</button>
-                    <?php endif; ?>
+                      <a class="lille" href="beboer-ret.php?id=<?php echo (int)$p['id']; ?>"
+                         title="Ret <?php echo $e($p['kontaktperson']); ?>">Ret<?php
+                         echo count($personer) > 1 && $fornavn !== '' ? ' ' . $e($fornavn) : ''; ?></a>
+                    <?php endforeach; ?>
                   </td>
                 </tr>
               <?php endforeach; ?>
@@ -470,40 +458,14 @@ $naesteBunke = min(count($tilUdsendelse), ADMIN_SEND_AD_GANGEN);
     </div>
 
     <div class="panel">
-      <details class="vaerktoej">
-        <summary>Udsendelse og import</summary>
-
-        <section>
-          <h2>Send koden til alle, der ikke har et login</h2>
-          <p>Går til ejeren på hver husstand, der hverken har et login eller
-            har fået en kode før. Der sendes <?php echo ADMIN_SEND_AD_GANGEN; ?>
-            ad gangen, så udsendelsen ikke løber ind i serverens tidsgrænse.
-            Tryk igen, til tallet er nul — ingen får koden to gange.</p>
-          <form method="post" data-bekraeft="Send en ny kode til <?php echo $naesteBunke; ?> husstande nu?">
-            <input type="hidden" name="csrf_token" value="<?php echo $e($csrf); ?>">
-            <button type="submit" name="handling" value="send-alle" class="blaa"
-                    <?php echo $naesteBunke === 0 ? 'disabled' : ''; ?>>
-              <?php if ($naesteBunke === 0): ?>
-                Alle har fået koden
-              <?php else: ?>
-                Send til de næste <?php echo $naesteBunke; ?>
-                (<?php echo count($tilUdsendelse); ?> mangler)
-              <?php endif; ?>
-            </button>
-          </form>
-          <?php if ($antal['ingen-mail'] > 0): ?>
-            <p class="smaat"><a href="admin.php?vis=ingen-mail"><?php echo $antal['ingen-mail']; ?>
-              husstand<?php echo $antal['ingen-mail'] === 1 ? '' : 'e'; ?></a> kan ikke nås,
-              fordi ejeren ikke har en brugbar mail.</p>
-          <?php endif; ?>
-        </section>
-
-        <section>
-          <h2>Importér regneark</h2>
-          <p>Læg bestyrelsens regneark ind i kartoteket på
-            <a href="beboer-import.php" style="color:#cfe9ff;">importsiden</a>.</p>
-        </section>
-      </details>
+      <p class="lead">
+        <?php if ($antal['ingen-mail'] > 0): ?>
+          <a href="admin.php?vis=ingen-mail"><?php echo $antal['ingen-mail']; ?>
+            husstand<?php echo $antal['ingen-mail'] === 1 ? '' : 'e'; ?></a> kan ikke få en kode,
+          fordi ejeren ikke har en brugbar mail. &nbsp;·&nbsp;
+        <?php endif; ?>
+        <a href="beboer-import.php">Importér regneark</a>
+      </p>
     </div>
   </div>
 
