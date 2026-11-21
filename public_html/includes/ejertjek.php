@@ -45,14 +45,19 @@ function ejertjek_hent_ois(string $bfe): array
     $fejl = curl_error($ch);
     curl_close($ch);
 
+    // Et stykke af svaret kommer med i fejlen — er det en blokeringsside,
+    // står det der.
+    $uddrag = trim(mb_substr(preg_replace('/\s+/', ' ', strip_tags((string)$svar)) ?? '', 0, 120));
+    $uddrag = $uddrag !== '' ? ' (' . $uddrag . ')' : '';
+
     if ($svar === false || $status !== 200) {
-        return ['ok' => false, 'navne' => [], 'fejl' => 'OIS svarede ' . ($status ?: $fejl)];
+        return ['ok' => false, 'navne' => [], 'fejl' => 'OIS svarede ' . ($status ?: $fejl) . $uddrag];
     }
 
     $data = json_decode((string)$svar, true);
 
     if (!is_array($data) || !isset($data['ejerdata']) || !is_array($data['ejerdata'])) {
-        return ['ok' => false, 'navne' => [], 'fejl' => 'OIS svarede noget uventet'];
+        return ['ok' => false, 'navne' => [], 'fejl' => 'OIS svarede noget uventet' . $uddrag];
     }
 
     $navne = [];
@@ -201,8 +206,8 @@ function ejertjek_koer(PDO $pdo, int $max = EJERTJEK_AD_GANGEN): array
         $gammel = $t === null
             || $t['bfe'] !== $bfe
             || strtotime((string)$t['tjekket_at']) < $graense
-            // Et fejlet opslag prøves igen næste dag, ikke først om en måned.
-            || ($t['fejl'] !== '' && strtotime((string)$t['tjekket_at']) < time() - 86400);
+            // Et fejlet opslag prøves igen efter en time, ikke først om en måned.
+            || ($t['fejl'] !== '' && strtotime((string)$t['tjekket_at']) < time() - 3600);
 
         if ($gammel) {
             $kø[$noegle] = ['adresse' => $hus['adresse'], 'bfe' => $bfe];
@@ -217,6 +222,7 @@ function ejertjek_koer(PDO $pdo, int $max = EJERTJEK_AD_GANGEN): array
     );
 
     $tjekket = 0;
+    $sidsteFejl = '';
     $fejlede = 0;
 
     foreach (array_slice($kø, 0, $max, true) as $noegle => $h) {
@@ -234,11 +240,13 @@ function ejertjek_koer(PDO $pdo, int $max = EJERTJEK_AD_GANGEN): array
 
         if (!$svar['ok']) {
             $fejlede++;
+            $sidsteFejl = $svar['fejl'];
         }
 
         // Pænt over for OIS: ikke flere opslag i sekundet.
         usleep(300000);
     }
 
-    return ['tjekket' => $tjekket, 'fejl' => $fejlede, 'mangler' => max(0, count($kø) - $tjekket)];
+    // sidste_fejl er OIS' svar eller curls fejltekst — aldrig et navn.
+    return ['tjekket' => $tjekket, 'fejl' => $fejlede, 'mangler' => max(0, count($kø) - $tjekket), 'sidste_fejl' => $sidsteFejl];
 }
