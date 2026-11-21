@@ -143,6 +143,15 @@
     z-index: 1;
   }
   .leaflet-container { font: inherit; }
+  /* Tynde hvide streger mellem kortbrikkerne: når brikkerne skaleres (fx
+     ved et halvt zoomtrin), tegner Chrome hver brik for sig og lader en
+     brøkdel af en pixel stå åben mellem dem. Afprøvet: med disse linjer
+     tegnes hele brikfladen samlet, og stregerne forsvinder. */
+  .leaflet-tile-pane { filter: blur(0); }
+  .leaflet-container img.leaflet-tile {
+    outline: 1px solid transparent;
+    will-change: transform;
+  }
   .leaflet-popup-content { font-size: 0.95rem; }
   .kort-hjaelp {
     margin-top: 10px;
@@ -364,7 +373,8 @@
       { maxZoom: 19, attribution: 'Luftfoto: Esri, Maxar, Earthstar Geographics' }
     );
 
-    osm.addTo(kort);
+    // Siden åbner med luftfoto; kortet kan vælges øverst til højre.
+    luftfoto.addTo(kort);
     L.control.layers({ 'Kort': osm, 'Luftfoto': luftfoto }, null, { position: 'topright' }).addTo(kort);
 
     // Selve området: en zone på 65 m ud til hver side af vejene. Et konvekst
@@ -469,14 +479,23 @@
       liste.appendChild(li);
     });
 
-    kort.fitBounds([[DATA.bounds[0][0], DATA.bounds[0][1]], [DATA.bounds[1][0], DATA.bounds[1][1]]],
-      { padding: [30, 30] });
-
     // Et halvt trin længere ud end det, der lige præcis omslutter vejene.
     // Så kan man se, hvor området ligger i forhold til stranden, klinten
     // og Ristingevej, i stedet for at det fylder hele rammen.
-    // Math.floor: zoomen, der passer på hele trin, som før zoomSnap 0.5.
-    kort.setZoom(Math.floor(kort.getZoom()) - 0.5);
+    //
+    // Zoomen regnes ud først og sættes i ét hug. Zoomede kortet først ind
+    // og så ud igen, lå brikkerne fra begge trin oven på hinanden et
+    // øjeblik — og kanten mellem dem stod som en hvid firkant.
+    // Math.floor: zoomen på hele trin, som kortet stod på før zoomSnap 0.5.
+    var omraade = L.latLngBounds(
+      [DATA.bounds[0][0], DATA.bounds[0][1]],
+      [DATA.bounds[1][0], DATA.bounds[1][1]]
+    );
+    kort.setView(
+      omraade.getCenter(),
+      Math.floor(kort.getBoundsZoom(omraade, false, L.point(60, 60))) - 0.5,
+      { animate: false }
+    );
 
     // Rullehjulet skal ikke stjæle siden, når man scroller forbi kortet.
     kort.on('click', function () { kort.scrollWheelZoom.enable(); });
