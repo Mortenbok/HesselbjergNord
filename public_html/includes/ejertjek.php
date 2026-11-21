@@ -18,10 +18,26 @@ require_once __DIR__ . '/admin.php';
 /** Hvor gammelt et tjek må være, før det tages igen. Lidt under en måned. */
 const EJERTJEK_DAGE = 25;
 
-/** Husstande pr. kald. Hvert opslag tager under et sekund. */
-const EJERTJEK_AD_GANGEN = 25;
+/**
+ * Husstande pr. kald. Med pausen nedenfor tager et kald omkring et halvt
+ * minut, så det holder sig inden for serverens tidsgrænse.
+ */
+const EJERTJEK_AD_GANGEN = 15;
 
-/** Henter ejernavnene på en ejendom. Returnerer ['ok' => bool, 'navne' => [], 'fejl' => string]. */
+/**
+ * Pause mellem to opslag, i mikrosekunder. OIS har en grænse for, hvor
+ * hurtigt man må spørge: med 0,3 sekunder gik fem igennem, og så svarede
+ * resten 429.
+ */
+const EJERTJEK_PAUSE = 2000000;
+
+/**
+ * Henter ejernavnene på en ejendom.
+ *
+ * Returnerer ['ok' => bool, 'navne' => [], 'fejl' => string, 'for_hurtigt' => bool].
+ * for_hurtigt betyder, at OIS bad os vente (429) — så er der intet galt
+ * med ejendommen, og den skal bare spørges igen senere.
+ */
 function ejertjek_hent_ois(string $bfe): array
 {
     $ch = curl_init('https://nyt.ois.dk/api/ejer/get?bfe=' . rawurlencode($bfe));
@@ -52,6 +68,10 @@ function ejertjek_hent_ois(string $bfe): array
     // står det der.
     $uddrag = trim(mb_substr(preg_replace('/\s+/', ' ', strip_tags((string)$svar)) ?? '', 0, 120));
     $uddrag = $uddrag !== '' ? ' (' . $uddrag . ')' : '';
+
+    if ($status === 429) {
+        return ['ok' => false, 'navne' => [], 'fejl' => 'OIS bad os vente' . $uddrag, 'for_hurtigt' => true];
+    }
 
     if ($svar === false || $status !== 200) {
         return ['ok' => false, 'navne' => [], 'fejl' => 'OIS svarede ' . ($status ?: $fejl) . $uddrag];
@@ -189,8 +209,9 @@ function ejertjek_status(array $hus, ?array $tjek, string $bfe): array
 /**
  * Tjekker de husstande, hvis tjek er for gammelt — højst $max ad gangen.
  *
- * Returnerer ['tjekket' => int, 'fejl' => int, 'mangler' => int], hvor
- * mangler er dem, der stadig venter efter denne omgang.
+ * Returnerer ['tjekket' => int, 'fejl' => int, 'mangler' => int,
+ * 'pause' => bool, 'sidste_fejl' => string], hvor mangler er dem, der
+ * stadig venter efter denne omgang, og pause betyder, at OIS bad os vente.
  */
 function ejertjek_koer(PDO $pdo, int $max = EJERTJEK_AD_GANGEN): array
 {
@@ -209,8 +230,8 @@ function ejertjek_koer(PDO $pdo, int $max = EJERTJEK_AD_GANGEN): array
         $gammel = $t === null
             || $t['bfe'] !== $bfe
             || strtotime((string)$t['tjekket_at']) < $graense
-            // Et fejlet opslag prøves igen efter en time, ikke først om en måned.
-            || ($t['fejl'] !== '' && strtotime((string)$t['tjekket_at']) < time() - 3600);
+            // Et fejlet opslag prøves igen efter et kvarter, ikke først om en måned.
+            || ($t['fejl'] !== '' && strtotime((string)$t['tjekket_at']) < time() - 900);
 
         if ($gammel) {
             $kø[$noegle] = ['adresse' => $hus['adresse'], 'bfe' => $bfe];
@@ -227,9 +248,23 @@ function ejertjek_koer(PDO $pdo, int $max = EJERTJEK_AD_GANGEN): array
     $tjekket = 0;
     $sidsteFejl = '';
     $fejlede = 0;
+    $pause = false;
 
     foreach (array_slice($kø, 0, $max, true) as $noegle => $h) {
+        if ($tjekket > 0) {
+            // Pænt over for OIS — se EJERTJEK_PAUSE.
+            usleep(EJERTJEK_PAUSE);
+        }
+
         $svar = ejertjek_hent_ois($h['bfe']);
+
+        if (!empty($svar['for_hurtigt'])) {
+            // OIS vil have en pause. Husstanden gemmes ikke som fejlet —
+            // den står stadig i køen og tages i næste kald.
+            $pause = true;
+            $sidsteFejl = $svar['fejl'];
+            break;
+        }
 
         $gem->execute([
             ':n' => $noegle,
@@ -245,11 +280,15 @@ function ejertjek_koer(PDO $pdo, int $max = EJERTJEK_AD_GANGEN): array
             $fejlede++;
             $sidsteFejl = $svar['fejl'];
         }
-
-        // Pænt over for OIS: ikke flere opslag i sekundet.
-        usleep(300000);
     }
 
     // sidste_fejl er OIS' svar eller curls fejltekst — aldrig et navn.
-    return ['tjekket' => $tjekket, 'fejl' => $fejlede, 'mangler' => max(0, count($kø) - $tjekket), 'sidste_fejl' => $sidsteFejl];
+    // pause: OIS bad os vente; kalderen skal vente lidt og kalde igen.
+    return [
+        'tjekket' => $tjekket,
+        'fejl' => $fejlede,
+        'mangler' => max(0, count($kø) - $tjekket),
+        'pause' => $pause,
+        'sidste_fejl' => $sidsteFejl,
+    ];
 }

@@ -10,7 +10,9 @@
 # fx første gang, så I ikke skal vente til den 1.
 #
 # Selve arbejdet sker på serveren i ejertjek.php. Herfra kaldes den bare
-# igen og igen, til der ikke mangler flere — hvert kald tager 25 husstande.
+# igen og igen, til der ikke mangler flere — hvert kald tager 15 husstande
+# med 2 sekunder imellem. OIS har en grænse for, hvor hurtigt man må spørge;
+# rammes den, svarer serveren "pause", og så venter vi et minut.
 #
 # BEMÆRK: GitHub slår planlagte kørsler fra, hvis der ikke er pushet til
 # depotet i 60 dage. Så får ejeren af depotet en mail, og den kan slås til
@@ -27,18 +29,27 @@ on:
 jobs:
   tjek:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 90
 
     steps:
       - name: Hent ejernavne fra OIS
         run: |
           set -eu
-          for omgang in $(seq 1 30); do
+          for omgang in $(seq 1 80); do
             svar=$(curl -fsS --max-time 180 "https://hesselbjergnord.dk/ejertjek.php")
             echo "Omgang $omgang: $svar"
 
             tjekket=$(echo "$svar" | jq -r '.tjekket')
             mangler=$(echo "$svar" | jq -r '.mangler')
+            pause=$(echo "$svar" | jq -r '.pause // false')
+
+            # OIS bad os vente (for mange opslag for hurtigt). Vent et
+            # minut, og tag resten bagefter.
+            if [ "$pause" = "true" ]; then
+              echo "OIS beder om en pause — venter 60 sekunder."
+              sleep 60
+              continue
+            fi
 
             # Færdig, når intet mangler — eller når en omgang ikke flyttede
             # noget, så den ikke kører i ring.
@@ -46,7 +57,9 @@ jobs:
               echo "Færdig."
               exit 0
             fi
+
+            sleep 5
           done
 
-          echo "Stoppede efter 30 omgange med $mangler tilbage." >&2
+          echo "Stoppede efter 80 omgange med $mangler tilbage." >&2
           exit 1
