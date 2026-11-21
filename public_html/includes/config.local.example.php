@@ -32,4 +32,12 @@ return [
     'smtp_user' => 'bestyrelsen@hesselbjergnord.dk',
     'smtp_pass' => '',
     'smtp_helo' => 'hesselbjergnord.dk',
+
+    // Databasen hos Simply.com. Bruges af includes/db.php — uden db_pass
+    // kan siden ikke starte.
+    'db_host' => 'mysql37.unoeuro.com',
+    'db_port' => 3306,
+    'db_name' => 'hesselbjergnord_dk_db',
+    'db_user' => 'hesselbjergnord_dk',
+    'db_pass' => '',
 ];

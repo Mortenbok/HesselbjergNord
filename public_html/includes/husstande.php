@@ -125,7 +125,6 @@ const HBN_HUSSTANDE = [
     'Hylleskovvænget 4',
     'Hylleskovvænget 5',
     'Hylleskovvænget 6',
-    'Hylleskovvænget 7',
     'Hylleskovvænget 8',
     'Hylleskovvænget 9',
     'Hylleskovvænget 10',

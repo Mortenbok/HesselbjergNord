@@ -6,11 +6,23 @@
  * herfra, så siden virker på et frisk hostingmiljø uden manuel import.
  */
 
-$host = 'mysql37.unoeuro.com';
-$port = 3306;
-$dbname = 'hesselbjergnord_dk_db';
-$username = 'hesselbjergnord_dk';
-$password = 'BGdk93ympnrfhDzRExAw';
+// Adgangen til databasen står i includes/config.local.php, som ikke er i
+// git — depotet er offentligt. Se config.local.example.php.
+$dbConfig = is_readable(__DIR__ . '/config.local.php') ? (array)require __DIR__ . '/config.local.php' : [];
+
+if (($dbConfig['db_pass'] ?? '') === '') {
+    error_log('db.php: db_pass mangler i includes/config.local.php');
+    http_response_code(500);
+    header('Content-Type: text/plain; charset=utf-8');
+    exit('Siden kan ikke få forbindelse til databasen lige nu.');
+}
+
+$host = (string)($dbConfig['db_host'] ?? 'mysql37.unoeuro.com');
+$port = (int)($dbConfig['db_port'] ?? 3306);
+$dbname = (string)($dbConfig['db_name'] ?? 'hesselbjergnord_dk_db');
+$username = (string)($dbConfig['db_user'] ?? 'hesselbjergnord_dk');
+$password = (string)$dbConfig['db_pass'];
+unset($dbConfig);
 
 $options = [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
