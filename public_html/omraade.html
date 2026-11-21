@@ -126,8 +126,11 @@
   .fakta b { display: block; font-size: 1.25rem; }
   .fakta span { font-size: 0.8rem; color: rgba(255,255,255,0.6); }
 
-  /* Selve kortet. */
+  /* Selve kortet. Det stikker 3 cm ud over panelet i hver side, når
+     skærmen er bred nok til det; på en smal skærm følger det panelet. */
   #kort {
+    margin-left: calc(-1 * clamp(0px, (100vw - 1100px) / 2, 3cm));
+    margin-right: calc(-1 * clamp(0px, (100vw - 1100px) / 2, 3cm));
     height: clamp(380px, 62vh, 620px);
     margin-top: 22px;
     border-radius: 14px;
@@ -400,7 +403,9 @@
           lineJoin: 'round'
         }).addTo(gruppe);
 
-        streg.bindPopup('<strong>' + navn + '</strong>');
+        // Navnet vises, når musen er over vejen. En popup ville flytte
+        // kortet for at få plads, og kortet skal blive, hvor det er.
+        streg.bindTooltip(navn, { sticky: true });
         streg.on('click', function () { fremhaev(navn); });
       });
 
@@ -420,11 +425,11 @@
 
       aktiv = navn;
 
+      // Kun farven skifter — kortet zoomer og flytter sig ikke.
       lag[navn].eachLayer(function (l) {
         l.setStyle({ color: AKTIV_FARVE, weight: 8 });
+        l.bringToFront();
       });
-
-      kort.fitBounds(lag[navn].getLayers()[0].getBounds(), { maxZoom: 18, padding: [60, 60] });
 
       document.querySelectorAll('#vejliste button').forEach(function (b) {
         b.style.background = b.dataset.navn === navn ? 'rgba(255,122,89,0.3)' : '';
