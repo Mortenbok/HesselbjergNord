@@ -1,16 +1,19 @@
 <?php
 /**
- * Adgangskoder — én kode pr. husstand, der giver login.
+ * Adgangskoder — hver person i kartoteket har sin egen kode, der giver login.
  *
- * Bestyrelsen sender koden fra admin.php til ejerens mail i
- * beboerkartoteket. At mailen står på ejeren, er beviset for, at
+ * Bestyrelsen sender koden fra admin.php til personens mail i
+ * beboerkartoteket. At mailen står på personen, er beviset for, at
  * modtageren hører til adressen — derfor skal bestyrelsen ikke godkende
  * noget i hånden.
  *
- * Koden brænder ikke ved brug: ejer og medejer kan oprette hver deres
- * login, og et glemt kodeord klares ved at bruge linket igen. Sender
- * bestyrelsen en ny kode, dør den gamle, og alle logins på adressen
- * lukkes (fx når et hus skifter ejer).
+ * Koden brænder ikke ved brug: et glemt kodeord klares ved at bruge linket
+ * igen. Sender bestyrelsen en ny kode til en person, dør personens gamle,
+ * og personens eget login lukkes; de andre på adressen røres ikke.
+ *
+ * Før de personlige koder havde hver husstand én fælles kode (tabellen
+ * adgangskort), sendt til ejeren. De koder virker stadig, til ejeren får
+ * sin egen.
  */
 
 require_once __DIR__ . '/adresser.php';
@@ -61,7 +64,34 @@ function adgang_find_kort(PDO $pdo, string $kode): ?array
     $stmt->execute([':kode' => $kode]);
     $kort = $stmt->fetch();
 
-    return $kort ?: null;
+    if ($kort) {
+        return $kort;
+    }
+
+    // En personlig kode fra kartoteket. Den ligner et kort udadtil, men
+    // id er 0, og mailen er personens egen, så formularen kan udfylde den.
+    $stmt = $pdo->prepare('SELECT * FROM beboerkartotek WHERE kode = :kode LIMIT 1');
+    $stmt->execute([':kode' => $kode]);
+    $p = $stmt->fetch();
+
+    if (!$p) {
+        return null;
+    }
+
+    require_once __DIR__ . '/admin.php';
+
+    // Adressen skrives som husstandens, så loginnet havner på det rigtige hus.
+    $hus = admin_hus($pdo, (string)$p['sommerhusadresse']);
+
+    return [
+        'id' => 0,
+        'beboer_id' => (int)$p['id'],
+        'adresse' => $hus['adresse'] ?? admin_kanonisk_adresse((string)$p['sommerhusadresse']),
+        'kode' => $kode,
+        'spaerret' => 0,
+        'navn' => trim((string)$p['kontaktperson']),
+        'mail' => admin_person_mail($p)['mail'],
+    ];
 }
 
 /** Brugere, der allerede er oprettet på adressen. */
@@ -180,6 +210,11 @@ function adgang_opret_bruger(PDO $pdo, array $kort, string $navn, string $mail, 
 /** Noterer, at kortet er brugt. */
 function adgang_noter_brug(PDO $pdo, int $kortId): void
 {
+    // En personlig kode (id 0) har intet kort at tælle op på.
+    if ($kortId <= 0) {
+        return;
+    }
+
     $pdo->prepare('UPDATE adgangskort SET sidst_brugt = NOW(), antal_brug = antal_brug + 1 WHERE id = :id')
         ->execute([':id' => $kortId]);
 }

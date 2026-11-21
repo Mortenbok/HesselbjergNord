@@ -84,11 +84,27 @@ function admin_person_mail(array $p): array
     return ['mail' => '', 'navn' => trim((string)($p['kontaktperson'] ?? '')), 'id' => (int)($p['id'] ?? 0)];
 }
 
+/** Personens brugbare mails, med små bogstaver. */
+function admin_person_mails(array $p): array
+{
+    $ud = [];
+
+    foreach (['mail', 'mail2'] as $felt) {
+        $mail = beboer_mail((string)($p[$felt] ?? ''));
+
+        if ($mail !== '') {
+            $ud[] = mb_strtolower($mail);
+        }
+    }
+
+    return array_values(array_unique($ud));
+}
+
 /**
- * Ejerens mail — den, koden sendes til, når den sendes fra forsiden.
+ * Ejerens mail. Bruges til filteret "ejer uden mail" og til at finde
+ * ejeren, der fik husstandens fælles kode, før hver person fik sin egen.
  *
- * Første ejer-række på adressen med en brugbar mail. Fra Ret-siden kan
- * koden i stedet sendes til den person, der er åbnet — se admin_send_kode().
+ * Første ejer-række på adressen med en brugbar mail.
  */
 function admin_ejer_mail(array $personer): array
 {
@@ -111,8 +127,15 @@ function admin_ejer_mail(array $personer): array
  * Alle husstande, sorteret efter adresse.
  *
  * Hver husstand: noegle, adresse, personer (kartoteksrækker, ejer først),
- * kort (rækken i adgangskort eller null), logins (aktive brugere),
- * ejer (se admin_ejer_mail).
+ * kort (rækken i adgangskort eller null), logins (aktive brugere på
+ * adressen), andre_logins (dem af logins, der ikke passer på en person i
+ * kartoteket), ejer (se admin_ejer_mail).
+ *
+ * Hver person får desuden:
+ *   'login'  den aktive bruger med personens mail (eller null) — søgt på
+ *            alle adresser, så én mail på to huse ikke ser ud til at mangle
+ *   'sendt'  hvornår personen sidst fik en kode (eller null). Ejeren, der
+ *            fik husstandens fælles kode før de personlige koder, tæller med.
  */
 function admin_husstande(PDO $pdo): array
 {
@@ -151,7 +174,10 @@ function admin_husstande(PDO $pdo): array
            FROM users WHERE is_active = 1 AND address <> ''"
     )->fetchAll();
 
+    $efterMail = [];
+
     foreach ($brugere as $u) {
+        $efterMail[mb_strtolower((string)$u['username'])] = $u;
         $n = admin_noegle((string)$u['address']);
 
         if (isset($huse[$n])) {
@@ -161,6 +187,32 @@ function admin_husstande(PDO $pdo): array
 
     foreach ($huse as &$h) {
         $h['ejer'] = admin_ejer_mail($h['personer']);
+        $kendte = [];
+
+        foreach ($h['personer'] as &$p) {
+            $p['login'] = null;
+
+            foreach (admin_person_mails($p) as $m) {
+                if (isset($efterMail[$m])) {
+                    $p['login'] = $efterMail[$m];
+                    $kendte[(int)$efterMail[$m]['id']] = true;
+                    break;
+                }
+            }
+
+            $p['sendt'] = $p['kode_sendt_at'] ?? null;
+
+            if ($p['sendt'] === null && (int)$p['id'] === $h['ejer']['id']
+                && $h['kort'] !== null && $h['kort']['sendt_at']) {
+                $p['sendt'] = $h['kort']['sendt_at'];
+            }
+        }
+        unset($p);
+
+        $h['andre_logins'] = array_values(array_filter(
+            $h['logins'],
+            static fn($u) => !isset($kendte[(int)$u['id']])
+        ));
     }
     unset($h);
 
@@ -189,22 +241,45 @@ function admin_base_url(): string
 }
 
 /**
- * Teksten i bekræftelsen, før en kode sendes: hvem får den, og hvilke
- * logins lukkes.
+ * Personen med det id i husstanden — med 'login' og 'sendt' fra
+ * admin_husstande() — eller null.
  */
-function admin_send_spoergsmaal(array $hus, int $migSelv, ?array $modtager = null): string
+function admin_hus_person(array $hus, int $id): ?array
 {
-    $modtager ??= $hus['ejer'];
-    $andres = array_filter($hus['logins'], static fn($u) => (int)$u['id'] !== $migSelv);
-    $lukkes = count($andres);
+    foreach ($hus['personer'] as $p) {
+        if ((int)$p['id'] === $id) {
+            return $p;
+        }
+    }
 
-    return 'Send en ny kode til ' . $modtager['navn'] . ' (' . $modtager['mail'] . ')?' . "\n\n"
-        . 'Den gamle kode til ' . $hus['adresse'] . ' holder op med at virke.'
-        . ($lukkes > 0
-            ? "\n" . $lukkes . ' login' . ($lukkes === 1 ? '' : 's') . ' på adressen lukkes: '
-                . implode(', ', array_column($andres, 'username'))
+    return null;
+}
+
+/**
+ * Teksten i bekræftelsen, før en kode sendes til én person: hvem får den,
+ * og hvad sker der med personens login. De andre på adressen røres ikke.
+ */
+function admin_send_spoergsmaal(array $p, int $migSelv): string
+{
+    $m = admin_person_mail($p);
+    $login = $p['login'] ?? null;
+
+    return 'Send en ny kode til ' . $m['navn'] . ' (' . $m['mail'] . ')?' . "\n\n"
+        . 'En kode, ' . $m['navn'] . ' har fået før, holder op med at virke.'
+        . ($login !== null && (int)$login['id'] !== $migSelv
+            ? "\n" . 'Loginnet ' . $login['username'] . ' lukkes, til den nye kode er brugt.'
             : '')
-        . ($lukkes < count($hus['logins']) ? "\nDit eget login bliver ikke lukket." : '');
+        . ($login !== null && (int)$login['id'] === $migSelv ? "\nDit eget login bliver ikke lukket." : '')
+        . "\n" . 'De andre på adressen beholder deres login.';
+}
+
+/** Personer, der mangler et login, og som har en mail at sende koden til. */
+function admin_mangler_login(array $h): array
+{
+    return array_values(array_filter(
+        $h['personer'],
+        static fn($p) => $p['login'] === null && admin_person_mails($p) !== []
+    ));
 }
 
 /** Passer husstanden på filteret? */
@@ -212,7 +287,7 @@ function admin_filter(array $h, string $vis): bool
 {
     switch ($vis) {
         case 'ikke-oprettet':
-            return $h['personer'] !== [] && $h['logins'] === [];
+            return admin_mangler_login($h) !== [];
         case 'ingen-mail':
             return $h['personer'] !== [] && $h['ejer']['mail'] === '';
         case 'mangler':
@@ -267,38 +342,51 @@ function admin_soeg(array $h, string $soeg): bool
     return false;
 }
 
-/** En ledig, ny kode. */
+/** En ledig, ny kode — hverken brugt af en husstand eller af en person. */
 function admin_ledig_kode(PDO $pdo): string
 {
-    $findes = $pdo->prepare('SELECT 1 FROM adgangskort WHERE kode = :k LIMIT 1');
+    $findes = $pdo->prepare(
+        'SELECT 1 FROM adgangskort WHERE kode = ?
+         UNION SELECT 1 FROM beboerkartotek WHERE kode = ? LIMIT 1'
+    );
 
     do {
         $kode = adgang_ny_kode();
-        $findes->execute([':k' => $kode]);
+        $findes->execute([$kode, $kode]);
     } while ($findes->fetchColumn());
 
     return $kode;
 }
 
 /**
- * Sender en ny kode til husstandens ejer — eller til $modtager (se
- * admin_person_mail), når den sendes fra en bestemt persons Ret-side.
+ * Sender en ny, personlig kode til én person i kartoteket — ejer eller
+ * medejer. $p er personen fra admin_husstande() (med 'login').
  *
- * Den gamle kode holder op med at virke, og alle logins på adressen
- * lukkes — undtagen den, der trykker på knappen, så bestyrelsen aldrig
- * kan lukke sig selv ude. Ejeren opretter sit login igen via linket.
+ * Personens tidligere kode holder op med at virke, og personens eget
+ * login lukkes, til den nye kode er brugt — men aldrig den, der trykker på
+ * knappen, så bestyrelsen ikke kan lukke sig selv ude. De andre på
+ * adressen røres ikke: de har hver deres kode og login.
+ *
+ * Er det ejeren, der fik husstandens fælles kode fra før, dør den også.
  *
  * Det hele sker i én transaktion, der først gemmes, når mailen er sendt.
  * Fejler mailen, er intet ændret.
  *
  * Returnerer ['ok' => bool, 'fejl' => string, 'mail' => string, 'lukkede' => int].
  */
-function admin_send_kode(PDO $pdo, array $hus, string $base, int $migSelv, ?array $modtager = null): array
+function admin_send_kode(PDO $pdo, array $hus, array $p, string $base, int $migSelv): array
 {
-    $ejer = $modtager ?? $hus['ejer'];
+    $m = admin_person_mail($p);
 
-    if ($ejer['mail'] === '') {
-        return ['ok' => false, 'fejl' => ($modtager !== null ? $ejer['navn'] : $hus['adresse'] . ' (ejeren)') . ' har ingen brugbar mail.', 'mail' => '', 'lukkede' => 0];
+    if ($m['mail'] === '') {
+        return ['ok' => false, 'fejl' => $m['navn'] . ' har ingen brugbar mail.', 'mail' => '', 'lukkede' => 0];
+    }
+
+    $luk = [];
+    $login = $p['login'] ?? null;
+
+    if ($login !== null && (int)$login['id'] !== $migSelv) {
+        $luk[] = (int)$login['id'];
     }
 
     $pdo->beginTransaction();
@@ -306,42 +394,31 @@ function admin_send_kode(PDO $pdo, array $hus, string $base, int $migSelv, ?arra
     try {
         $kode = admin_ledig_kode($pdo);
 
-        if ($hus['kort'] !== null) {
-            $kortId = (int)$hus['kort']['id'];
-            $adresse = (string)$hus['kort']['adresse'];
-            $pdo->prepare(
-                'UPDATE adgangskort
-                    SET kode = :k, spaerret = 0, antal_brug = 0, sidst_brugt = NULL,
-                        sendt_at = NOW(), sendt_antal = sendt_antal + 1
-                  WHERE id = :id'
-            )->execute([':k' => $kode, ':id' => $kortId]);
-        } else {
-            $adresse = $hus['adresse'];
-            $pdo->prepare(
-                'INSERT INTO adgangskort (adresse, kode, sendt_at, sendt_antal) VALUES (:a, :k, NOW(), 1)'
-            )->execute([':a' => $adresse, ':k' => $kode]);
-        }
+        $pdo->prepare(
+            'UPDATE beboerkartotek
+                SET kode = :k, kode_sendt_at = NOW(), kode_sendt_antal = kode_sendt_antal + 1
+              WHERE id = :id'
+        )->execute([':k' => $kode, ':id' => (int)$p['id']]);
 
-        $luk = [];
-
-        foreach ($hus['logins'] as $u) {
-            if ((int)$u['id'] !== $migSelv) {
-                $luk[] = (int)$u['id'];
-            }
+        // Den fælles husstandskode, der før blev sendt til ejeren. Får
+        // ejeren nu sin egen, er den gamle overflødig — og den skal ikke
+        // kunne bruges af en tidligere ejer, der stadig har mailen.
+        if ($hus['kort'] !== null && (int)$p['id'] === $hus['ejer']['id']) {
+            $pdo->prepare('UPDATE adgangskort SET kode = :k WHERE id = :id')
+                ->execute([':k' => admin_ledig_kode($pdo), ':id' => (int)$hus['kort']['id']]);
         }
 
         if ($luk !== []) {
-            $pladser = implode(',', array_fill(0, count($luk), '?'));
-            $pdo->prepare("UPDATE users SET is_active = 0 WHERE id IN ($pladser)")->execute($luk);
+            $pdo->prepare('UPDATE users SET is_active = 0 WHERE id = ?')->execute($luk);
         }
 
         $link = $base . '/adgang.php?k=' . $kode;
-        $sendt = adgang_send_kode($adresse, $kode, $ejer['mail'], $ejer['navn'], $link);
+        $sendt = adgang_send_kode($hus['adresse'], $kode, $m['mail'], $m['navn'], $link);
 
         if (!$sendt) {
             $pdo->rollBack();
 
-            return ['ok' => false, 'fejl' => 'Mailen til ' . $ejer['mail'] . ' kunne ikke sendes. Intet er ændret.', 'mail' => $ejer['mail'], 'lukkede' => 0];
+            return ['ok' => false, 'fejl' => 'Mailen til ' . $m['mail'] . ' kunne ikke sendes. Intet er ændret.', 'mail' => $m['mail'], 'lukkede' => 0];
         }
 
         $pdo->commit();
@@ -352,8 +429,8 @@ function admin_send_kode(PDO $pdo, array $hus, string $base, int $migSelv, ?arra
 
         error_log('admin_send_kode: ' . $t->getMessage());
 
-        return ['ok' => false, 'fejl' => 'Noget gik galt for ' . $hus['adresse'] . '. Intet er ændret.', 'mail' => $ejer['mail'], 'lukkede' => 0];
+        return ['ok' => false, 'fejl' => 'Noget gik galt for ' . $m['navn'] . '. Intet er ændret.', 'mail' => $m['mail'], 'lukkede' => 0];
     }
 
-    return ['ok' => true, 'fejl' => '', 'mail' => $ejer['mail'], 'lukkede' => count($luk)];
+    return ['ok' => true, 'fejl' => '', 'mail' => $m['mail'], 'lukkede' => count($luk)];
 }

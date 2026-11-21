@@ -79,19 +79,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // ikke det, der måske står halvt rettet i formularen. Se
         // admin_send_kode().
         $hus = admin_hus($pdo, (string)$raekke['sommerhusadresse']);
+        $person = $hus !== null ? admin_hus_person($hus, $id) : null;
 
-        if ($hus === null) {
+        if ($person === null) {
             $fejl = 'Husstanden blev ikke fundet.';
         } else {
-            $svar = admin_send_kode($pdo, $hus, admin_base_url(), (int)$user['id'], admin_person_mail($raekke));
+            $svar = admin_send_kode($pdo, $hus, $person, admin_base_url(), (int)$user['id']);
 
             if (!$svar['ok']) {
                 $fejl = $svar['fejl'];
             } else {
                 $tekst = 'Ny kode sendt til ' . $svar['mail'] . '.'
-                    . ($svar['lukkede'] > 0
-                        ? ' ' . $svar['lukkede'] . ' login' . ($svar['lukkede'] === 1 ? '' : 's') . ' på adressen er lukket.'
-                        : '');
+                    . ($svar['lukkede'] > 0 ? ' Det gamle login er lukket, til den nye kode er brugt.' : '');
                 header('Location: beboer-ret.php?id=' . $id . '&besked=' . rawurlencode($tekst), true, 303);
                 exit;
             }
@@ -162,6 +161,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Husstanden til boksen med adgangskoden — ud fra den gemte adresse, ikke
 // det, der måske står halvt rettet i formularen.
 $hus = !$nyRaekke ? admin_hus($pdo, (string)$raekke['sommerhusadresse']) : null;
+$person = $hus !== null ? admin_hus_person($hus, $id) : null;
 ?>
 <!DOCTYPE html>
 <html lang="da">
@@ -338,7 +338,7 @@ $hus = !$nyRaekke ? admin_hus($pdo, (string)$raekke['sommerhusadresse']) : null;
       <?php endif; ?>
     </div>
 
-    <?php if ($hus !== null): ?>
+    <?php if ($person !== null): ?>
       <div class="panel">
         <h2>Adgangskode</h2>
         <p class="tekst">
@@ -349,38 +349,29 @@ $hus = !$nyRaekke ? admin_hus($pdo, (string)$raekke['sommerhusadresse']) : null;
           <?php else: ?>
             Ingen på <?php echo $e($hus['adresse']); ?> har et login endnu.
           <?php endif; ?>
-          <?php if ($hus['kort'] !== null && $hus['kort']['sendt_at']): ?>
-            Sidste kode blev sendt <?php echo $e(date('d-m-Y', strtotime($hus['kort']['sendt_at']))); ?>.
-          <?php endif; ?>
         </p>
 
-        <?php
-          // Personen, der er åbnet: får koden, og har vedkommende selv et login?
-          $modtager = admin_person_mail($raekke);
-          $egneMails = array_filter([
-              mb_strtolower(trim((string)$raekke['mail'])),
-              mb_strtolower(trim((string)$raekke['mail2'])),
-          ]);
-          $egetLogin = array_values(array_filter(
-              $hus['logins'],
-              static fn($u) => in_array(mb_strtolower((string)$u['username']), $egneMails, true)
-          ));
-        ?>
+        <?php $modtager = admin_person_mail($person); ?>
         <p class="tekst"><b><?php echo $e($modtager['navn']); ?></b>
-          <?php if ($egetLogin !== []): ?>
-            har login som <?php echo $e($egetLogin[0]['username']); ?>.
+          <?php if ($person['login'] !== null): ?>
+            har login som <?php echo $e($person['login']['username']); ?>.
           <?php else: ?>
             har ikke selv et login endnu.
+          <?php endif; ?>
+          <?php if ($person['sendt'] !== null): ?>
+            Fik sidst en kode <?php echo $e(date('d-m-Y', strtotime($person['sendt']))); ?>.
+          <?php else: ?>
+            Har ikke fået en kode endnu.
           <?php endif; ?>
         </p>
 
         <?php if ($modtager['mail'] !== ''): ?>
           <p class="tekst">En ny kode sendes til
             <b><?php echo $e($modtager['navn']); ?></b> (<?php echo $e($modtager['mail']); ?>).
-            Den gamle kode holder op med at virke, og de logins, der er
-            oprettet på adressen, lukkes — brug den, når huset skifter ejer,
-            eller når nogen har brug for koden igen.</p>
-          <form method="post" data-bekraeft="<?php echo $e(admin_send_spoergsmaal($hus, (int)$user['id'], $modtager)); ?>">
+            <?php echo $e($modtager['navn']); ?>s tidligere kode holder op med
+            at virke<?php echo $person['login'] !== null ? ', og loginnet lukkes, til den nye kode er brugt' : ''; ?>.
+            De andre på adressen beholder deres login.</p>
+          <form method="post" data-bekraeft="<?php echo $e(admin_send_spoergsmaal($person, (int)$user['id'])); ?>">
             <input type="hidden" name="csrf_token" value="<?php echo $e($csrf); ?>">
             <input type="hidden" name="id" value="<?php echo (int)$id; ?>">
             <button type="submit" name="handling" value="send-kode" class="gem">Send kode</button>

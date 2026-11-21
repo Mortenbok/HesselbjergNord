@@ -23,7 +23,8 @@ $fejl = '';
 $done = false;
 $fornyet = false;
 $rolle = 'medlem';
-$form = ['navn' => '', 'mail' => ''];
+// En personlig kode kender personen — så står navn og mail der i forvejen.
+$form = ['navn' => (string)($kort['navn'] ?? ''), 'mail' => (string)($kort['mail'] ?? '')];
 
 // Et spærret kort behandles som et ukendt kort udadtil, men med sin egen
 // besked — ellers kan man ikke forstå, hvorfor kortet ikke virker.

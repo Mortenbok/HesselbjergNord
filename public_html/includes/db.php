@@ -284,6 +284,16 @@ try {
 
     // BFE-nummeret (Bestemt Fast Ejendom) bruges til at slå ejeren op på
     // nyt.ois.dk. Det står ikke i regnearket og udfyldes i hånden.
+    // Hver person — ejer som medejer — har sin egen adgangskode, så en ny
+    // kode til én ikke lukker de andre ude. Se admin_send_kode().
+    if (!in_array('kode', $bk, true)) {
+        $pdo->exec("ALTER TABLE beboerkartotek
+            ADD COLUMN kode CHAR(8) NULL DEFAULT NULL AFTER bekraeftet_at,
+            ADD COLUMN kode_sendt_at DATETIME NULL DEFAULT NULL AFTER kode,
+            ADD COLUMN kode_sendt_antal INT NOT NULL DEFAULT 0 AFTER kode_sendt_at,
+            ADD UNIQUE KEY uniq_beboer_kode (kode)");
+    }
+
     if (!in_array('bfe', $bk, true)) {
         $pdo->exec("ALTER TABLE beboerkartotek
             ADD COLUMN bfe VARCHAR(12) NOT NULL DEFAULT '' AFTER rolle");

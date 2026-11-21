@@ -176,10 +176,15 @@ CREATE TABLE IF NOT EXISTS beboerkartotek (
   token CHAR(32) NULL DEFAULT NULL,
   token_udloeb DATETIME NULL DEFAULT NULL,
   bekraeftet_at DATETIME NULL DEFAULT NULL,
+  -- Personens egen adgangskode (se includes/admin.php, admin_send_kode).
+  kode CHAR(8) NULL DEFAULT NULL,
+  kode_sendt_at DATETIME NULL DEFAULT NULL,
+  kode_sendt_antal INT NOT NULL DEFAULT 0,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uniq_beboer_token (token),
+  UNIQUE KEY uniq_beboer_kode (kode),
   KEY idx_beboer_adresse (sommerhusadresse),
   KEY idx_beboer_mail (mail),
   KEY idx_beboer_status (status)

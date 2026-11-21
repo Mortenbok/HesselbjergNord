@@ -2,10 +2,9 @@
 /**
  * Admin — bestyrelsens overblik over husstandene.
  *
- * Én række pr. sommerhus: hvem der bor der (beboerkartoteket), om nogen
- * har oprettet et login, og en knap, der sender en ny adgangskode til
- * ejerens mail. En ny kode lukker de logins, der allerede er oprettet på
- * adressen — se admin_send_kode() i includes/admin.php.
+ * Én række pr. sommerhus og én linje pr. person: hvem der bor der
+ * (beboerkartoteket), og om hver person har et login. Hver person får sin
+ * egen kode på sin egen mail — se admin_send_kode() i includes/admin.php.
  *
  * Erstatter beboerkartotek.php og adgangskort.php, der nu sender hertil.
  *
@@ -52,12 +51,16 @@ foreach ($huse as $noegle => &$h) {
 }
 unset($h);
 
-/** Husstande, der får koden ved en samlet udsendelse: ingen login, aldrig sendt, ejer har mail. */
-$tilUdsendelse = array_filter($huse, static fn($h) =>
-    $h['personer'] !== []
-    && $h['logins'] === []
-    && $h['ejer']['mail'] !== ''
-    && ($h['kort'] === null || $h['kort']['sendt_at'] === null));
+/** Personer, der får koden ved en samlet udsendelse: har mail, intet login, aldrig fået en kode. */
+$tilUdsendelse = [];
+
+foreach ($huse as $h) {
+    foreach (admin_mangler_login($h) as $p) {
+        if ($p['sendt'] === null) {
+            $tilUdsendelse[] = ['hus' => $h, 'person' => $p];
+        }
+    }
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!auth_csrf_valid($_POST['csrf_token'] ?? null)) {
@@ -73,18 +76,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $sendt = 0;
         $fejlede = [];
 
-        foreach (array_slice($tilUdsendelse, 0, ADMIN_SEND_AD_GANGEN) as $hus) {
-            $svar = admin_send_kode($pdo, $hus, $base, (int)$user['id']);
+        foreach (array_slice($tilUdsendelse, 0, ADMIN_SEND_AD_GANGEN) as $t) {
+            $svar = admin_send_kode($pdo, $t['hus'], $t['person'], $base, (int)$user['id']);
 
             if ($svar['ok']) {
                 $sendt++;
             } else {
-                $fejlede[] = $hus['adresse'];
+                $fejlede[] = $t['person']['kontaktperson'] . ' (' . $t['hus']['adresse'] . ')';
             }
         }
 
         $tilbage(
-            'Koden er sendt til ' . $sendt . ' husstand' . ($sendt === 1 ? '' : 'e') . '.',
+            'Koden er sendt til ' . $sendt . ' person' . ($sendt === 1 ? '' : 'er') . '.',
             $fejlede !== []
                 ? 'Mailen kunne ikke sendes til: ' . implode(', ', array_slice($fejlede, 0, 8))
                     . (count($fejlede) > 8 ? ' m.fl.' : '')
@@ -98,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Tallene på knapperne regnes på alle husstande, ikke kun dem der vises.
 $filtre = [
     ''              => 'husstande',
-    'ikke-oprettet' => 'uden login',
+    'ikke-oprettet' => 'nogen mangler login',
     'ingen-mail'    => 'ejer uden mail',
     'mangler'       => 'mangler hjemmeadresse',
     'problemer'     => 'mail/tlf kan ikke bruges',
@@ -221,7 +224,6 @@ $naesteBunke = min(count($tilUdsendelse), ADMIN_SEND_AD_GANGEN);
   .detalje a { color: #cfe9ff; text-decoration: none; }
   .detalje a:hover { text-decoration: underline; }
   .note { font-size: 0.8rem; color: rgba(255,210,150,0.85); margin-top: 2px; }
-  .stjerne { color: #ffd76a; cursor: help; }
   .maerke {
     display: inline-block; padding: 1px 9px; border-radius: 20px; font-size: 0.76rem;
     border: 1px solid rgba(255,255,255,0.3); white-space: nowrap; vertical-align: 1px;
@@ -277,11 +279,11 @@ $naesteBunke = min(count($tilUdsendelse), ADMIN_SEND_AD_GANGEN);
   <div class="container">
     <div class="panel">
       <h1>Admin</h1>
-      <p class="lead">Én række pr. sommerhus: hvem der bor der, og om de har
-        et login. Koden sendes til ejerens mail (<span class="stjerne">★</span>).
-        Skal én husstand have en ny kode — fx når huset skifter ejer — så tryk
-        <b>Ret</b> og <b>Send kode</b> derinde. Den gamle kode holder op med
-        at virke, og de logins, der er oprettet på adressen, lukkes.</p>
+      <p class="lead">Én række pr. sommerhus og én linje pr. person: hvem der
+        bor der, og om hver af dem har et login. Alle — ejer som medejer — får
+        deres egen kode på deres egen mail. Skal én have en ny kode, så tryk
+        <b>Ret</b> ud for personen og <b>Send kode</b> derinde. Personens
+        gamle kode holder op med at virke; de andre på adressen røres ikke.</p>
 
       <div class="advarsel">
         Siden indeholder personoplysninger om navngivne mennesker. Del ikke
@@ -318,15 +320,15 @@ $naesteBunke = min(count($tilUdsendelse), ADMIN_SEND_AD_GANGEN);
           <?php endif; ?>
         </form>
         <a class="tilfoej" href="beboer-ret.php">+ Tilføj beboer</a>
-        <form method="post" data-bekraeft="Send en kode til ejeren på <?php echo $naesteBunke; ?> husstande nu?">
+        <form method="post" data-bekraeft="Send en kode til <?php echo $naesteBunke; ?> personer nu?">
           <input type="hidden" name="csrf_token" value="<?php echo $e($csrf); ?>">
           <input type="hidden" name="s" value="<?php echo $e($soeg); ?>">
           <input type="hidden" name="vis" value="<?php echo $e($vis); ?>">
           <button type="submit" name="handling" value="send-alle" class="blaa"
-                  title="Til ejeren på hver husstand, der hverken har et login eller har fået en kode før. <?php echo ADMIN_SEND_AD_GANGEN; ?> ad gangen."
+                  title="Til hver person — ejer og medejer — der har en mail, men hverken har et login eller har fået en kode før. <?php echo ADMIN_SEND_AD_GANGEN; ?> ad gangen."
                   <?php echo $naesteBunke === 0 ? 'disabled' : ''; ?>>
             <?php if ($naesteBunke === 0): ?>
-              Alle har fået en kode
+              Alle med mail har fået en kode
             <?php elseif (count($tilUdsendelse) > $naesteBunke): ?>
               Send kode til de næste <?php echo $naesteBunke; ?> (<?php echo count($tilUdsendelse); ?> mangler)
             <?php else: ?>
@@ -388,15 +390,9 @@ $naesteBunke = min(count($tilUdsendelse), ADMIN_SEND_AD_GANGEN);
                     <?php if ($p === null): ?>
                       <span class="maerke nej">ingen i kartoteket</span>
                     <?php else: ?>
-                      <?php
-                        $faarKoden = (int)$p['id'] === $h['ejer']['id'];
-                        $venter = $p['status'] === 'afventer_oplysninger';
-                      ?>
+                      <?php $venter = $p['status'] === 'afventer_oplysninger'; ?>
                       <div class="person <?php echo $p['forhold'] === 'medejer' ? 'medejer' : ''; ?>">
                         <span class="navn"><?php echo $e($p['kontaktperson']); ?></span>
-                        <?php if ($faarKoden): ?>
-                          <span class="stjerne" title="Koden sendes til <?php echo $e($h['ejer']['mail']); ?>">★</span>
-                        <?php endif; ?>
                         <?php if ($p['forhold'] === 'medejer'): ?>
                           <span class="maerke nej">medejer</span>
                         <?php endif; ?>
@@ -442,24 +438,28 @@ $naesteBunke = min(count($tilUdsendelse), ADMIN_SEND_AD_GANGEN);
                     <?php endif; ?>
                   </td>
 
-                  <?php if ($i === 0): ?>
-                    <td class="login" rowspan="<?php echo $span; ?>">
-                      <?php if ($h['logins'] !== []): ?>
-                        <?php $n = count($h['logins']); ?>
-                        <span class="maerke ja" title="<?php echo $e(implode(', ', array_column($h['logins'], 'username'))); ?>">
-                          <?php echo $n; ?> login<?php echo $n === 1 ? '' : 's'; ?>
-                        </span>
-                      <?php elseif ($h['personer'] !== []): ?>
+                  <td class="login">
+                    <?php if ($p !== null): ?>
+                      <?php if ($p['login'] !== null): ?>
+                        <span class="maerke ja" title="<?php echo $e($p['login']['username']); ?>">login</span>
+                      <?php elseif (admin_person_mails($p) === []): ?>
+                        <span class="maerke stop" title="Koden kan ikke sendes, før personen har en brugbar mail.">ingen mail</span>
+                      <?php else: ?>
                         <span class="maerke nej">ingen login</span>
                       <?php endif; ?>
-                      <?php if ($h['personer'] !== [] && $h['ejer']['mail'] === ''): ?>
-                        <div><span class="maerke stop" title="Koden kan ikke sendes, før ejeren har en brugbar mail.">ejer uden mail</span></div>
+                      <?php if ($p['sendt'] !== null): ?>
+                        <div class="smaat">kode sendt <?php echo $e(date('d-m-Y', strtotime($p['sendt']))); ?></div>
                       <?php endif; ?>
-                      <?php if ($h['kort'] !== null && $h['kort']['sendt_at']): ?>
-                        <div class="smaat">kode sendt <?php echo $e(date('d-m-Y', strtotime($h['kort']['sendt_at']))); ?></div>
-                      <?php endif; ?>
-                    </td>
+                    <?php endif; ?>
+                    <?php if ($i === $span - 1 && $h['andre_logins'] !== []): ?>
+                      <?php $n = count($h['andre_logins']); ?>
+                      <div class="smaat" title="<?php echo $e(implode(', ', array_column($h['andre_logins'], 'username'))); ?>">
+                        + <?php echo $n; ?> andet login<?php echo $n === 1 ? '' : 's'; ?> på adressen
+                      </div>
+                    <?php endif; ?>
+                  </td>
 
+                  <?php if ($i === 0): ?>
                     <td class="knap-celle" rowspan="<?php echo $span; ?>">
                       <?php if ($bfe !== ''): ?>
                         <a class="ejer <?php echo $e($h['ejertjek']['farve']); ?>" target="_blank" rel="noopener"
