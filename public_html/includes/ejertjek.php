@@ -35,7 +35,10 @@ function ejertjek_hent_ois(string $bfe): array
 
     $ca = (string)(sms_config()['sms_ca_bundle'] ?? '');
 
-    if ($ca !== '') {
+    // Kun hvis filen findes. config.local.php kan være kopieret fra en
+    // Windows-maskine med en sti, der ikke findes på serveren — og så
+    // fejler hvert eneste opslag, som det gjorde første gang.
+    if ($ca !== '' && is_readable($ca)) {
         $opt[CURLOPT_CAINFO] = $ca;
     }
 
