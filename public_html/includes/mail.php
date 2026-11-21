@@ -43,8 +43,11 @@ function mail_uses_smtp(): bool
     return $c['smtp_host'] !== '' && $c['smtp_user'] !== '' && $c['smtp_pass'] !== '';
 }
 
-/** Brevhovedet, som er ens for alle modtagere. */
-function mail_headers(): string
+/**
+ * Brevhovedet, som er ens for alle modtagere. Uden $boundary er det en
+ * ren tekstmail; med er det tekst og HTML i ét (multipart/alternative).
+ */
+function mail_headers(?string $boundary = null): string
 {
     [$from, $fromName] = mail_from();
 
@@ -54,8 +57,10 @@ function mail_headers(): string
         'From: ' . mb_encode_mimeheader($fromName, 'UTF-8', 'B', "\r\n") . ' <' . $from . '>',
         'Reply-To: ' . $from,
         'MIME-Version: 1.0',
-        'Content-Type: text/plain; charset=UTF-8',
-        'Content-Transfer-Encoding: 8bit',
+        $boundary === null
+            ? 'Content-Type: text/plain; charset=UTF-8'
+            : 'Content-Type: multipart/alternative; boundary="' . $boundary . '"',
+        $boundary === null ? 'Content-Transfer-Encoding: 8bit' : 'Content-Transfer-Encoding: 7bit',
         'X-Mailer: hesselbjergnord.dk',
         'Auto-Submitted: auto-generated',
     ]);
@@ -66,8 +71,11 @@ function mail_headers(): string
  *
  * Returnerer ['ok' => antal sendte, 'failed' => [adresser], 'error' => string].
  * En afvist adresse må ikke stoppe resten af udsendelsen.
+ *
+ * Med $html sendes mailen både som tekst og som HTML; mailprogrammet viser
+ * den pæne udgave, og teksten er der til dem, der ikke kan vise HTML.
  */
-function mail_send(array $recipients, string $subject, string $body): array
+function mail_send(array $recipients, string $subject, string $body, ?string $html = null): array
 {
     $config = mail_config();
 
@@ -83,11 +91,28 @@ function mail_send(array $recipients, string $subject, string $body): array
 
     mb_internal_encoding('UTF-8');
     $encodedSubject = mb_encode_mimeheader($subject, 'UTF-8', 'B', "\r\n");
-    $headers = mail_headers();
     $useSmtp = mail_uses_smtp();
 
-    // Linjer i en mail må ikke være vilkårligt lange.
-    $text = wordwrap(str_replace(["\r\n", "\r"], "\n", $body), 78, "\r\n");
+    if ($html === null) {
+        $headers = mail_headers();
+
+        // Linjer i en mail må ikke være vilkårligt lange.
+        $text = wordwrap(str_replace(["\r\n", "\r"], "\n", $body), 78, "\r\n");
+    } else {
+        // Begge dele base64-kodes: så er linjerne korte, og et punktum
+        // først på en linje kan ikke afslutte brevet før tid.
+        $graense = 'hbn-' . bin2hex(random_bytes(12));
+        $headers = mail_headers($graense);
+        $text = "--$graense\r\n"
+            . "Content-Type: text/plain; charset=UTF-8\r\n"
+            . "Content-Transfer-Encoding: base64\r\n\r\n"
+            . chunk_split(base64_encode(str_replace(["\r\n", "\r"], "\n", $body)))
+            . "--$graense\r\n"
+            . "Content-Type: text/html; charset=UTF-8\r\n"
+            . "Content-Transfer-Encoding: base64\r\n\r\n"
+            . chunk_split(base64_encode($html))
+            . "--$graense--";
+    }
 
     $ok = 0;
     $failed = [];

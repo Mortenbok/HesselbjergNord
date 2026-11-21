@@ -256,26 +256,89 @@ function adgang_e(?string $v): string
 function adgang_send_kode(string $adresse, string $kode, string $mail, string $navn, string $link): bool
 {
     $emne = 'Din adgang til hesselbjergnord.dk — ' . $adresse;
-    $hilsen = $navn !== '' ? 'Hej ' . $navn : 'Hej';
+    $hilsen = $navn !== '' ? 'Kære ' . $navn : 'Kære medlem';
 
     $tekst = $hilsen . "\n\n"
-        . "Her er jeres adgang til foreningens hjemmeside. Den hører til "
-        . $adresse . ".\n\n"
+        . "Her er din adgang til foreningens nye hjemmeside. Den er personlig "
+        . "og hører til " . $adresse . ", så længe du er ejer eller medejer "
+        . "af adressen.\n\n"
         . "Åbn dette link:\n"
         . $link . "\n\n"
-        . "Eller gå ind på hesselbjergnord.dk/adgang.php og tast koden:\n"
-        . "    " . adgang_kode_paent($kode) . "\n\n"
-        . "Du vælger selv adgangskode undervejs. Bag login finder du "
-        . "referater, regnskaber, vedtægter og medlemsbilleder.\n\n"
-        . "Er I flere på adressen, kan I hver især oprette et login med den "
-        . "samme kode. Koden virker, indtil bestyrelsen sender en ny — og så "
-        . "lukkes de logins, der er oprettet på adressen. Havde du et login "
-        . "i forvejen, skal du derfor oprette det igen med linket ovenfor.\n\n"
+        . "Du vælger selv adgangskode undervejs. Bag login finder du en masse "
+        . "informationer om grundejerforeningen, referater, regnskaber, "
+        . "vedtægter og medlemsbilleder.\n\n"
+        . "Skulle du glemme eller miste din adgang, sender vi dig blot et nyt "
+        . "login.\n\n"
+        . "Vi glæder os til, at du besøger vores nye side, og til at se dig "
+        . "i området.\n\n"
         . "Venlig hilsen\n"
         . "Bestyrelsen\n"
         . "Grundejerforeningen Hesselbjerg Nord";
 
-    $svar = mail_send([$mail], $emne, $tekst);
+    $svar = mail_send([$mail], $emne, $tekst, adgang_mail_html($hilsen, $adresse, $link));
 
     return ($svar['ok'] ?? 0) > 0;
+}
+
+/**
+ * Den pæne udgave af mailen. Samme ord som tekstudgaven ovenfor.
+ *
+ * Mailprogrammer forstår kun gammeldags HTML: tabeller til layout og
+ * style direkte på hvert element — ingen <style>, ingen billeder udefra.
+ */
+function adgang_mail_html(string $hilsen, string $adresse, string $link): string
+{
+    $e = static fn(string $v): string => htmlspecialchars($v, ENT_QUOTES, 'UTF-8');
+    $p = 'margin:0 0 16px;font-size:16px;line-height:1.6;color:#2b3a42;';
+
+    return '<!DOCTYPE html><html lang="da"><head><meta charset="UTF-8">'
+        . '<meta name="viewport" content="width=device-width, initial-scale=1.0">'
+        . '<title>Din adgang til hesselbjergnord.dk</title></head>'
+        . '<body style="margin:0;padding:0;background:#eef3f5;">'
+        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef3f5;">'
+        . '<tr><td align="center" style="padding:28px 12px;">'
+        . '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" '
+        .   'style="max-width:560px;background:#ffffff;border-radius:14px;overflow:hidden;'
+        .   'font-family:\'Segoe UI\',Helvetica,Arial,sans-serif;">'
+
+        // Toppen
+        . '<tr><td style="background:#1f4e63;padding:26px 32px;">'
+        . '<div style="font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#a9d3e6;">Grundejerforeningen</div>'
+        . '<div style="font-size:24px;font-weight:600;color:#ffffff;margin-top:4px;">Hesselbjerg Nord</div>'
+        . '</td></tr>'
+
+        // Brevet
+        . '<tr><td style="padding:32px 32px 8px;">'
+        . '<p style="' . $p . 'font-size:18px;font-weight:600;">' . $e($hilsen) . '</p>'
+        . '<p style="' . $p . '">Her er din adgang til foreningens nye hjemmeside. Den er personlig '
+        .   'og hører til <b>' . $e($adresse) . '</b>, så længe du er ejer eller medejer af adressen.</p>'
+        . '</td></tr>'
+
+        // Knappen
+        . '<tr><td align="center" style="padding:8px 32px 24px;">'
+        . '<a href="' . $e($link) . '" style="display:inline-block;background:#2f7fb8;color:#ffffff;'
+        .   'text-decoration:none;font-size:17px;font-weight:600;padding:14px 34px;border-radius:10px;">'
+        .   'Opret dit login</a>'
+        . '<div style="font-size:12px;color:#7a8a92;margin-top:12px;line-height:1.5;">'
+        .   'Virker knappen ikke, så kopiér dette link ind i din browser:<br>'
+        .   '<a href="' . $e($link) . '" style="color:#2f7fb8;word-break:break-all;">' . $e($link) . '</a></div>'
+        . '</td></tr>'
+
+        . '<tr><td style="padding:0 32px 8px;">'
+        . '<p style="' . $p . '">Du vælger selv adgangskode undervejs. Bag login finder du en masse '
+        .   'informationer om grundejerforeningen, referater, regnskaber, vedtægter og medlemsbilleder.</p>'
+        . '<p style="' . $p . '">Skulle du glemme eller miste din adgang, sender vi dig blot et nyt login.</p>'
+        . '<p style="' . $p . '">Vi glæder os til, at du besøger vores nye side, og til at se dig i området.</p>'
+        . '<p style="' . $p . 'margin-bottom:28px;">Venlig hilsen<br><b>Bestyrelsen</b><br>'
+        .   'Grundejerforeningen Hesselbjerg Nord</p>'
+        . '</td></tr>'
+
+        // Bunden
+        . '<tr><td style="background:#f4f7f8;padding:16px 32px;font-size:12px;color:#7a8a92;line-height:1.5;">'
+        . 'Mailen er sendt fra <a href="https://hesselbjergnord.dk" style="color:#2f7fb8;">hesselbjergnord.dk</a>. '
+        . 'Spørgsmål? Skriv til <a href="mailto:bestyrelsen@hesselbjergnord.dk" style="color:#2f7fb8;">'
+        . 'bestyrelsen@hesselbjergnord.dk</a>.'
+        . '</td></tr>'
+
+        . '</table></td></tr></table></body></html>';
 }
