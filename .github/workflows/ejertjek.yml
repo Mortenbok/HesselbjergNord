@@ -1,0 +1,52 @@
+# Tjekker hver måned, om ejerne i beboerkartoteket stadig står som ejere
+# hos OIS. Resultatet ses som en grøn eller rød Ejer-knap på admin.php.
+#
+# ---------------------------------------------------------------------------
+# SÅDAN VIRKER DEN
+# ---------------------------------------------------------------------------
+# AUTOMATISK: den 1. i hver måned kl. ca. 05 dansk tid.
+#
+# I HÅNDEN: fanen "Actions" → "Ejertjek mod OIS" → "Run workflow". Brug den
+# fx første gang, så I ikke skal vente til den 1.
+#
+# Selve arbejdet sker på serveren i ejertjek.php. Herfra kaldes den bare
+# igen og igen, til der ikke mangler flere — hvert kald tager 25 husstande.
+#
+# BEMÆRK: GitHub slår planlagte kørsler fra, hvis der ikke er pushet til
+# depotet i 60 dage. Så får ejeren af depotet en mail, og den kan slås til
+# igen med ét klik under Actions.
+# ---------------------------------------------------------------------------
+
+name: Ejertjek mod OIS
+
+on:
+  schedule:
+    - cron: "0 4 1 * *"
+  workflow_dispatch:
+
+jobs:
+  tjek:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Hent ejernavne fra OIS
+        run: |
+          set -eu
+          for omgang in $(seq 1 30); do
+            svar=$(curl -fsS --max-time 180 "https://hesselbjergnord.dk/ejertjek.php")
+            echo "Omgang $omgang: $svar"
+
+            tjekket=$(echo "$svar" | jq -r '.tjekket')
+            mangler=$(echo "$svar" | jq -r '.mangler')
+
+            # Færdig, når intet mangler — eller når en omgang ikke flyttede
+            # noget, så den ikke kører i ring.
+            if [ "$mangler" = "0" ] || [ "$tjekket" = "0" ]; then
+              echo "Færdig."
+              exit 0
+            fi
+          done
+
+          echo "Stoppede efter 30 omgange med $mangler tilbage." >&2
+          exit 1

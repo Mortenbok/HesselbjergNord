@@ -17,6 +17,7 @@ require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/mail.php';
 require_once __DIR__ . '/includes/admin.php';
+require_once __DIR__ . '/includes/ejertjek.php';
 
 auth_require('index.html');
 
@@ -40,6 +41,16 @@ $tilbage = static function (string $besked, string $fejl = '') use ($soeg, $vis)
 };
 
 $huse = admin_husstande($pdo);
+
+// Ejertjekket fra OIS: farven regnes her, mod kartoteket som det ser ud
+// lige nu, så en rettelse under Ret slår igennem med det samme.
+$ejertjek = ejertjek_alle($pdo);
+
+foreach ($huse as $noegle => &$h) {
+    $h['bfe'] = ejertjek_bfe($h);
+    $h['ejertjek'] = ejertjek_status($h, $ejertjek[$noegle] ?? null, $h['bfe']);
+}
+unset($h);
 
 /** Husstande, der får koden ved en samlet udsendelse: ingen login, aldrig sendt, ejer har mail. */
 $tilUdsendelse = array_filter($huse, static fn($h) =>
@@ -94,14 +105,25 @@ $filtre = [
     'bestyrelse'    => 'bestyrelse',
     'noter'         => 'med note',
     'uden-beboer'   => 'uden beboer',
+    'ejer-forkert'  => 'ejer passer ikke med OIS',
 ];
+
+// Filteret på ejertjekket ligger her og ikke i admin_filter(), fordi det
+// bruger farven, der er regnet ovenfor.
+$passer = static fn(array $h, string $f): bool => $f === 'ejer-forkert'
+    ? $h['ejertjek']['farve'] === 'nej'
+    : admin_filter($h, $f);
+
 $antal = [];
 
 foreach (array_keys($filtre) as $f) {
-    $antal[$f] = count(array_filter($huse, static fn($h) => admin_filter($h, $f)));
+    $antal[$f] = count(array_filter($huse, static fn($h) => $passer($h, $f)));
 }
 
-$viste = array_filter($huse, static fn($h) => admin_filter($h, $vis) && admin_soeg($h, $soeg));
+$viste = array_filter($huse, static fn($h) => $passer($h, $vis) && admin_soeg($h, $soeg));
+
+// Hvornår OIS sidst blev spurgt — står under tabellen.
+$sidstTjekket = $ejertjek ? max(array_column($ejertjek, 'tjekket_at')) : null;
 $csrf = auth_csrf_token();
 $besked = (string)($_GET['besked'] ?? '');
 $fejl = (string)($_GET['fejl'] ?? '');
@@ -217,6 +239,11 @@ $naesteBunke = min(count($tilUdsendelse), ADMIN_SEND_AD_GANGEN);
   }
   a.lille:hover, button.lille:hover:not(:disabled), .ejer:hover { background: rgba(150,210,255,0.2); }
   button.ejer { color: rgba(255,255,255,0.7); border-style: dashed; }
+  /* Ejertjekket mod OIS: grøn = en fra kartoteket står som ejer, rød = ingen. */
+  a.ejer.ok { color: #dcffe4; background: rgba(60,170,95,0.4); border-color: rgba(140,230,170,0.75); }
+  a.ejer.ok:hover { background: rgba(60,170,95,0.6); }
+  a.ejer.nej { color: #ffe0e0; background: rgba(200,60,60,0.45); border-color: rgba(255,150,150,0.75); }
+  a.ejer.nej:hover { background: rgba(200,60,60,0.65); }
 
 
   footer {
@@ -348,7 +375,7 @@ $naesteBunke = min(count($tilUdsendelse), ADMIN_SEND_AD_GANGEN);
                 // Adresse, login og Ejer spænder over hele husstanden.
                 $raekker = $personer !== [] ? $personer : [null];
                 $span = count($raekker);
-                $bfe = bfe_for_raekke($h['personer'][0] ?? ['sommerhusadresse' => $h['adresse']]);
+                $bfe = $h['bfe'];
               ?>
               <tbody class="husstand<?php echo $h['personer'] === [] ? ' tom-hus' : ''; ?>">
               <?php foreach ($raekker as $i => $p): ?>
@@ -435,8 +462,8 @@ $naesteBunke = min(count($tilUdsendelse), ADMIN_SEND_AD_GANGEN);
 
                     <td class="knap-celle" rowspan="<?php echo $span; ?>">
                       <?php if ($bfe !== ''): ?>
-                        <a class="ejer" target="_blank" rel="noopener"
-                           title="BFE <?php echo $e($bfe); ?> — åbner OIS i en ny fane"
+                        <a class="ejer <?php echo $e($h['ejertjek']['farve']); ?>" target="_blank" rel="noopener"
+                           title="<?php echo $e($h['ejertjek']['tekst'] . "\nBFE " . $bfe . ' — åbner OIS i en ny fane'); ?>"
                            href="<?php echo $e(bfe_link($bfe)); ?>">Ejer</a>
                       <?php else: ?>
                         <button type="button" class="ejer" data-ejer-adresse="<?php
@@ -469,6 +496,16 @@ $naesteBunke = min(count($tilUdsendelse), ADMIN_SEND_AD_GANGEN);
           fordi ejeren ikke har en brugbar mail. &nbsp;·&nbsp;
         <?php endif; ?>
         <a href="beboer-import.php">Importér regneark</a>
+      </p>
+      <p class="smaat" style="margin-top:10px;">
+        Ejer-knappen er <b style="color:#9fe6b4;">grøn</b>, når mindst én fra
+        kartoteket står som ejer hos OIS, og <b style="color:#ffb0b0;">rød</b>,
+        når ingen af dem gør. Uden farve er den ikke tjekket endnu, eller OIS
+        kunne ikke svare — hold musen over knappen for at se navnene.
+        <?php if ($sidstTjekket): ?>
+          OIS blev sidst spurgt <?php echo $e(date('d-m-Y', strtotime($sidstTjekket))); ?>;
+        <?php endif; ?>
+        det sker af sig selv den 1. i hver måned.
       </p>
     </div>
   </div>

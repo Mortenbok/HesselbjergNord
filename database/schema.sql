@@ -186,6 +186,25 @@ CREATE TABLE IF NOT EXISTS beboerkartotek (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------------------------------
+-- ejertjek — ejernavnene fra OIS pr. husstand
+-- ---------------------------------------------------------------------------
+-- Hentes én gang om måneden af ejertjek.php (startet af GitHub Actions,
+-- .github/workflows/ejertjek.yml). admin.php sammenligner navnene med
+-- kartoteket og farver Ejer-knappen grøn eller rød.
+--
+-- noegle er husstandens adressenøgle fra admin_noegle(). fejl er tom, når
+-- opslaget lykkedes.
+CREATE TABLE IF NOT EXISTS ejertjek (
+  noegle VARCHAR(120) NOT NULL,
+  adresse VARCHAR(255) NOT NULL DEFAULT '',
+  bfe VARCHAR(12) NOT NULL DEFAULT '',
+  ois_navne TEXT NULL,
+  fejl VARCHAR(255) NOT NULL DEFAULT '',
+  tjekket_at DATETIME NOT NULL,
+  PRIMARY KEY (noegle)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ---------------------------------------------------------------------------
 -- residents — tilmeldinger fra "Ny beboer"-formularen
 -- ---------------------------------------------------------------------------
 -- Formularen er offentlig, så alle kan sende oplysninger ind. Selve listen

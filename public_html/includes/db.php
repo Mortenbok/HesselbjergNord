@@ -296,6 +296,20 @@ try {
         }
     }
 
+    // ejertjek — ejernavnene fra OIS, hentet én gang om måneden af
+    // ejertjek.php. Én række pr. husstand; se includes/ejertjek.php.
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS ejertjek (
+            noegle VARCHAR(120) NOT NULL,
+            adresse VARCHAR(255) NOT NULL DEFAULT '',
+            bfe VARCHAR(12) NOT NULL DEFAULT '',
+            ois_navne TEXT NULL,
+            fejl VARCHAR(255) NOT NULL DEFAULT '',
+            tjekket_at DATETIME NOT NULL,
+            PRIMARY KEY (noegle)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    ");
+
     $pdo->exec("
         CREATE TABLE IF NOT EXISTS residents (
             id INT NOT NULL AUTO_INCREMENT,

@@ -107,3 +107,12 @@ en slås op i hånden på OIS og skrives i `BFE_HAANDHOLDT`:
 Værktøjet tror ikke blindt på tallet — det slår ejendommen op i matriklen
 og siger fra, hvis nummeret ikke findes. I `bfe.php` bliver linjen mærket
 `(slået op i hånden)`, så ingen tror, den er hentet som resten.
+
+**Tilføjet 21. 11. 2026:** Datafordeleren giver stadig ikke navnene, men
+OIS' egen side gør. `nyt.ois.dk/search/<BFE>` henter dem fra
+
+    https://nyt.ois.dk/api/ejer/get?bfe=<BFE>
+
+som svarer uden login med ejernes navne (andele og adresser er skjult).
+Det bruger `public_html/ejertjek.php` én gang om måneden til at farve
+Ejer-knappen på admin.php grøn eller rød — se `includes/ejertjek.php`.
