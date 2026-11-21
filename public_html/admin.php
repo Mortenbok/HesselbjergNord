@@ -189,9 +189,10 @@ $naesteBunke = min(count($tilUdsendelse), ADMIN_SEND_AD_GANGEN);
   th { font-size: 0.74rem; letter-spacing: 1px; text-transform: uppercase; color: rgba(255,255,255,0.6); }
   td.hus { white-space: nowrap; font-weight: 600; width: 1%; }
   td.login { width: 1%; white-space: nowrap; }
-  td.knapper { width: 1%; white-space: nowrap; text-align: right; }
-  tr.tom-hus td { color: rgba(255,255,255,0.6); }
-  .person + .person { margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.12); }
+  td.knap-celle { width: 1%; white-space: nowrap; padding-left: 4px; }
+  /* Personer i samme husstand skilles med en stiplet linje, husstande med en hel. */
+  tbody.husstand tr:not(:last-child) td:not([rowspan]) { border-bottom-style: dashed; }
+  tbody.tom-hus td { color: rgba(255,255,255,0.6); }
   .person.medejer { color: rgba(255,255,255,0.78); }
   .navn { font-weight: 600; }
   .detalje { font-size: 0.84rem; color: rgba(255,255,255,0.78); margin-top: 2px; }
@@ -216,8 +217,6 @@ $naesteBunke = min(count($tilUdsendelse), ADMIN_SEND_AD_GANGEN);
   }
   a.lille:hover, button.lille:hover:not(:disabled), .ejer:hover { background: rgba(150,210,255,0.2); }
   button.ejer { color: rgba(255,255,255,0.7); border-style: dashed; }
-  .knapper form { display: inline; }
-  .knapper > * + * { margin-left: 4px; }
 
 
   footer {
@@ -335,25 +334,33 @@ $naesteBunke = min(count($tilUdsendelse), ADMIN_SEND_AD_GANGEN);
                 <th>Beboere</th>
                 <th>Login</th>
                 <th></th>
+                <th></th>
               </tr>
             </thead>
-            <tbody>
-              <?php foreach ($viste as $noegle => $h): ?>
-                <?php
-                  // Under "Bestyrelse" vises kun bestyrelsesmedlemmerne selv,
-                  // ikke medejerne på deres adresse.
-                  $personer = $vis === 'bestyrelse'
-                      ? array_values(array_filter($h['personer'], static fn($p) => (int)$p['bestyrelse'] === 1))
-                      : $h['personer'];
-                ?>
-                <tr class="<?php echo $h['personer'] === [] ? 'tom-hus' : ''; ?>">
-                  <td class="hus"><?php echo $e($h['adresse']); ?></td>
+            <?php foreach ($viste as $h): ?>
+              <?php
+                // Under "Bestyrelse" vises kun bestyrelsesmedlemmerne selv,
+                // ikke medejerne på deres adresse.
+                $personer = $vis === 'bestyrelse'
+                    ? array_values(array_filter($h['personer'], static fn($p) => (int)$p['bestyrelse'] === 1))
+                    : $h['personer'];
+                // Én tabelrække pr. person, så Ret står ud for den, den retter.
+                // Adresse, login og Ejer spænder over hele husstanden.
+                $raekker = $personer !== [] ? $personer : [null];
+                $span = count($raekker);
+                $bfe = bfe_for_raekke($h['personer'][0] ?? ['sommerhusadresse' => $h['adresse']]);
+              ?>
+              <tbody class="husstand<?php echo $h['personer'] === [] ? ' tom-hus' : ''; ?>">
+              <?php foreach ($raekker as $i => $p): ?>
+                <tr>
+                  <?php if ($i === 0): ?>
+                    <td class="hus" rowspan="<?php echo $span; ?>"><?php echo $e($h['adresse']); ?></td>
+                  <?php endif; ?>
 
-                  <td>
-                    <?php if ($h['personer'] === []): ?>
+                  <td class="person-celle">
+                    <?php if ($p === null): ?>
                       <span class="maerke nej">ingen i kartoteket</span>
-                    <?php endif; ?>
-                    <?php foreach ($personer as $p): ?>
+                    <?php else: ?>
                       <?php
                         $faarKoden = (int)$p['id'] === $h['ejer']['id'];
                         $venter = $p['status'] === 'afventer_oplysninger';
@@ -405,53 +412,50 @@ $naesteBunke = min(count($tilUdsendelse), ADMIN_SEND_AD_GANGEN);
                           <div class="note"><?php echo $e($p['noter']); ?></div>
                         <?php endif; ?>
                       </div>
-                    <?php endforeach; ?>
-                  </td>
-
-                  <td class="login">
-                    <?php if ($h['logins'] !== []): ?>
-                      <?php $n = count($h['logins']); ?>
-                      <span class="maerke ja" title="<?php echo $e(implode(', ', array_column($h['logins'], 'username'))); ?>">
-                        <?php echo $n; ?> login<?php echo $n === 1 ? '' : 's'; ?>
-                      </span>
-                    <?php elseif ($h['personer'] !== []): ?>
-                      <span class="maerke nej">ingen login</span>
-                    <?php endif; ?>
-                    <?php if ($h['personer'] !== [] && $h['ejer']['mail'] === ''): ?>
-                      <div><span class="maerke stop" title="Koden kan ikke sendes, før ejeren har en brugbar mail.">ejer uden mail</span></div>
-                    <?php endif; ?>
-                    <?php if ($h['kort'] !== null && $h['kort']['sendt_at']): ?>
-                      <div class="smaat">kode sendt <?php echo $e(date('d-m-Y', strtotime($h['kort']['sendt_at']))); ?></div>
                     <?php endif; ?>
                   </td>
 
-                  <td class="knapper">
-                    <?php
-                      $bfe = bfe_for_raekke($h['personer'][0] ?? ['sommerhusadresse' => $h['adresse']]);
-                    ?>
-                    <?php if ($bfe !== ''): ?>
-                      <a class="ejer" target="_blank" rel="noopener"
-                         title="BFE <?php echo $e($bfe); ?> — åbner OIS i en ny fane"
-                         href="<?php echo $e(bfe_link($bfe)); ?>">Ejer</a>
-                    <?php else: ?>
-                      <button type="button" class="ejer" data-ejer-adresse="<?php
-                          echo $e($h['adresse'] . ', ' . HBN_POSTNR . ' ' . HBN_BY);
-                      ?>" title="Kopierer adressen og åbner boligejer.dk">Find ejer</button>
-                    <?php endif; ?>
+                  <?php if ($i === 0): ?>
+                    <td class="login" rowspan="<?php echo $span; ?>">
+                      <?php if ($h['logins'] !== []): ?>
+                        <?php $n = count($h['logins']); ?>
+                        <span class="maerke ja" title="<?php echo $e(implode(', ', array_column($h['logins'], 'username'))); ?>">
+                          <?php echo $n; ?> login<?php echo $n === 1 ? '' : 's'; ?>
+                        </span>
+                      <?php elseif ($h['personer'] !== []): ?>
+                        <span class="maerke nej">ingen login</span>
+                      <?php endif; ?>
+                      <?php if ($h['personer'] !== [] && $h['ejer']['mail'] === ''): ?>
+                        <div><span class="maerke stop" title="Koden kan ikke sendes, før ejeren har en brugbar mail.">ejer uden mail</span></div>
+                      <?php endif; ?>
+                      <?php if ($h['kort'] !== null && $h['kort']['sendt_at']): ?>
+                        <div class="smaat">kode sendt <?php echo $e(date('d-m-Y', strtotime($h['kort']['sendt_at']))); ?></div>
+                      <?php endif; ?>
+                    </td>
 
-                    <?php foreach ($personer as $p): ?>
-                      <?php
-                        // Bor der flere, står fornavnet på knappen, så man kan se, hvem man retter.
-                        $fornavn = strtok(trim((string)$p['kontaktperson']), ' ') ?: '';
-                      ?>
+                    <td class="knap-celle" rowspan="<?php echo $span; ?>">
+                      <?php if ($bfe !== ''): ?>
+                        <a class="ejer" target="_blank" rel="noopener"
+                           title="BFE <?php echo $e($bfe); ?> — åbner OIS i en ny fane"
+                           href="<?php echo $e(bfe_link($bfe)); ?>">Ejer</a>
+                      <?php else: ?>
+                        <button type="button" class="ejer" data-ejer-adresse="<?php
+                            echo $e($h['adresse'] . ', ' . HBN_POSTNR . ' ' . HBN_BY);
+                        ?>" title="Kopierer adressen og åbner boligejer.dk">Find ejer</button>
+                      <?php endif; ?>
+                    </td>
+                  <?php endif; ?>
+
+                  <td class="knap-celle">
+                    <?php if ($p !== null): ?>
                       <a class="lille" href="beboer-ret.php?id=<?php echo (int)$p['id']; ?>"
-                         title="Ret <?php echo $e($p['kontaktperson']); ?>">Ret<?php
-                         echo count($personer) > 1 && $fornavn !== '' ? ' ' . $e($fornavn) : ''; ?></a>
-                    <?php endforeach; ?>
+                         title="Ret <?php echo $e($p['kontaktperson']); ?>">Ret</a>
+                    <?php endif; ?>
                   </td>
                 </tr>
               <?php endforeach; ?>
-            </tbody>
+              </tbody>
+            <?php endforeach; ?>
           </table>
         </div>
       <?php endif; ?>
